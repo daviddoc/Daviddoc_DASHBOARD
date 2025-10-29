@@ -453,7 +453,7 @@ return `
 <h2 class="text-2xl font-bold mb-4 text-center text-blue-400">HOY</h2>
 <div class="text-center mb-4">
 <div class="countdown-time clock-time">${timeStr}</div>
-<div class="text-sm text-gray-400 mt-2 clock-date capitalize">${dateStr}</div>
+<a href="https://daviddoc.github.io/Daviddoc_DASHBOARD/CALENDARIO/calendar.html" target="_blank" class="text-sm text-gray-400 mt-2 clock-date capitalize hover:text-blue-400">${dateStr}</a>
 </div>
 <div class="relative rounded-lg overflow-hidden flex justify-center">
 <div id="mrwidb5079e7663ded13edcc5ad94b1da0b5a"></div>
@@ -596,7 +596,7 @@ function createIframeCard(card) {
   const iframeId = `edu-iframe-${card.id}`;
   setTimeout(() => {
     const iframe = document.getElementById(iframeId);
-    if (iframe) iframe.style.transform = 'translateY(-530px)';
+    if (iframe) iframe.style.transform = 'translateY(-500px)';
   }, 100);
   return `
     <div class="flex justify-start gap-2 mb-2">
@@ -607,7 +607,7 @@ function createIframeCard(card) {
     <div class="relative overflow-auto mx-auto" style="height: 300px; width: 520px; max-width: 100%;">
       <iframe id="${iframeId}" src="${homeUrl}"
               class="border border-gray-600 rounded w-full"
-              style="width: 100%; height: 1800px; transform: translateY(-530px);"></iframe>
+              style="width: 100%; height: 1800px; transform: translateY(-500px);"></iframe>
     </div>`;
 }
 // Controles de navegación para iframe
