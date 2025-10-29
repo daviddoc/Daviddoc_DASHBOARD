@@ -5,319 +5,234 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mi Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script>
+// Carga de fallback para Tailwind si el script de v4 no está activo en runtime (p. ej., en GitHub Pages)
+(function() {
+  function isTailwindWorking() {
+    try {
+      const test = document.createElement('div');
+      test.className = 'grid';
+      document.body.appendChild(test);
+      const ok = getComputedStyle(test).display === 'grid';
+      test.remove();
+      return ok;
+    } catch (e) {
+      return false;
+    }
+  }
+  function loadFallback() {
+    if (document.getElementById('tw-fallback')) return;
+    const s = document.createElement('script');
+    s.id = 'tw-fallback';
+    s.src = 'https://cdn.tailwindcss.com';
+    s.referrerPolicy = 'no-referrer';
+    s.onload = () => console.info('Tailwind fallback (cdn.tailwindcss.com) cargado');
+    s.onerror = () => console.warn('No se pudo cargar el fallback de Tailwind');
+    document.head.appendChild(s);
+  }
+  function checkSoon() {
+    setTimeout(() => {
+      if (!isTailwindWorking()) {
+        console.warn('Tailwind v4 no parece activo, cargando fallback v3...');
+        loadFallback();
+      }
+    }, 450);
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    checkSoon();
+  } else {
+    document.addEventListener('DOMContentLoaded', checkSoon);
+  }
+})();
+</script>
 <style>
-body {
-background: #0f172a;
-color: #e2e8f0;
-}
-
-.card {
-background: #1e293b;
-border: 1px solid #334155;
-transition: all 0.3s ease;
-}
-
-.card:hover {
-border-color: #475569;
-box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.card.dragging {
-opacity: 0.5;
-}
-
-.save-btn-pending {
-animation: pulse-red 1.5s infinite;
-background: #dc2626 !important;
-box-shadow: 0 0 20px rgba(220, 38, 38, 0.6);
-}
-
-@keyframes pulse-red {
-0%, 100% {
-opacity: 1;
-}
-50% {
-opacity: 0.7;
-}
-}
-
-.progress-bar {
-transition: width 1s linear;
-background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-}
-
-.countdown-time {
-font-family: 'Courier New', monospace;
-font-size: 2rem;
-font-weight: bold;
-}
-
-.weather-widget {
-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-cursor: pointer;
-transition: transform 0.2s;
-}
-
-.weather-widget:hover {
-transform: scale(1.05);
-}
-
-.bookmark-item {
-display: flex;
-flex-direction: column;
-align-items: center;
-padding: 0.75rem;
-background: #334155;
-border-radius: 0.5rem;
-transition: all 0.2s;
-cursor: pointer;
-}
-
-.bookmark-item:hover {
-background: #475569;
-transform: translateY(-2px);
-}
-
-.bookmark-icon {
-width: 32px;
-height: 32px;
-margin-bottom: 0.5rem;
-}
-
-.modal {
-display: none;
-position: fixed;
-top: 0;
-left: 0;
-width: 100%;
-height: 100%;
-background: rgba(0, 0, 0, 0.8);
-z-index: 1000;
-align-items: center;
-justify-content: center;
-}
-
-.modal.active {
-display: flex;
-}
-
-.modal-content {
-background: #1e293b;
-padding: 2rem;
-border-radius: 1rem;
-border: 1px solid #334155;
-max-width: 600px;
-width: 92%;
-max-height: 80vh;
-overflow-y: auto;
-}
-
-input, textarea, select {
-background: #0f172a;
-border: 1px solid #334155;
-color: #e2e8f0;
-padding: 0.5rem;
-border-radius: 0.375rem;
-width: 100%;
-}
-
-input:focus, textarea:focus, select:focus {
-outline: none;
-border-color: #3b82f6;
-}
-
-button {
-cursor: pointer;
-transition: all 0.2s;
-}
-
-button:hover {
-transform: translateY(-1px);
-}
-
-.delete-btn {
-position: absolute;
-top: 0.5rem;
-right: 0.5rem;
-background: #7f1d1d;
-color: white;
-border: none;
-padding: 0.25rem 0.5rem;
-border-radius: 0.25rem;
-font-size: 0.75rem;
-opacity: 0;
-transition: opacity 0.2s;
-}
-
-.card:hover .delete-btn {
-opacity: 1;
-}
-
-.delete-btn:hover {
-background: #991b1b;
-}
-
+body { background: #0f172a; color: #e2e8f0; }
+.card { background: #1e293b; border: 1px solid #334155; transition: all 0.3s ease; }
+.card:hover { border-color: #475569; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+.card.dragging { opacity: 0.5; }
+.save-btn-pending { animation: pulse-red 1.5s infinite; background: #dc2626 !important; box-shadow: 0 0 20px rgba(220,38,38,0.6); }
+@keyframes pulse-red { 0%,100%{opacity:1} 50%{opacity:.7} }
+.progress-bar { transition: width 1s linear; background: linear-gradient(90deg, #3b82f6, #8b5cf6); }
+.countdown-time { font-family: 'Courier New', monospace; font-size: 2rem; font-weight: bold; }
+.bookmark-item { display: flex; flex-direction: column; align-items: center; padding: 0.75rem; background: #334155; border-radius: 0.5rem; transition: all 0.2s; cursor: pointer; }
+.bookmark-item:hover { background: #475569; transform: translateY(-2px); }
+.bookmark-icon { width: 32px; height: 32px; margin-bottom: 0.5rem; }
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
+.modal.active { display: flex; }
+.modal-content { background: #1e293b; padding: 2rem; border-radius: 1rem; border: 1px solid #334155; max-width: 600px; width: 92%; max-height: 80vh; overflow-y: auto; }
+input, textarea, select { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 0.5rem; border-radius: 0.375rem; width: 100%; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; }
+button { cursor: pointer; transition: all 0.2s; }
+button:hover { transform: translateY(-1px); }
+.delete-btn { position: absolute; top: 0.5rem; right: 0.5rem; background: #7f1d1d; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; opacity: 0; transition: opacity 0.2s; }
+.card:hover .delete-btn { opacity: 1; }
+.delete-btn:hover { background: #991b1b; }
 /* Error banner */
-#errorBanner {
-display: none;
-}
-#errorBanner.active {
-display: block;
-}
+#errorBanner { display: none; }
+#errorBanner.active { display: block; }
 </style>
 </head>
 <body class="p-6">
 <div class="max-w-7xl mx-auto">
-<!-- Header -->
-<div class="flex justify-between items-center mb-4">
-<h1 class="text-3xl font-bold text-blue-400">Mi Dashboard</h1>
-<div class="flex flex-wrap gap-2">
-<button id="addCardBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-  + Nueva Tarjeta
-</button>
-<button id="saveBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
-  💾 Guardar
-</button>
-<button id="configUrlBtn" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">
-  🌐 URL Config
-</button>
-<button id="importJsonBtn" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">
-  📥 Importar JSON
-</button>
-</div>
-</div>
-
-<!-- Error banner -->
-<div id="errorBanner" class="mb-4 border border-red-500/40 bg-red-900/30 text-red-200 rounded-lg">
-<div class="p-3 flex items-start gap-3">
-<div class="text-red-300">⚠️</div>
-<div class="flex-1">
-  <div class="font-semibold">No se pudo cargar la configuración</div>
-  <div id="errorDetails" class="text-sm opacity-90 mt-1"></div>
-  <ul class="text-sm list-disc pl-5 mt-2 opacity-90">
-    <li>El archivo config.json no existe (404) o la ruta es incorrecta.</li>
-    <li>En GitHub Pages respeta mayúsculas/minúsculas y subcarpetas.</li>
-    <li>GitHub Pages puede tardar 1-2 minutos en publicar cambios nuevos.</li>
-    <li>Si abres el archivo como file:// algunos navegadores limitan las peticiones de red.</li>
-    <li>Si usas un dominio de terceros, el origen remoto puede bloquear CORS.</li>
-  </ul>
-  <div class="flex flex-wrap gap-2 mt-3">
-    <button id="retryLoadBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm">Reintentar</button>
-    <button id="openConfigBtn" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm">Cambiar URL</button>
-    <button id="openImportBtn" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm">Importar JSON</button>
-    <button id="dismissErrorBtn" class="bg-transparent hover:bg-red-800/30 text-red-200 px-3 py-1.5 rounded text-sm">Ocultar</button>
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-3xl font-bold text-blue-400">Mi Dashboard</h1>
+    <div class="flex flex-wrap gap-2">
+      <button id="addCardBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">+ Nueva Tarjeta</button>
+      <button id="saveBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">💾 Guardar</button>
+      <button id="configUrlBtn" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">🌐 URL Config</button>
+      <button id="importJsonBtn" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-2 rounded-lg text-sm">📥 Importar JSON</button>
+    </div>
   </div>
-</div>
-</div>
-</div>
 
-<!-- Cards Container -->
-<div id="cardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <!-- Error banner -->
+  <div id="errorBanner" class="mb-4 border border-red-500/40 bg-red-900/30 text-red-200 rounded-lg">
+    <div class="p-3 flex items-start gap-3">
+      <div class="text-red-300">⚠️</div>
+      <div class="flex-1">
+        <div class="font-semibold">No se pudo cargar la configuración</div>
+        <div id="errorDetails" class="text-sm opacity-90 mt-1"></div>
+        <ul class="text-sm list-disc pl-5 mt-2 opacity-90">
+          <li>El archivo config.json no existe (404) o la ruta es incorrecta.</li>
+          <li>En GitHub Pages respeta mayúsculas/minúsculas y subcarpetas.</li>
+          <li>GitHub Pages puede tardar 1-2 minutos en publicar cambios nuevos.</li>
+          <li>Si abres el archivo como file:// algunos navegadores limitan las peticiones de red.</li>
+          <li>Si usas un dominio de terceros, el origen remoto puede bloquear CORS.</li>
+        </ul>
+        <div class="flex flex-wrap gap-2 mt-3">
+          <button id="retryLoadBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm">Reintentar</button>
+          <button id="openConfigBtn" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm">Cambiar URL</button>
+          <button id="openImportBtn" class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm">Importar JSON</button>
+          <button id="dismissErrorBtn" class="bg-transparent hover:bg-red-800/30 text-red-200 px-3 py-1.5 rounded text-sm">Ocultar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cards Container -->
+  <div id="cardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 </div>
 
 <!-- Modal para crear tarjetas -->
 <div id="createCardModal" class="modal">
-<div class="modal-content">
-<h2 class="text-2xl font-bold mb-4">Crear Nueva Tarjeta</h2>
-<div class="space-y-3">
-<label class="block">
-  <span class="text-sm font-medium">Tipo de Tarjeta:</span>
-  <select id="cardTypeSelect" class="mt-1">
-    <option value="today">Hoy (Reloj y Tiempo)</option>
-    <option value="schedule">Horario (Mañana/Tarde)</option>
-    <option value="iframe">iFrame (Educa JCYL)</option>
-    <option value="quote">Cita Célebre</option>
-    <option value="bookmarks">Bookmarks IA</option>
-    <option value="helpers">AYUDANTES</option>
-    <option value="countdowns">Cuentas Atrás Personalizadas</option>
-  </select>
-</label>
-<div class="flex gap-2 mt-4">
-  <button id="confirmCreateCard" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">Crear</button>
-  <button id="cancelCreateCard" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex-1">Cancelar</button>
-</div>
-</div>
-</div>
+  <div class="modal-content">
+    <h2 class="text-2xl font-bold mb-4">Crear Nueva Tarjeta</h2>
+    <div class="space-y-3">
+      <label class="block">
+        <span class="text-sm font-medium">Tipo de Tarjeta:</span>
+        <select id="cardTypeSelect" class="mt-1">
+          <option value="today">Hoy (Reloj y Tiempo)</option>
+          <option value="schedule">Horario (Mañana/Tarde)</option>
+          <option value="iframe">iFrame (Educa JCYL)</option>
+          <option value="quote">Cita Célebre</option>
+          <option value="bookmarks">Bookmarks IA</option>
+          <option value="helpers">AYUDANTES</option>
+          <option value="countdowns">Cuentas Atrás Personalizadas</option>
+        </select>
+      </label>
+      <div class="flex gap-2 mt-4">
+        <button id="confirmCreateCard" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">Crear</button>
+        <button id="cancelCreateCard" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex-1">Cancelar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Modal para editar bookmarks -->
+<!-- Modal para editar bookmarks (sin icono) -->
 <div id="editBookmarkModal" class="modal">
-<div class="modal-content">
-<h2 class="text-2xl font-bold mb-4">Editar Bookmark</h2>
-<div class="space-y-3">
-<label class="block">
-  <span class="text-sm font-medium">Título:</span>
-  <input type="text" id="bookmarkTitle" class="mt-1">
-</label>
-<label class="block">
-  <span class="text-sm font-medium">URL:</span>
-  <input type="text" id="bookmarkUrl" class="mt-1">
-</label>
-<label class="block">
-  <span class="text-sm font-medium">Icono URL (opcional):</span>
-  <input type="text" id="bookmarkIcon" class="mt-1" placeholder="URL del favicon">
-</label>
-<div class="flex gap-2 mt-4">
-  <button id="confirmEditBookmark" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">Guardar</button>
-  <button id="deleteBookmark" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex-1">Eliminar</button>
-  <button id="cancelEditBookmark" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex-1">Cancelar</button>
-</div>
-</div>
-</div>
+  <div class="modal-content">
+    <h2 class="text-2xl font-bold mb-4">Editar Bookmark</h2>
+    <div class="space-y-3">
+      <label class="block">
+        <span class="text-sm font-medium">Título:</span>
+        <input type="text" id="bookmarkTitle" class="mt-1">
+      </label>
+      <label class="block">
+        <span class="text-sm font-medium">URL:</span>
+        <input type="text" id="bookmarkUrl" class="mt-1" placeholder="https://...">
+      </label>
+      <div class="flex gap-2 mt-4">
+        <button id="confirmEditBookmark" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">Guardar</button>
+        <button id="deleteBookmark" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex-1">Eliminar</button>
+        <button id="cancelEditBookmark" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex-1">Cancelar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Modal para añadir cuenta atrás -->
 <div id="addCountdownModal" class="modal">
-<div class="modal-content">
-<h2 class="text-2xl font-bold mb-4">Añadir Cuenta Atrás</h2>
-<div class="space-y-3">
-<label class="block">
-  <span class="text-sm font-medium">Título:</span>
-  <input type="text" id="countdownTitle" class="mt-1">
-</label>
-<label class="block">
-  <span class="text-sm font-medium">Fecha:</span>
-  <input type="date" id="countdownDate" class="mt-1">
-</label>
-<label class="block">
-  <span class="text-sm font-medium">Hora:</span>
-  <input type="time" id="countdownTime" class="mt-1">
-</label>
-<div class="flex gap-2 mt-4">
-  <button id="confirmAddCountdown" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">Añadir</button>
-  <button id="cancelAddCountdown" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex-1">Cancelar</button>
-</div>
-</div>
-</div>
+  <div class="modal-content">
+    <h2 class="text-2xl font-bold mb-4">Añadir Cuenta Atrás</h2>
+    <div class="space-y-3">
+      <label class="block">
+        <span class="text-sm font-medium">Título:</span>
+        <input type="text" id="countdownTitle" class="mt-1">
+      </label>
+      <label class="block">
+        <span class="text-sm font-medium">Fecha:</span>
+        <input type="date" id="countdownDate" class="mt-1">
+      </label>
+      <label class="block">
+        <span class="text-sm font-medium">Hora:</span>
+        <input type="time" id="countdownTime" class="mt-1">
+      </label>
+      <div class="flex gap-2 mt-4">
+        <button id="confirmAddCountdown" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">Añadir</button>
+        <button id="cancelAddCountdown" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex-1">Cancelar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Modal para configurar URL de configuración -->
 <div id="configUrlModal" class="modal">
-<div class="modal-content">
-<h2 class="text-2xl font-bold mb-4">Configurar URL de la Configuración</h2>
-<p class="text-sm text-gray-300 mb-3">Por defecto se usa config.json en el mismo directorio que esta página (ideal para GitHub Pages). Puedes indicar otra URL RAW si lo prefieres.</p>
-<label class="block mb-4">
-<span class="text-sm font-medium">URL:</span>
-<input type="url" id="configUrlInput" class="mt-1" placeholder="https://usuario.github.io/tu-repo/config.json">
-</label>
-<div class="flex gap-2">
-<button id="confirmConfigUrl" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">Guardar URL</button>
-<button id="cancelConfigUrl" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex-1">Cancelar</button>
-</div>
-</div>
+  <div class="modal-content">
+    <h2 class="text-2xl font-bold mb-4">Configurar URL de la Configuración</h2>
+    <p class="text-sm text-gray-300 mb-3">Por defecto se usa config.json en el mismo directorio que esta página (ideal para GitHub Pages). Puedes indicar otra URL RAW si lo prefieres.</p>
+    <label class="block mb-4">
+      <span class="text-sm font-medium">URL:</span>
+      <input type="url" id="configUrlInput" class="mt-1" placeholder="https://usuario.github.io/tu-repo/config.json">
+    </label>
+    <div class="flex gap-2">
+      <button id="confirmConfigUrl" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">Guardar URL</button>
+      <button id="cancelConfigUrl" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex-1">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <!-- Modal para importar JSON -->
 <div id="importJsonModal" class="modal">
-<div class="modal-content">
-<h2 class="text-2xl font-bold mb-4">Importar configuración desde JSON</h2>
-<p class="text-sm text-gray-300 mb-3">Pega aquí el JSON de configuración. Reemplazará las tarjetas actuales en memoria.</p>
-<textarea id="importJsonTextarea" rows="10" class="w-full" placeholder='{"cards": [...], "lastUpdated": "..."}'></textarea>
-<div class="flex gap-2 mt-4">
-<button id="confirmImportJson" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">Importar</button>
-<button id="cancelImportJson" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex-1">Cancelar</button>
+  <div class="modal-content">
+    <h2 class="text-2xl font-bold mb-4">Importar configuración desde JSON</h2>
+    <p class="text-sm text-gray-300 mb-3">Pega aquí el JSON de configuración. Reemplazará las tarjetas actuales en memoria.</p>
+    <textarea id="importJsonTextarea" rows="10" class="w-full" placeholder='{"cards": [...], "lastUpdated": "..."}'></textarea>
+    <div class="flex gap-2 mt-4">
+      <button id="confirmImportJson" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">Importar</button>
+      <button id="cancelImportJson" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex-1">Cancelar</button>
+    </div>
+  </div>
 </div>
-</div>
+
+<!-- Modal para añadir frase (citas) -->
+<div id="addQuoteModal" class="modal">
+  <div class="modal-content">
+    <h2 class="text-2xl font-bold mb-4">Añadir frase</h2>
+    <div class="space-y-3">
+      <label class="block">
+        <span class="text-sm font-medium">Frase:</span>
+        <textarea id="quoteTextInput" rows="3"></textarea>
+      </label>
+      <label class="block">
+        <span class="text-sm font-medium">Autor:</span>
+        <input type="text" id="quoteAuthorInput" placeholder="Autor o 'Sin autor'">
+      </label>
+      <div class="flex gap-2 mt-4">
+        <button id="confirmAddQuote" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex-1">Añadir</button>
+        <button id="cancelAddQuote" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded flex-1">Cancelar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -345,39 +260,33 @@ let currentEditingCard = null;
 
 // Utilidades de banner de error
 function showErrorBanner(message, details = '') {
-const banner = document.getElementById('errorBanner');
-const detailsEl = document.getElementById('errorDetails');
-detailsEl.textContent = `${message}${details ? ' — ' + details : ''}`;
-banner.classList.add('active');
+  const banner = document.getElementById('errorBanner');
+  const detailsEl = document.getElementById('errorDetails');
+  detailsEl.textContent = `${message}${details ? ' — ' + details : ''}`;
+  banner.classList.add('active');
 }
 function hideErrorBanner() {
-const banner = document.getElementById('errorBanner');
-banner.classList.remove('active');
+  const banner = document.getElementById('errorBanner');
+  banner.classList.remove('active');
 }
 
 // Marcar cambios pendientes
 function markUnsaved() {
-hasUnsavedChanges = true;
-document.getElementById('saveBtn').classList.add('save-btn-pending');
+  hasUnsavedChanges = true;
+  document.getElementById('saveBtn').classList.add('save-btn-pending');
 }
-
 function markSaved() {
-hasUnsavedChanges = false;
-document.getElementById('saveBtn').classList.remove('save-btn-pending');
+  hasUnsavedChanges = false;
+  document.getElementById('saveBtn').classList.remove('save-btn-pending');
 }
 
 // Cargar configuración con reintentos y espejos (solo si es cross-origin)
 async function fetchJsonThrough(url) {
-const res = await fetch(url, { cache: 'no-store' });
-if (!res.ok) throw new Error(`HTTP ${res.status}`);
-const text = await res.text();
-try {
-return JSON.parse(text);
-} catch (e) {
-throw new Error('El contenido no es JSON válido');
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { throw new Error('El contenido no es JSON válido'); }
 }
-}
-
 function buildAttempts(url) {
   const u = new URL(url, window.location.href);
   const attempts = [{ label: 'Directo', url: u.href }];
@@ -389,744 +298,607 @@ function buildAttempts(url) {
   }
   return attempts;
 }
-
 async function fetchWithFallback(url) {
-const attempts = buildAttempts(url);
-const errors = [];
-for (const a of attempts) {
-try {
-const json = await fetchJsonThrough(a.url);
-return { json, via: a.label, finalUrl: a.url };
-} catch (err) {
-errors.push(`${a.label}: ${err.message}`);
-}
-}
-throw new Error(errors.join(' | '));
+  const attempts = buildAttempts(url);
+  const errors = [];
+  for (const a of attempts) {
+    try { const json = await fetchJsonThrough(a.url); return { json, via: a.label, finalUrl: a.url }; }
+    catch (err) { errors.push(`${a.label}: ${err.message}`); }
+  }
+  throw new Error(errors.join(' | '));
 }
 
 // Cargar configuración
 async function loadConfig() {
-const protocol = window.location.protocol;
-const online = navigator.onLine;
-try {
-const { json, via, finalUrl } = await fetchWithFallback(window.configUrl);
-cards = json.cards || [];
-renderCards();
-hideErrorBanner();
-console.info('Configuración cargada vía', via, 'desde', finalUrl);
-} catch (error) {
-console.error('Error loading config:', error);
-const parts = [];
-if (!online) parts.push('Sin conexión a internet.');
-try {
-  const u = new URL(window.configUrl, window.location.href);
-  if (u.origin === window.location.origin) {
-    parts.push('Comprueba que config.json existe en el mismo directorio que index.html y que la ruta es correcta (GitHub Pages).');
+  const protocol = window.location.protocol;
+  const online = navigator.onLine;
+  try {
+    const { json, via, finalUrl } = await fetchWithFallback(window.configUrl);
+    cards = json.cards || [];
+    renderCards();
+    hideErrorBanner();
+    console.info('Configuración cargada vía', via, 'desde', finalUrl);
+  } catch (error) {
+    console.error('Error loading config:', error);
+    const parts = [];
+    if (!online) parts.push('Sin conexión a internet.');
+    try {
+      const u = new URL(window.configUrl, window.location.href);
+      if (u.origin === window.location.origin) parts.push('Comprueba que config.json existe en el mismo directorio que index.html y que la ruta es correcta (GitHub Pages).');
+    } catch {}
+    if (protocol === 'file:') parts.push('Abierto como file:// puede limitar fetch en algunos navegadores.');
+    parts.push('Intentos fallidos: ' + error.message);
+    showErrorBanner('Error al cargar la configuración', parts.join(' '));
+    cards = [];
+    renderCards();
   }
-} catch (e) {}
-if (protocol === 'file:') {
-  parts.push('Abierto como file:// puede limitar fetch en algunos navegadores.');
-}
-parts.push('Intentos fallidos: ' + error.message);
-showErrorBanner('Error al cargar la configuración', parts.join(' '));
-cards = [];
-renderCards();
-}
 }
 
 // Guardar configuración
 function saveConfig() {
-const config = {
-cards: cards,
-lastUpdated: new Date().toISOString()
-};
-const configText = JSON.stringify(config, null, 2);
-
-navigator.clipboard.writeText(configText).then(() => {
-alert('✅ Configuración copiada al portapapeles!\n\nPega este JSON en el archivo config.json de tu repositorio (GitHub Pages) y súbelo.');
-markSaved();
-}).catch(err => {
-console.error('Error copying to clipboard:', err);
-alert('Error al copiar al portapapeles. Verifica los permisos del navegador.');
-});
+  const config = { cards: cards, lastUpdated: new Date().toISOString() };
+  const configText = JSON.stringify(config, null, 2);
+  navigator.clipboard.writeText(configText).then(() => {
+    alert('✅ Configuración copiada al portapapeles!\n\nPega este JSON en el archivo config.json de tu repositorio (GitHub Pages) y súbelo.');
+    markSaved();
+  }).catch(err => {
+    console.error('Error copying to clipboard:', err);
+    alert('Error al copiar al portapapeles. Verifica los permisos del navegador.');
+  });
 }
 
 // Generar ID único
-function generateId() {
-return 'card-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-}
+function generateId() { return 'card-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9); }
 
 // Crear tarjeta
 function createCard(type, data = {}) {
-const id = generateId();
-const card = {
-id: id,
-type: type,
-data: data,
-order: cards.length
-};
-cards.push(card);
-markUnsaved();
-renderCards();
+  const id = generateId();
+  const card = { id, type, data, order: cards.length };
+  cards.push(card);
+  markUnsaved();
+  renderCards();
 }
 
 // Eliminar tarjeta
 function deleteCard(id) {
-if (confirm('¿Estás seguro de que quieres eliminar esta tarjeta?')) {
-cards = cards.filter(c => c.id !== id);
-markUnsaved();
-renderCards();
-}
+  if (confirm('¿Estás seguro de que quieres eliminar esta tarjeta?')) {
+    cards = cards.filter(c => c.id !== id);
+    markUnsaved();
+    renderCards();
+  }
 }
 
 // Actualizar datos de tarjeta
 function updateCardData(id, newData) {
-const card = cards.find(c => c.id === id);
-if (card) {
-card.data = { ...card.data, ...newData };
-markUnsaved();
-renderCards();
-}
+  const card = cards.find(c => c.id === id);
+  if (card) { card.data = { ...card.data, ...newData }; markUnsaved(); renderCards(); }
 }
 
 // Renderizar todas las tarjetas
 function renderCards() {
-const container = document.getElementById('cardsContainer');
-container.innerHTML = '';
-
-cards.sort((a, b) => a.order - b.order);
-
-cards.forEach(card => {
-const cardElement = createCardElement(card);
-container.appendChild(cardElement);
-});
+  const container = document.getElementById('cardsContainer');
+  container.innerHTML = '';
+  cards.sort((a, b) => a.order - b.order);
+  cards.forEach(card => { const cardElement = createCardElement(card); container.appendChild(cardElement); });
 }
 
 // Crear elemento de tarjeta según tipo
 function createCardElement(card) {
-const div = document.createElement('div');
-div.className = 'card rounded-lg p-4 relative';
-div.draggable = true;
-div.dataset.cardId = card.id;
+  const div = document.createElement('div');
+  div.className = 'card rounded-lg p-4 relative';
+  div.draggable = true;
+  div.dataset.cardId = card.id;
 
-// Botón de eliminar
-const deleteBtn = document.createElement('button');
-deleteBtn.className = 'delete-btn';
-deleteBtn.textContent = '✕';
-deleteBtn.onclick = () => deleteCard(card.id);
-div.appendChild(deleteBtn);
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'delete-btn';
+  deleteBtn.textContent = '✕';
+  deleteBtn.onclick = () => deleteCard(card.id);
+  div.appendChild(deleteBtn);
 
-// Contenido según tipo
-let content = '';
-switch (card.type) {
-case 'today':
-content = createTodayCard(card);
-break;
-case 'schedule':
-content = createScheduleCard(card);
-break;
-case 'iframe':
-content = createIframeCard(card);
-break;
-case 'quote':
-content = createQuoteCard(card);
-break;
-case 'bookmarks':
-content = createBookmarksCard(card);
-break;
-case 'helpers':
-content = createHelpersCard(card);
-break;
-case 'countdowns':
-content = createCountdownsCard(card);
-break;
+  let content = '';
+  switch (card.type) {
+    case 'today': content = createTodayCard(card); break;
+    case 'schedule': content = createScheduleCard(card); break;
+    case 'iframe': content = createIframeCard(card); break;
+    case 'quote': content = createQuoteCard(card); break;
+    case 'bookmarks': content = createBookmarksCard(card); break;
+    case 'helpers': content = createHelpersCard(card); break;
+    case 'countdowns': content = createCountdownsCard(card); break;
+  }
+
+  const contentDiv = document.createElement('div');
+  contentDiv.innerHTML = content;
+  div.appendChild(contentDiv);
+
+  // Drag and drop
+  div.addEventListener('dragstart', handleDragStart);
+  div.addEventListener('dragend', handleDragEnd);
+  div.addEventListener('dragover', handleDragOver);
+  div.addEventListener('drop', handleDrop);
+
+  return div;
 }
 
-const contentDiv = document.createElement('div');
-contentDiv.innerHTML = content;
-div.appendChild(contentDiv);
-
-// Drag and drop
-div.addEventListener('dragstart', handleDragStart);
-div.addEventListener('dragend', handleDragEnd);
-div.addEventListener('dragover', handleDragOver);
-div.addEventListener('drop', handleDrop);
-
-return div;
-}
-
-// Tarjeta "Hoy"
+// Tarjeta "Hoy" con widget Meteored
 function createTodayCard(card) {
-const now = new Date();
-const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-const dateStr = now.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-setTimeout(() => {
-const el = document.querySelector(`[data-card-id="${card.id}"]`);
-if (!el) return;
-const timeElement = el.querySelector('.clock-time');
-const dateElement = el.querySelector('.clock-date');
-if (timeElement && dateElement) {
-setInterval(() => {
   const now = new Date();
-  timeElement.textContent = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  dateElement.textContent = now.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-}, 1000);
-}
-}, 100);
+  const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const dateStr = now.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-return `
-<h2 class="text-2xl font-bold mb-4 text-center text-blue-400">HOY</h2>
-<div class="text-center mb-4">
-<div class="countdown-time clock-time">${timeStr}</div>
-<div class="text-sm text-gray-400 mt-2 clock-date capitalize">${dateStr}</div>
-</div>
-<div class="weather-widget rounded-lg p-4 text-center text-white" onclick="window.open('https://www.tiempo.com/valladolid.htm', '_blank')">
-<div class="text-lg font-semibold">🌤️ El Tiempo</div>
-<div class="text-sm mt-1">Valladolid</div>
-</div>
-`;
+  setTimeout(() => {
+    const el = document.querySelector(`[data-card-id="${card.id}"]`);
+    if (!el) return;
+    const timeElement = el.querySelector('.clock-time');
+    const dateElement = el.querySelector('.clock-date');
+    if (timeElement && dateElement) {
+      setInterval(() => {
+        const now = new Date();
+        timeElement.textContent = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        dateElement.textContent = now.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      }, 1000);
+    }
+    // Cargar widget Meteored dinámicamente para que se ejecute el script
+    const widgetDiv = el.querySelector('#mrwidb5079e7663ded13edcc5ad94b1da0b5a');
+    if (widgetDiv && !widgetDiv.dataset.loaded) {
+      const s = document.createElement('script');
+      s.type = 'text/javascript';
+      s.async = true;
+      s.src = 'https://api.meteored.com/widget/loader/b5079e7663ded13edcc5ad94b1da0b5a';
+      widgetDiv.appendChild(s);
+      widgetDiv.dataset.loaded = '1';
+    }
+  }, 100);
+
+  return `
+  <h2 class="text-2xl font-bold mb-4 text-center text-blue-400">HOY</h2>
+  <div class="text-center mb-4">
+    <div class="countdown-time clock-time">${timeStr}</div>
+    <div class="text-sm text-gray-400 mt-2 clock-date capitalize">${dateStr}</div>
+  </div>
+  <div class="relative rounded-lg overflow-hidden">
+    <div id="mrwidb5079e7663ded13edcc5ad94b1da0b5a"></div>
+    <a href="https://www.tiempo.com/valladolid.htm" target="_blank" rel="noopener" class="absolute inset-0 z-10"></a>
+  </div>
+  `;
 }
 
 // Tarjeta "Horario"
 function createScheduleCard(card) {
-const html = `
-<div class="space-y-4">
-<div class="border-b border-gray-600 pb-4">
-  <h3 class="text-lg font-semibold mb-2 text-yellow-400">MAÑANA</h3>
-  <div id="morning-${card.id}" class="schedule-section"></div>
-</div>
-<div>
-  <h3 class="text-lg font-semibold mb-2 text-orange-400">TARDE</h3>
-  <div id="afternoon-${card.id}" class="schedule-section"></div>
-</div>
-</div>
-`;
-
-setTimeout(() => updateScheduleCard(card.id), 100);
-setInterval(() => updateScheduleCard(card.id), 1000);
-
-return html;
+  const html = `
+  <div class="space-y-4">
+    <div class="border-b border-gray-600 pb-4">
+      <h3 class="text-lg font-semibold mb-2 text-yellow-400">MAÑANA</h3>
+      <div id="morning-${card.id}" class="schedule-section"></div>
+    </div>
+    <div>
+      <h3 class="text-lg font-semibold mb-2 text-orange-400">TARDE</h3>
+      <div id="afternoon-${card.id}" class="schedule-section"></div>
+    </div>
+  </div>`;
+  setTimeout(() => updateScheduleCard(card.id), 100);
+  setInterval(() => updateScheduleCard(card.id), 1000);
+  return html;
 }
-
 function updateScheduleCard(cardId) {
-const now = new Date();
-const day = now.getDay(); // 0 = domingo, 1 = lunes, etc.
-const hour = now.getHours();
-const minute = now.getMinutes();
-const currentMinutes = hour * 60 + minute;
-
-const morningDiv = document.getElementById(`morning-${cardId}`);
-const afternoonDiv = document.getElementById(`afternoon-${cardId}`);
-
-if (!morningDiv || !afternoonDiv) return;
-
-// Mañana: 8:15 - 13:30, lunes a viernes
-if (day >= 1 && day <= 5) {
-const startMorning = 8 * 60 + 15; // 8:15
-const endMorning = 13 * 60 + 30; // 13:30
-
-if (currentMinutes >= startMorning && currentMinutes <= endMorning) {
-const remaining = endMorning - currentMinutes;
-const total = endMorning - startMorning;
-const progress = ((total - remaining) / total) * 100;
-
-const hours = Math.floor(remaining / 60);
-const mins = remaining % 60;
-
-morningDiv.innerHTML = `
-  <div class="flex items-center gap-3">
-    <div class="flex-1">
-      <div class="text-2xl font-mono">${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}</div>
-    </div>
-    <div class="w-24">
-      <div class="h-4 bg-gray-700 rounded-full overflow-hidden">
-        <div class="progress-bar h-full" style="width: ${100 - progress}%"></div>
-      </div>
-    </div>
-  </div>
-`;
-} else {
-morningDiv.innerHTML = '<div class="text-gray-500 text-sm">Fuera de horario</div>';
-}
-} else {
-morningDiv.innerHTML = '<div class="text-gray-500 text-sm">Fin de semana</div>';
-}
-
-// Tarde: 16:00 - 19:30, lunes a jueves
-if (day >= 1 && day <= 4) {
-const startAfternoon = 16 * 60; // 16:00
-const endAfternoon = 19 * 60 + 30; // 19:30
-
-if (currentMinutes >= startAfternoon && currentMinutes <= endAfternoon) {
-const remaining = endAfternoon - currentMinutes;
-const total = endAfternoon - startAfternoon;
-const progress = ((total - remaining) / total) * 100;
-
-const hours = Math.floor(remaining / 60);
-const mins = remaining % 60;
-
-afternoonDiv.innerHTML = `
-  <div class="flex items-center gap-3">
-    <div class="flex-1">
-      <div class="text-2xl font-mono">${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}</div>
-    </div>
-    <div class="w-24">
-      <div class="h-4 bg-gray-700 rounded-full overflow-hidden">
-        <div class="progress-bar h-full" style="width: ${100 - progress}%"></div>
-      </div>
-    </div>
-  </div>
-`;
-} else {
-afternoonDiv.innerHTML = '<div class="text-gray-500 text-sm">Fuera de horario</div>';
-}
-} else {
-afternoonDiv.innerHTML = '<div class="text-gray-500 text-sm">No hay clase</div>';
-}
+  const now = new Date();
+  const day = now.getDay();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  const currentMinutes = hour * 60 + minute;
+  const morningDiv = document.getElementById(`morning-${cardId}`);
+  const afternoonDiv = document.getElementById(`afternoon-${cardId}`);
+  if (!morningDiv || !afternoonDiv) return;
+  // Mañana: 8:15 - 13:30, lunes a viernes
+  if (day >= 1 && day <= 5) {
+    const startMorning = 8 * 60 + 15;
+    const endMorning = 13 * 60 + 30;
+    if (currentMinutes >= startMorning && currentMinutes <= endMorning) {
+      const remaining = endMorning - currentMinutes;
+      const total = endMorning - startMorning;
+      const progress = ((total - remaining) / total) * 100;
+      const hours = Math.floor(remaining / 60);
+      const mins = remaining % 60;
+      morningDiv.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="flex-1">
+            <div class="text-2xl font-mono">${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}</div>
+          </div>
+          <div class="w-24">
+            <div class="h-4 bg-gray-700 rounded-full overflow-hidden">
+              <div class="progress-bar h-full" style="width: ${100 - progress}%"></div>
+            </div>
+          </div>
+        </div>`;
+    } else {
+      morningDiv.innerHTML = '<div class="text-gray-500 text-sm">Fuera de horario</div>';
+    }
+  } else {
+    morningDiv.innerHTML = '<div class="text-gray-500 text-sm">Fin de semana</div>';
+  }
+  // Tarde: 16:00 - 19:30, lunes a jueves
+  if (day >= 1 && day <= 4) {
+    const startAfternoon = 16 * 60;
+    const endAfternoon = 19 * 60 + 30;
+    if (currentMinutes >= startAfternoon && currentMinutes <= endAfternoon) {
+      const remaining = endAfternoon - currentMinutes;
+      const total = endAfternoon - startAfternoon;
+      const progress = ((total - remaining) / total) * 100;
+      const hours = Math.floor(remaining / 60);
+      const mins = remaining % 60;
+      afternoonDiv.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="flex-1">
+            <div class="text-2xl font-mono">${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}</div>
+          </div>
+          <div class="w-24">
+            <div class="h-4 bg-gray-700 rounded-full overflow-hidden">
+              <div class="progress-bar h-full" style="width: ${100 - progress}%"></div>
+            </div>
+          </div>
+        </div>`;
+    } else {
+      afternoonDiv.innerHTML = '<div class="text-gray-500 text-sm">Fuera de horario</div>';
+    }
+  } else {
+    afternoonDiv.innerHTML = '<div class="text-gray-500 text-sm">No hay clase</div>';
+  }
 }
 
-// Tarjeta iframe
+// Tarjeta iframe (vista móvil recortada y altura 75%)
 function createIframeCard(card) {
-return `
-<h2 class="text-lg font-bold mb-3 text-purple-400">Formación Profesorado</h2>
-<div class="relative" style="height: 400px; max-width: 375px; margin: 0 auto;">
-<iframe 
-  src="https://www.educa.jcyl.es/profesorado/es/formacion-profesorado/actualidad-formacion-profesorado" 
-  class="w-full h-full border border-gray-600 rounded"
-  style="transform: scale(0.8); transform-origin: top left; width: 125%; height: 125%;"
-></iframe>
-</div>
-`;
+  return `
+  <h2 class="text-lg font-bold mb-3 text-purple-400">Formación Profesorado</h2>
+  <div class="relative overflow-hidden mx-auto" style="height: 300px; width: 390px; max-width: 100%;">
+    <iframe src="https://www.educa.jcyl.es/profesorado/es/formacion-profesorado/actualidad-formacion-profesorado"
+            class="border border-gray-600 rounded w-full"
+            style="width: 100%; height: 1200px; transform: translateY(-400px);"></iframe>
+  </div>
+  <div class="text-center text-xs text-gray-400 mt-2">Vista móvil recortada</div>`;
 }
 
-// Tarjeta de citas
+// Tarjeta de citas (autogestionada)
 function createQuoteCard(card) {
-const quotes = [
-{ text: "La educación es el arma más poderosa que puedes usar para cambiar el mundo.", author: "Nelson Mandela" },
-{ text: "El único modo de hacer un gran trabajo es amar lo que haces.", author: "Steve Jobs" },
-{ text: "La inteligencia consiste no solo en el conocimiento, sino también en la destreza de aplicar los conocimientos en la práctica.", author: "Aristóteles" },
-{ text: "Nunca consideres el estudio como una obligación, sino como una oportunidad para penetrar en el bello y maravilloso mundo del saber.", author: "Albert Einstein" },
-{ text: "La mente que se abre a una nueva idea jamás volverá a su tamaño original.", author: "Albert Einstein" },
-{ text: "El aprendizaje es un tesoro que seguirá a su dueño a todas partes.", author: "Proverbio chino" },
-{ text: "No es la más fuerte de las especies la que sobrevive, tampoco es la más inteligente, sino la que mejor responde al cambio.", author: "Charles Darwin" },
-{ text: "La innovación distingue a un líder de un seguidor.", author: "Steve Jobs" }
-];
-
-const quote = quotes[Math.floor(Math.random() * quotes.length)];
-
-return `
-<div class="text-center p-4">
-<div class="text-4xl mb-4">💭</div>
-<blockquote class="text-lg italic mb-4">"${quote.text}"</blockquote>
-<div class="text-sm text-gray-400">— ${quote.author}</div>
-</div>
-`;
+  if (!card.data.quotes || !Array.isArray(card.data.quotes) || card.data.quotes.length === 0) {
+    card.data.quotes = [
+      { text: 'Cónocete a tí mismo', author: 'Sócrates' },
+      { text: 'No sabes nada, John Nieve', author: 'Igritte' },
+      { text: 'Piensa por ti mismo, usa el pensamiento crítico.', author: 'Sócrates' },
+      { text: 'No hay que confundir la verdad con la opinión de la mayoría', author: 'Jean Cocteau' },
+      { text: 'No juzgues, sé curioso', author: 'Ted Lasso' },
+      { text: 'Extremismo mal, ni nazis ni judíos', author: 'Ojete Calor' },
+      { text: 'Hay que dejar de proyectarnos en el futuro y de dar vueltas al pasado, y aprovechar el instante presente, CARPE DIEM', author: 'Sin autor' },
+      { text: 'La pobreza no viene por la disminución de las riquezas, sino por la multiplicación de los deseos', author: 'Platón' },
+      { text: 'No eches a perder lo que tienes por desear lo que no tienes . Los placeres, llevados al exceso, nos convierten en dependientes', author: 'Epicuro' },
+      { text: 'Un gran poder conlleva una gran responsabilidad', author: 'Spider-Man' },
+      { text: 'Exígete mucho a ti mismo y espera poco de los demás. Así te ahorrarás disgustos', author: 'Confucio' },
+      { text: 'La medida de la inteligencia es la capacidad de cambiar', author: 'Albert Einstein' },
+      { text: 'No es lo que te ocurre, sino cómo reaccionas lo que importa', author: 'Epícteto' },
+      { text: 'Es sencillo hacer que las cosas sean complicadas, pero difícil hacer que sean sencillas', author: 'Friedrich Nietzsche' },
+      { text: 'La vida es muy simple, pero insistimos en hacerla complicada', author: 'Confucio' },
+      { text: 'La paciencia es amarga, pero su fruto es dulce', author: 'Jean-Jacques Rousseau' },
+      { text: 'La prisa en todos los negocios trae fracasos', author: 'Heródoto' },
+      { text: 'Si abordas cada situación como asunto de vida o muerte, morirás muchas veces', author: 'Adam Smith' },
+      { text: 'La verdadera grandeza consiste en hacer que todos se sientan grandes', author: 'Charles Dickens' },
+      { text: 'Si quieres saber quién te controla, fíjate en quién es la persona a la que no se te permite criticar', author: 'Voltaire' }
+    ];
+  }
+  if (typeof card.data.currentIndex !== 'number') card.data.currentIndex = 0;
+  const idx = Math.max(0, Math.min(card.data.currentIndex, card.data.quotes.length - 1));
+  const q = card.data.quotes[idx] || { text: 'Sin frases. Añade una.', author: '' };
+  return `
+  <div class="text-center p-2">
+    <div class="text-4xl mb-3">💭</div>
+    <blockquote class="text-lg italic mb-2">"${q.text}"</blockquote>
+    <div class="text-sm text-gray-400">${q.author ? '— ' + q.author : ''}</div>
+    <div class="flex gap-2 justify-center mt-3">
+      <button class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm" onclick="prevQuote('${card.id}')">Anterior</button>
+      <button class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm" onclick="nextQuote('${card.id}')">Siguiente</button>
+      <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm" onclick="openAddQuoteModal('${card.id}')">Añadir</button>
+      <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm" onclick="deleteCurrentQuote('${card.id}')">Eliminar</button>
+    </div>
+  </div>`;
 }
 
 // Tarjeta de bookmarks IA
 function createBookmarksCard(card) {
-if (!card.data.bookmarks) {
-card.data.bookmarks = [
-{ title: 'ChatGPT', url: 'https://chat.openai.com', icon: 'https://www.google.com/s2/favicons?domain=openai.com&sz=64' },
-{ title: 'Gemini', url: 'https://gemini.google.com', icon: 'https://www.google.com/s2/favicons?domain=gemini.google.com&sz=64' },
-{ title: 'Claude', url: 'https://claude.ai', icon: 'https://www.google.com/s2/favicons?domain=claude.ai&sz=64' },
-{ title: 'Perplexity', url: 'https://www.perplexity.ai', icon: 'https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64' },
-{ title: 'Copilot', url: 'https://copilot.microsoft.com', icon: 'https://www.google.com/s2/favicons?domain=microsoft.com&sz=64' },
-{ title: 'NotebookLM', url: 'https://notebooklm.google.com', icon: 'https://www.google.com/s2/favicons?domain=google.com&sz=64' },
-{ title: 'AI Studio', url: 'https://aistudio.google.com', icon: 'https://www.google.com/s2/favicons?domain=google.com&sz=64' },
-{ title: 'LMArena', url: 'https://lmarena.ai', icon: 'https://www.google.com/s2/favicons?domain=lmarena.ai&sz=64' }
-];
-}
-
-return createBookmarksList(card, 'IA');
+  if (!card.data.bookmarks) {
+    card.data.bookmarks = [
+      { title: 'ChatGPT', url: 'https://chat.openai.com' },
+      { title: 'Gemini', url: 'https://gemini.google.com' },
+      { title: 'Claude', url: 'https://claude.ai' },
+      { title: 'Perplexity', url: 'https://www.perplexity.ai' },
+      { title: 'Copilot', url: 'https://copilot.microsoft.com' },
+      { title: 'NotebookLM', url: 'https://notebooklm.google.com' },
+      { title: 'AI Studio', url: 'https://aistudio.google.com' },
+      { title: 'LMArena', url: 'https://lmarena.ai' }
+    ];
+  }
+  return createBookmarksList(card, 'IA');
 }
 
 // Tarjeta de ayudantes
 function createHelpersCard(card) {
-if (!card.data.bookmarks) {
-card.data.bookmarks = [];
+  if (!card.data.bookmarks) card.data.bookmarks = [];
+  return createBookmarksList(card, 'AYUDANTES');
 }
 
-return createBookmarksList(card, 'AYUDANTES');
+function faviconFromUrl(url) {
+  try { return 'https://www.google.com/s2/favicons?domain=' + new URL(url).hostname + '&sz=64'; } catch { return ''; }
 }
 
 function createBookmarksList(card, title) {
-let html = `
-<h2 class="text-xl font-bold mb-4 text-green-400">${title}</h2>
-<div class="grid grid-cols-3 gap-2 mb-3" id="bookmarks-${card.id}">
-`;
-
-card.data.bookmarks.forEach((bookmark, index) => {
-html += `
-<div class="bookmark-item" onclick="openBookmark('${bookmark.url}')" oncontextmenu="editBookmark(event, '${card.id}', ${index})">
-  <img src="${bookmark.icon || 'https://www.google.com/s2/favicons?domain=' + new URL(bookmark.url).hostname + '&sz=64'}" 
-       class="bookmark-icon" 
-       onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22><rect width=%2232%22 height=%2232%22 fill=%22%23475569%22/><text x=%2250%%22 y=%2250%%22 font-size=%2220%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22>🔗</text></svg>'">
-  <span class="text-xs text-center">${bookmark.title}</span>
-</div>
-`;
-});
-
-html += `
-</div>
-<button onclick="addBookmark('${card.id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm">
-+ Añadir Bookmark
-</button>
-`;
-
-return html;
+  let html = `
+  <h2 class="text-xl font-bold mb-4 text-green-400">${title}</h2>
+  <div class="grid grid-cols-3 gap-2 mb-3" id="bookmarks-${card.id}">`;
+  card.data.bookmarks.forEach((bookmark, index) => {
+    const iconUrl = faviconFromUrl(bookmark.url);
+    html += `
+    <div class="bookmark-item" onclick="openBookmark('${bookmark.url}')" oncontextmenu="editBookmark(event, '${card.id}', ${index})">
+      <img src="${iconUrl}" class="bookmark-icon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22><rect width=%2232%22 height=%2232%22 fill=%22%23475569%22/><text x=%2250%%25%22 y=%2250%%25%22 font-size=%2220%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22>🔗</text></svg>'">
+      <span class="text-xs text-center">${bookmark.title}</span>
+    </div>`;
+  });
+  html += `
+  </div>
+  <button onclick="addBookmark('${card.id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm">+ Añadir Bookmark</button>`;
+  return html;
 }
 
 // Tarjeta de cuentas atrás personalizadas
 function createCountdownsCard(card) {
-if (!card.data.countdowns) {
-card.data.countdowns = [];
+  if (!card.data.countdowns) card.data.countdowns = [];
+  let html = `
+  <h2 class="text-xl font-bold mb-4 text-pink-400">Cuentas Atrás</h2>
+  <div id="countdowns-${card.id}" class="space-y-3 mb-3">`;
+  card.data.countdowns.forEach((countdown, index) => {
+    html += `<div id="countdown-item-${card.id}-${index}" class="bg-gray-800 p-3 rounded"></div>`;
+  });
+  html += `
+  </div>
+  <button onclick="addCustomCountdown('${card.id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm">+ Añadir Cuenta Atrás</button>`;
+  setTimeout(() => updateCustomCountdowns(card.id), 100);
+  setInterval(() => updateCustomCountdowns(card.id), 1000);
+  return html;
 }
-
-let html = `
-<h2 class="text-xl font-bold mb-4 text-pink-400">Cuentas Atrás</h2>
-<div id="countdowns-${card.id}" class="space-y-3 mb-3">
-`;
-
-card.data.countdowns.forEach((countdown, index) => {
-html += `<div id="countdown-item-${card.id}-${index}" class="bg-gray-800 p-3 rounded"></div>`;
-});
-
-html += `
-</div>
-<button onclick="addCustomCountdown('${card.id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm">
-+ Añadir Cuenta Atrás
-</button>
-`;
-
-setTimeout(() => updateCustomCountdowns(card.id), 100);
-setInterval(() => updateCustomCountdowns(card.id), 1000);
-
-return html;
-}
-
 function updateCustomCountdowns(cardId) {
-const card = cards.find(c => c.id === cardId);
-if (!card || !card.data.countdowns) return;
-
-card.data.countdowns.forEach((countdown, index) => {
-const element = document.getElementById(`countdown-item-${cardId}-${index}`);
-if (!element) return;
-
-const targetDate = new Date(countdown.dateTime);
-const now = new Date();
-const diff = targetDate - now;
-
-if (diff <= 0) {
-element.innerHTML = `
-  <div class="text-center">
-    <div class="font-semibold">${countdown.title}</div>
-    <div class="text-red-400">¡Tiempo completado!</div>
-    <button onclick="removeCountdown('${cardId}', ${index})" class="mt-2 text-xs text-red-400 hover:text-red-300">Eliminar</button>
-  </div>
-`;
-} else {
-const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-const startOfTargetDay = new Date(countdown.dateTime.split('T')[0]);
-const totalTime = targetDate - startOfTargetDay;
-const elapsed = now - startOfTargetDay;
-const progress = Math.min(100, Math.max(0, (elapsed / totalTime) * 100));
-
-element.innerHTML = `
-  <div>
-    <div class="font-semibold mb-2">${countdown.title}</div>
-    <div class="flex justify-between items-center mb-2">
-      <div class="font-mono">${days}d ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>
-      <button onclick="removeCountdown('${cardId}', ${index})" class="text-xs text-red-400 hover:text-red-300">✕</button>
-    </div>
-    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
-      <div class="progress-bar h-full" style="width: ${100 - progress}%"></div>
-    </div>
-  </div>
-`;
-}
-});
+  const card = cards.find(c => c.id === cardId);
+  if (!card || !card.data.countdowns) return;
+  card.data.countdowns.forEach((countdown, index) => {
+    const element = document.getElementById(`countdown-item-${cardId}-${index}`);
+    if (!element) return;
+    const targetDate = new Date(countdown.dateTime);
+    const now = new Date();
+    const diff = targetDate - now;
+    if (diff <= 0) {
+      element.innerHTML = `
+        <div class="text-center">
+          <div class="font-semibold text-red-400">${countdown.title}</div>
+          <div class="text-red-400">¡Tiempo completado!</div>
+          <button onclick="removeCountdown('${cardId}', ${index})" class="mt-2 text-xs text-red-400 hover:text-red-300">Eliminar</button>
+        </div>`;
+    } else {
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      const startOfTargetDay = new Date(countdown.dateTime.split('T')[0]);
+      const totalTime = targetDate - startOfTargetDay;
+      const elapsed = now - startOfTargetDay;
+      const progress = Math.min(100, Math.max(0, (elapsed / totalTime) * 100));
+      element.innerHTML = `
+        <div>
+          <div class="font-semibold mb-2">${countdown.title}</div>
+          <div class="flex justify-between items-center mb-2">
+            <div class="font-mono">${days}d ${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}</div>
+            <button onclick="removeCountdown('${cardId}', ${index})" class="text-xs text-red-400 hover:text-red-300">✕</button>
+          </div>
+          <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+            <div class="progress-bar h-full" style="width: ${100 - progress}%"></div>
+          </div>
+        </div>`;
+    }
+  });
 }
 
-// Funciones globales para bookmarks
-window.openBookmark = function(url) {
-window.open(url, '_blank');
-};
+// Funciones globales
+window.openBookmark = function(url) { window.open(url, '_blank'); };
 
+// Bookmarks
 window.editBookmark = function(event, cardId, bookmarkIndex) {
-event.preventDefault();
-const card = cards.find(c => c.id === cardId);
-if (!card) return;
-
-const bookmark = card.data.bookmarks[bookmarkIndex];
-currentEditingCard = cardId;
-currentEditingBookmark = bookmarkIndex;
-
-document.getElementById('bookmarkTitle').value = bookmark.title;
-document.getElementById('bookmarkUrl').value = bookmark.url;
-document.getElementById('bookmarkIcon').value = bookmark.icon || '';
-
-document.getElementById('editBookmarkModal').classList.add('active');
+  event.preventDefault();
+  const card = cards.find(c => c.id === cardId);
+  if (!card) return;
+  const bookmark = card.data.bookmarks[bookmarkIndex];
+  currentEditingCard = cardId;
+  currentEditingBookmark = bookmarkIndex;
+  document.getElementById('bookmarkTitle').value = bookmark.title;
+  document.getElementById('bookmarkUrl').value = bookmark.url;
+  document.getElementById('editBookmarkModal').classList.add('active');
 };
-
 window.addBookmark = function(cardId) {
-currentEditingCard = cardId;
-currentEditingBookmark = -1;
-
-document.getElementById('bookmarkTitle').value = '';
-document.getElementById('bookmarkUrl').value = '';
-document.getElementById('bookmarkIcon').value = '';
-
-document.getElementById('editBookmarkModal').classList.add('active');
+  currentEditingCard = cardId;
+  currentEditingBookmark = -1;
+  document.getElementById('bookmarkTitle').value = '';
+  document.getElementById('bookmarkUrl').value = '';
+  document.getElementById('editBookmarkModal').classList.add('active');
 };
 
-window.addCustomCountdown = function(cardId) {
-currentEditingCard = cardId;
-document.getElementById('addCountdownModal').classList.add('active');
+// Citas
+window.openAddQuoteModal = function(cardId) {
+  currentEditingCard = cardId;
+  document.getElementById('quoteTextInput').value = '';
+  document.getElementById('quoteAuthorInput').value = '';
+  document.getElementById('addQuoteModal').classList.add('active');
+};
+window.deleteCurrentQuote = function(cardId) {
+  const card = cards.find(c => c.id === cardId);
+  if (!card || !card.data.quotes) return;
+  if (card.data.quotes.length === 0) return;
+  card.data.quotes.splice(card.data.currentIndex || 0, 1);
+  if (card.data.currentIndex >= card.data.quotes.length) card.data.currentIndex = Math.max(0, card.data.quotes.length - 1);
+  markUnsaved();
+  renderCards();
+};
+window.nextQuote = function(cardId) {
+  const card = cards.find(c => c.id === cardId);
+  if (!card || !card.data.quotes || card.data.quotes.length === 0) return;
+  card.data.currentIndex = ((card.data.currentIndex || 0) + 1) % card.data.quotes.length;
+  renderCards();
+};
+window.prevQuote = function(cardId) {
+  const card = cards.find(c => c.id === cardId);
+  if (!card || !card.data.quotes || card.data.quotes.length === 0) return;
+  card.data.currentIndex = (card.data.currentIndex - 1 + card.data.quotes.length) % card.data.quotes.length;
+  renderCards();
 };
 
+window.addCustomCountdown = function(cardId) { currentEditingCard = cardId; document.getElementById('addCountdownModal').classList.add('active'); };
 window.removeCountdown = function(cardId, index) {
-const card = cards.find(c => c.id === cardId);
-if (card && card.data.countdowns) {
-card.data.countdowns.splice(index, 1);
-markUnsaved();
-renderCards();
-}
+  const card = cards.find(c => c.id === cardId);
+  if (card && card.data.countdowns) { card.data.countdowns.splice(index, 1); markUnsaved(); renderCards(); }
 };
 
 // Drag and drop handlers
-function handleDragStart(e) {
-draggedElement = this;
-this.classList.add('dragging');
-e.dataTransfer.effectAllowed = 'move';
-}
-
-function handleDragEnd(e) {
-this.classList.remove('dragging');
-draggedElement = null;
-}
-
-function handleDragOver(e) {
-if (e.preventDefault) {
-e.preventDefault();
-}
-e.dataTransfer.dropEffect = 'move';
-return false;
-}
-
+function handleDragStart(e) { draggedElement = this; this.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+function handleDragEnd() { this.classList.remove('dragging'); draggedElement = null; }
+function handleDragOver(e) { if (e.preventDefault) e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
 function handleDrop(e) {
-if (e.stopPropagation) {
-e.stopPropagation();
-}
-
-if (draggedElement !== this) {
-const draggedId = draggedElement.dataset.cardId;
-const targetId = this.dataset.cardId;
-
-const draggedIndex = cards.findIndex(c => c.id === draggedId);
-const targetIndex = cards.findIndex(c => c.id === targetId);
-
-// Reordenar
-const temp = cards[draggedIndex];
-cards.splice(draggedIndex, 1);
-cards.splice(targetIndex, 0, temp);
-
-// Actualizar orden
-cards.forEach((card, index) => {
-card.order = index;
-});
-
-markUnsaved();
-renderCards();
-}
-
-return false;
+  if (e.stopPropagation) e.stopPropagation();
+  if (draggedElement !== this) {
+    const draggedId = draggedElement.dataset.cardId;
+    const targetId = this.dataset.cardId;
+    const draggedIndex = cards.findIndex(c => c.id === draggedId);
+    const targetIndex = cards.findIndex(c => c.id === targetId);
+    const temp = cards[draggedIndex];
+    cards.splice(draggedIndex, 1);
+    cards.splice(targetIndex, 0, temp);
+    cards.forEach((card, index) => { card.order = index; });
+    markUnsaved();
+    renderCards();
+  }
+  return false;
 }
 
 // Event listeners UI
-// Botones cabecera
 const addCardBtn = document.getElementById('addCardBtn');
 const saveBtn = document.getElementById('saveBtn');
 const configUrlBtn = document.getElementById('configUrlBtn');
 const importJsonBtn = document.getElementById('importJsonBtn');
-
-addCardBtn.addEventListener('click', () => {
-document.getElementById('createCardModal').classList.add('active');
-});
+addCardBtn.addEventListener('click', () => { document.getElementById('createCardModal').classList.add('active'); });
 saveBtn.addEventListener('click', saveConfig);
-configUrlBtn.addEventListener('click', () => {
-document.getElementById('configUrlInput').value = window.configUrl || '';
-document.getElementById('configUrlModal').classList.add('active');
-});
-importJsonBtn.addEventListener('click', () => {
-document.getElementById('importJsonTextarea').value = '';
-document.getElementById('importJsonModal').classList.add('active');
-});
+configUrlBtn.addEventListener('click', () => { document.getElementById('configUrlInput').value = window.configUrl || ''; document.getElementById('configUrlModal').classList.add('active'); });
+importJsonBtn.addEventListener('click', () => { document.getElementById('importJsonTextarea').value = ''; document.getElementById('importJsonModal').classList.add('active'); });
 
 // Banner de error
 const retryLoadBtn = document.getElementById('retryLoadBtn');
 const openConfigBtn = document.getElementById('openConfigBtn');
 const openImportBtn = document.getElementById('openImportBtn');
 const dismissErrorBtn = document.getElementById('dismissErrorBtn');
-
 retryLoadBtn.addEventListener('click', loadConfig);
-openConfigBtn.addEventListener('click', () => {
-document.getElementById('configUrlInput').value = window.configUrl || '';
-document.getElementById('configUrlModal').classList.add('active');
-});
-openImportBtn.addEventListener('click', () => {
-document.getElementById('importJsonTextarea').value = '';
-document.getElementById('importJsonModal').classList.add('active');
-});
+openConfigBtn.addEventListener('click', () => { document.getElementById('configUrlInput').value = window.configUrl || ''; document.getElementById('configUrlModal').classList.add('active'); });
+openImportBtn.addEventListener('click', () => { document.getElementById('importJsonTextarea').value = ''; document.getElementById('importJsonModal').classList.add('active'); });
 dismissErrorBtn.addEventListener('click', hideErrorBanner);
 
 // Crear tarjeta modal
 const confirmCreateCard = document.getElementById('confirmCreateCard');
 const cancelCreateCard = document.getElementById('cancelCreateCard');
-
-confirmCreateCard.addEventListener('click', () => {
-const type = document.getElementById('cardTypeSelect').value;
-createCard(type);
-document.getElementById('createCardModal').classList.remove('active');
-});
-
-cancelCreateCard.addEventListener('click', () => {
-document.getElementById('createCardModal').classList.remove('active');
-});
+confirmCreateCard.addEventListener('click', () => { const type = document.getElementById('cardTypeSelect').value; createCard(type); document.getElementById('createCardModal').classList.remove('active'); });
+cancelCreateCard.addEventListener('click', () => { document.getElementById('createCardModal').classList.remove('active'); });
 
 // Editar bookmark modal
 const confirmEditBookmark = document.getElementById('confirmEditBookmark');
 const deleteBookmarkBtn = document.getElementById('deleteBookmark');
 const cancelEditBookmark = document.getElementById('cancelEditBookmark');
-
 confirmEditBookmark.addEventListener('click', () => {
-const title = document.getElementById('bookmarkTitle').value;
-const url = document.getElementById('bookmarkUrl').value;
-const icon = document.getElementById('bookmarkIcon').value;
-
-if (!title || !url) {
-alert('Por favor, completa título y URL');
-return;
-}
-
-const card = cards.find(c => c.id === currentEditingCard);
-if (card) {
-if (currentEditingBookmark === -1) {
-// Añadir nuevo
-card.data.bookmarks.push({ title, url, icon });
-} else {
-// Editar existente
-card.data.bookmarks[currentEditingBookmark] = { title, url, icon };
-}
-markUnsaved();
-renderCards();
-}
-
-document.getElementById('editBookmarkModal').classList.remove('active');
+  const title = document.getElementById('bookmarkTitle').value.trim();
+  const url = document.getElementById('bookmarkUrl').value.trim();
+  if (!title || !url) { alert('Por favor, completa título y URL'); return; }
+  const card = cards.find(c => c.id === currentEditingCard);
+  if (card) {
+    if (currentEditingBookmark === -1) { card.data.bookmarks.push({ title, url }); }
+    else { card.data.bookmarks[currentEditingBookmark] = { title, url }; }
+    markUnsaved();
+    renderCards();
+  }
+  document.getElementById('editBookmarkModal').classList.remove('active');
 });
-
 deleteBookmarkBtn.addEventListener('click', () => {
-if (currentEditingBookmark === -1) return;
-
-const card = cards.find(c => c.id === currentEditingCard);
-if (card) {
-card.data.bookmarks.splice(currentEditingBookmark, 1);
-markUnsaved();
-renderCards();
-}
-
-document.getElementById('editBookmarkModal').classList.remove('active');
+  if (currentEditingBookmark === -1) return;
+  const card = cards.find(c => c.id === currentEditingCard);
+  if (card) { card.data.bookmarks.splice(currentEditingBookmark, 1); markUnsaved(); renderCards(); }
+  document.getElementById('editBookmarkModal').classList.remove('active');
 });
-
-cancelEditBookmark.addEventListener('click', () => {
-document.getElementById('editBookmarkModal').classList.remove('active');
-});
+cancelEditBookmark.addEventListener('click', () => { document.getElementById('editBookmarkModal').classList.remove('active'); });
 
 // Añadir cuenta atrás modal
 const confirmAddCountdown = document.getElementById('confirmAddCountdown');
 const cancelAddCountdown = document.getElementById('cancelAddCountdown');
-
 confirmAddCountdown.addEventListener('click', () => {
-const title = document.getElementById('countdownTitle').value;
-const date = document.getElementById('countdownDate').value;
-const time = document.getElementById('countdownTime').value;
-
-if (!title || !date || !time) {
-alert('Por favor, completa todos los campos');
-return;
-}
-
-const card = cards.find(c => c.id === currentEditingCard);
-if (card) {
-if (!card.data.countdowns) card.data.countdowns = [];
-card.data.countdowns.push({
-title,
-dateTime: `${date}T${time}`
+  const title = document.getElementById('countdownTitle').value;
+  const date = document.getElementById('countdownDate').value;
+  const time = document.getElementById('countdownTime').value;
+  if (!title || !date || !time) { alert('Por favor, completa todos los campos'); return; }
+  const card = cards.find(c => c.id === currentEditingCard);
+  if (card) {
+    if (!card.data.countdowns) card.data.countdowns = [];
+    card.data.countdowns.push({ title, dateTime: `${date}T${time}` });
+    markUnsaved();
+    renderCards();
+  }
+  document.getElementById('addCountdownModal').classList.remove('active');
 });
-markUnsaved();
-renderCards();
-}
-
-document.getElementById('addCountdownModal').classList.remove('active');
-});
-
-cancelAddCountdown.addEventListener('click', () => {
-document.getElementById('addCountdownModal').classList.remove('active');
-});
+cancelAddCountdown.addEventListener('click', () => { document.getElementById('addCountdownModal').classList.remove('active'); });
 
 // Config URL modal
 const confirmConfigUrl = document.getElementById('confirmConfigUrl');
 const cancelConfigUrl = document.getElementById('cancelConfigUrl');
-
 confirmConfigUrl.addEventListener('click', () => {
-const url = document.getElementById('configUrlInput').value.trim();
-if (!url) {
-alert('Introduce una URL válida');
-return;
-}
-window.configUrl = url;
-localStorage.setItem('configUrl', window.configUrl);
-document.getElementById('configUrlModal').classList.remove('active');
-loadConfig();
+  const url = document.getElementById('configUrlInput').value.trim();
+  if (!url) { alert('Introduce una URL válida'); return; }
+  window.configUrl = url;
+  localStorage.setItem('configUrl', window.configUrl);
+  document.getElementById('configUrlModal').classList.remove('active');
+  loadConfig();
 });
-
-cancelConfigUrl.addEventListener('click', () => {
-document.getElementById('configUrlModal').classList.remove('active');
-});
+cancelConfigUrl.addEventListener('click', () => { document.getElementById('configUrlModal').classList.remove('active'); });
 
 // Import JSON modal
 const confirmImportJson = document.getElementById('confirmImportJson');
 const cancelImportJson = document.getElementById('cancelImportJson');
-
 confirmImportJson.addEventListener('click', () => {
-const text = document.getElementById('importJsonTextarea').value;
-try {
-const obj = JSON.parse(text);
-cards = Array.isArray(obj.cards) ? obj.cards : [];
-renderCards();
-hideErrorBanner();
-document.getElementById('importJsonModal').classList.remove('active');
-} catch (e) {
-alert('JSON no válido: ' + e.message);
-}
+  const text = document.getElementById('importJsonTextarea').value;
+  try {
+    const obj = JSON.parse(text);
+    cards = Array.isArray(obj.cards) ? obj.cards : [];
+    renderCards();
+    hideErrorBanner();
+    document.getElementById('importJsonModal').classList.remove('active');
+  } catch (e) { alert('JSON no válido: ' + e.message); }
 });
+cancelImportJson.addEventListener('click', () => { document.getElementById('importJsonModal').classList.remove('active'); });
 
-cancelImportJson.addEventListener('click', () => {
-document.getElementById('importJsonModal').classList.remove('active');
+// Modal de citas
+const confirmAddQuote = document.getElementById('confirmAddQuote');
+const cancelAddQuote = document.getElementById('cancelAddQuote');
+confirmAddQuote.addEventListener('click', () => {
+  const text = document.getElementById('quoteTextInput').value.trim();
+  const author = document.getElementById('quoteAuthorInput').value.trim();
+  if (!text) { alert('Introduce una frase'); return; }
+  const card = cards.find(c => c.id === currentEditingCard);
+  if (card) {
+    if (!card.data.quotes) card.data.quotes = [];
+    card.data.quotes.push({ text, author });
+    card.data.currentIndex = card.data.quotes.length - 1;
+    markUnsaved();
+    renderCards();
+  }
+  document.getElementById('addQuoteModal').classList.remove('active');
 });
+cancelAddQuote.addEventListener('click', () => { document.getElementById('addQuoteModal').classList.remove('active'); });
 
 // Cerrar modales al hacer clic fuera
 document.querySelectorAll('.modal').forEach(modal => {
-modal.addEventListener('click', (e) => {
-if (e.target === modal) {
-modal.classList.remove('active');
-}
-});
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
 });
 
 // Inicializar
