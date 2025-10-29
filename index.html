@@ -478,7 +478,7 @@ const html = `
   <div>
     <div class="flex items-center justify-between mb-2">
       <h3 class="text-lg font-semibold text-pink-400 m-0">Cuentas Atrás</h3>
-      <button onclick="addCustomCountdown('${card.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm" title="Añadir">➕</button>
+      <button onclick="addCustomCountdown('${card.id}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm" title="Añadir">➕</button>
     </div>
     <div id="countdowns-${card.id}" class="space-y-2"></div>
   </div>
@@ -590,25 +590,25 @@ wrap.appendChild(div);
 });
 }
 
-// Tarjeta iframe (vista móvil recortada, altura 75% y controles de navegación a la izquierda, 33% mayor y recorte 580px)
+// Tarjeta iframe (vista móvil recortada, controles a la izquierda, 33% mayor y recorte 500px)
 function createIframeCard(card) {
-const homeUrl = 'https://www.educa.jcyl.es/profesorado/es/formacion-profesorado/actualidad-formacion-profesorado';
-const iframeId = `edu-iframe-${card.id}`;
-setTimeout(() => {
-const iframe = document.getElementById(iframeId);
-if (iframe) iframe.style.transform = 'translateY(-580px)';
-}, 100);
-return `
-<div class="flex justify-start gap-2 mb-2">
-<button class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-sm" onclick="navIframe('${iframeId}', 'back')">⏪</button>
-<button class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-sm" onclick="navIframe('${iframeId}', 'forward')">⏩</button>
-<button class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-sm" onclick="navIframe('${iframeId}', 'home', '${homeUrl}')">🏠</button>
-</div>
-<div class="relative overflow-hidden mx-auto" style="height: 300px; width: 520px; max-width: 100%;">
-<iframe id="${iframeId}" src="${homeUrl}"
-        class="border border-gray-600 rounded w-full"
-        style="width: 100%; height: 1800px; transform: translateY(-580px);"></iframe>
-</div>`;
+  const homeUrl = 'https://www.educa.jcyl.es/profesorado/es/formacion-profesorado/actualidad-formacion-profesorado';
+  const iframeId = `edu-iframe-${card.id}`;
+  setTimeout(() => {
+    const iframe = document.getElementById(iframeId);
+    if (iframe) iframe.style.transform = 'translateY(-500px)';
+  }, 100);
+  return `
+    <div class="flex justify-start gap-2 mb-2">
+      <button class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-sm" onclick="navIframe('${iframeId}', 'back')">⏪</button>
+      <button class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-sm" onclick="navIframe('${iframeId}', 'forward')">⏩</button>
+      <button class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-sm" onclick="navIframe('${iframeId}', 'home', '${homeUrl}')">🏠</button>
+    </div>
+    <div class="relative overflow-hidden mx-auto" style="height: 300px; width: 520px; max-width: 100%;">
+      <iframe id="${iframeId}" src="${homeUrl}"
+              class="border border-gray-600 rounded w-full"
+              style="width: 100%; height: 1800px; transform: translateY(-500px);"></iframe>
+    </div>`;
 }
 // Controles de navegación para iframe
 window.navIframe = function(id, action, home) {
@@ -626,47 +626,53 @@ if (action === 'home' && home) iframe.src = home;
 
 // Tarjeta de citas (autogestionada) - botones con emojis arriba
 function createQuoteCard(card) {
-if (!card.data.quotes || !Array.isArray(card.data.quotes) || card.data.quotes.length === 0) {
-card.data.quotes = [
-{ text: 'Cónocete a tí mismo', author: 'Sócrates' },
-{ text: 'No sabes nada, John Nieve', author: 'Igritte' },
-{ text: 'Piensa por ti mismo, usa el pensamiento crítico.', author: 'Sócrates' },
-{ text: 'No hay que confundir la verdad con la opinión de la mayoría', author: 'Jean Cocteau' },
-{ text: 'No juzgues, sé curioso', author: 'Ted Lasso' },
-{ text: 'Extremismo mal, ni nazis ni judíos', author: 'Ojete Calor' },
-{ text: 'Hay que dejar de proyectarnos en el futuro y de dar vueltas al pasado, y aprovechar el instante presente, CARPE DIEM', author: 'Sin autor' },
-{ text: 'La pobreza no viene por la disminución de las riquezas, sino por la multiplicación de los deseos', author: 'Platón' },
-{ text: 'No eches a perder lo que tienes por desear lo que no tienes . Los placeres, llevados al exceso, nos convierten en dependientes', author: 'Epicuro' },
-{ text: 'Un gran poder conlleva una gran responsabilidad', author: 'Spider-Man' },
-{ text: 'Exígete mucho a ti mismo y espera poco de los demás. Así te ahorrarás disgustos', author: 'Confucio' },
-{ text: 'La medida de la inteligencia es la capacidad de cambiar', author: 'Albert Einstein' },
-{ text: 'No es lo que te ocurre, sino cómo reaccionas lo que importa', author: 'Epícteto' },
-{ text: 'Es sencillo hacer que las cosas sean complicadas, pero difícil hacer que sean sencillas', author: 'Friedrich Nietzsche' },
-{ text: 'La vida es muy simple, pero insistimos en hacerla complicada', author: 'Confucio' },
-{ text: 'La paciencia es amarga, pero su fruto es dulce', author: 'Jean-Jacques Rousseau' },
-{ text: 'La prisa en todos los negocios trae fracasos', author: 'Heródoto' },
-{ text: 'Si abordas cada situación como asunto de vida o muerte, morirás muchas veces', author: 'Adam Smith' },
-{ text: 'La verdadera grandeza consiste en hacer que todos se sientan grandes', author: 'Charles Dickens' },
-{ text: 'Si quieres saber quién te controla, fíjate en quién es la persona a la que no se te permite criticar', author: 'Voltaire' }
-];
-}
-if (typeof card.data.currentIndex !== 'number') card.data.currentIndex = 0;
-const idx = Math.max(0, Math.min(card.data.currentIndex, card.data.quotes.length - 1));
-const q = card.data.quotes[idx] || { text: 'Sin frases. Añade una.', author: '' };
-return `
-<div class="p-2">
-  <div class="flex gap-2 justify-center mb-3">
-    <button class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm" onclick="prevQuote('${card.id}')" title="Anterior">⬅️</button>
-    <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm" onclick="openAddQuoteModal('${card.id}')" title="Añadir">➕</button>
-    <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm" onclick="deleteCurrentQuote('${card.id}')" title="Eliminar">🗑️</button>
-    <button class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm" onclick="nextQuote('${card.id}')" title="Siguiente">➡️</button>
-  </div>
-  <div class="text-center">
-    <div class="text-4xl mb-3">💭</div>
-    <blockquote class="text-lg italic mb-2">"${q.text}"</blockquote>
-    <div class="text-sm text-gray-400">${q.author ? '— ' + q.author : ''}</div>
-  </div>
-</div>`;
+  if (!card.data.quotes || !Array.isArray(card.data.quotes) || card.data.quotes.length === 0) {
+    card.data.quotes = [
+      { text: 'Cónocete a tí mismo', author: 'Sócrates' },
+      { text: 'No sabes nada, John Nieve', author: 'Igritte' },
+      { text: 'Piensa por ti mismo, usa el pensamiento crítico.', author: 'Sócrates' },
+      { text: 'No hay que confundir la verdad con la opinión de la mayoría', author: 'Jean Cocteau' },
+      { text: 'No juzgues, sé curioso', author: 'Ted Lasso' },
+      { text: 'Extremismo mal, ni nazis ni judíos', author: 'Ojete Calor' },
+      { text: 'Hay que dejar de proyectarnos en el futuro y de dar vueltas al pasado, y aprovechar el instante presente, CARPE DIEM', author: 'Sin autor' },
+      { text: 'La pobreza no viene por la disminución de las riquezas, sino por la multiplicación de los deseos', author: 'Platón' },
+      { text: 'No eches a perder lo que tienes por desear lo que no tienes . Los placeres, llevados al exceso, nos convierten en dependientes', author: 'Epicuro' },
+      { text: 'Un gran poder conlleva una gran responsabilidad', author: 'Spider-Man' },
+      { text: 'Exígete mucho a ti mismo y espera poco de los demás. Así te ahorrarás disgustos', author: 'Confucio' },
+      { text: 'La medida de la inteligencia es la capacidad de cambiar', author: 'Albert Einstein' },
+      { text: 'No es lo que te ocurre, sino cómo reaccionas lo que importa', author: 'Epícteto' },
+      { text: 'Es sencillo hacer que las cosas sean complicadas, pero difícil hacer que sean sencillas', author: 'Friedrich Nietzsche' },
+      { text: 'La vida es muy simple, pero insistimos en hacerla complicada', author: 'Confucio' },
+      { text: 'La paciencia es amarga, pero su fruto es dulce', author: 'Jean-Jacques Rousseau' },
+      { text: 'La prisa en todos los negocios trae fracasos', author: 'Heródoto' },
+      { text: 'Si abordas cada situación como asunto de vida o muerte, morirás muchas veces', author: 'Adam Smith' },
+      { text: 'La verdadera grandeza consiste en hacer que todos se sientan grandes', author: 'Charles Dickens' },
+      { text: 'Si quieres saber quién te controla, fíjate en quién es la persona a la que no se te permite criticar', author: 'Voltaire' }
+    ];
+  }
+  // Forzar aleatoriedad la primera vez que se renderiza la tarjeta
+  if (!card.data._randomizedOnce) {
+    card.data.currentIndex = Math.floor(Math.random() * card.data.quotes.length);
+    card.data._randomizedOnce = true;
+  } else if (typeof card.data.currentIndex !== 'number') {
+    card.data.currentIndex = 0;
+  }
+  const idx = Math.max(0, Math.min(card.data.currentIndex, card.data.quotes.length - 1));
+  const q = card.data.quotes[idx] || { text: 'Sin frases. Añade una.', author: '' };
+  return `
+    <div class="p-2">
+      <div class="flex gap-2 justify-center mb-3">
+        <button class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm" onclick="prevQuote('${card.id}')" title="Anterior">⬅️</button>
+        <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm" onclick="openAddQuoteModal('${card.id}')" title="Añadir">➕</button>
+        <button class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm" onclick="deleteCurrentQuote('${card.id}')" title="Eliminar">🗑️</button>
+        <button class="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded text-sm" onclick="nextQuote('${card.id}')" title="Siguiente">➡️</button>
+      </div>
+      <div class="text-center">
+        <div class="text-4xl mb-3">💭</div>
+        <blockquote class="text-lg italic mb-2">"${q.text}"</blockquote>
+        <div class="text-sm text-gray-400">${q.author ? '— ' + q.author : ''}</div>
+      </div>
+    </div>`;
 }
 
 // Tarjeta de bookmarks IA
@@ -697,23 +703,24 @@ try { return 'https://www.google.com/s2/favicons?domain=' + new URL(url).hostnam
 }
 
 function createBookmarksList(card, title) {
-let html = `
-<div class="flex items-center justify-between mb-3">
-  <h2 class="text-xl font-bold ${title === 'IA' ? 'text-green-400' : 'text-green-400'}">${title}</h2>
-  <button onclick="addBookmark('${card.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm" title="Añadir">➕</button>
-</div>
-<div class="grid grid-cols-3 gap-2 mb-1" id="bookmarks-${card.id}">`;
-card.data.bookmarks.forEach((bookmark, index) => {
-const iconUrl = faviconFromUrl(bookmark.url);
-html += `
-<div class="bookmark-item" onclick="openBookmark('${bookmark.url}')" oncontextmenu="editBookmark(event, '${card.id}', ${index})">
-<img src="${iconUrl}" class="bookmark-icon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22><rect width=%2232%22 height=%2232%22 fill=%22%23475569%22/><text x=%2250%%25%22 y=%2250%%25%22 font-size=%2220%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22>🔗</text></svg>'">
-<span class="text-xs text-center">${bookmark.title}</span>
-</div>`;
-});
-html += `
-</div>`;
-return html;
+  let html = `
+  <div class="flex items-center mb-3">
+    <button onclick="addBookmark('${card.id}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm mr-2" title="Añadir">➕</button>
+    <h2 class="flex-1 text-center text-xl font-bold text-green-400">${title}</h2>
+    <div class="w-8"></div>
+  </div>
+  <div class="grid grid-cols-3 gap-2 mb-1" id="bookmarks-${card.id}">`;
+  (card.data.bookmarks || []).forEach((bookmark, index) => {
+    const iconUrl = faviconFromUrl(bookmark.url);
+    html += `
+    <div class="bookmark-item" onclick="openBookmark('${bookmark.url}')" oncontextmenu="editBookmark(event, '${card.id}', ${index})">
+      <img src="${iconUrl}" class="bookmark-icon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22><rect width=%2232%22 height=%2232%22 fill=%22%23475569%22/><text x=%2250%%25%22 y=%2250%%25%22 font-size=%2220%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22>🔗</text></svg>'">
+      <span class="text-xs text-center">${bookmark.title}</span>
+    </div>`;
+  });
+  html += `
+  </div>`;
+  return html;
 }
 
 // Tarjeta de cuentas atrás personalizadas
