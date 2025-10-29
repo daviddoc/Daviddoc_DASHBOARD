@@ -1,0 +1,94 @@
+{
+  "cards": [
+    {
+      "id": "card-init-001",
+      "type": "today",
+      "data": {},
+      "order": 0
+    },
+    {
+      "id": "card-init-002",
+      "type": "schedule",
+      "data": {},
+      "order": 1
+    },
+    {
+      "id": "card-init-003",
+      "type": "iframe",
+      "data": {},
+      "order": 2
+    },
+    {
+      "id": "card-init-004",
+      "type": "quote",
+      "data": {},
+      "order": 3
+    },
+    {
+      "id": "card-init-005",
+      "type": "bookmarks",
+      "data": {
+        "bookmarks": [
+          {
+            "title": "ChatGPT",
+            "url": "https://chat.openai.com",
+            "icon": "https://www.google.com/s2/favicons?domain=openai.com&sz=64"
+          },
+          {
+            "title": "Gemini",
+            "url": "https://gemini.google.com",
+            "icon": "https://www.google.com/s2/favicons?domain=gemini.google.com&sz=64"
+          },
+          {
+            "title": "Claude",
+            "url": "https://claude.ai",
+            "icon": "https://www.google.com/s2/favicons?domain=claude.ai&sz=64"
+          },
+          {
+            "title": "Perplexity",
+            "url": "https://www.perplexity.ai",
+            "icon": "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64"
+          },
+          {
+            "title": "Copilot",
+            "url": "https://copilot.microsoft.com",
+            "icon": "https://www.google.com/s2/favicons?domain=microsoft.com&sz=64"
+          },
+          {
+            "title": "NotebookLM",
+            "url": "https://notebooklm.google.com",
+            "icon": "https://www.google.com/s2/favicons?domain=google.com&sz=64"
+          },
+          {
+            "title": "AI Studio",
+            "url": "https://aistudio.google.com",
+            "icon": "https://www.google.com/s2/favicons?domain=google.com&sz=64"
+          },
+          {
+            "title": "LMArena",
+            "url": "https://lmarena.ai",
+            "icon": "https://www.google.com/s2/favicons?domain=lmarena.ai&sz=64"
+          }
+        ]
+      },
+      "order": 4
+    },
+    {
+      "id": "card-init-006",
+      "type": "helpers",
+      "data": {
+        "bookmarks": []
+      },
+      "order": 5
+    },
+    {
+      "id": "card-init-007",
+      "type": "countdowns",
+      "data": {
+        "countdowns": []
+      },
+      "order": 6
+    }
+  ],
+  "lastUpdated": "2025-10-29T05:05:22.065Z"
+}
