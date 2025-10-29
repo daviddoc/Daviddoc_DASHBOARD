@@ -1,27 +1,36 @@
 {
   "cards": [
-    {
-      "id": "card-init-001",
-      "type": "today",
-      "data": {},
-      "order": 0
-    },
-    {
-      "id": "card-init-002",
-      "type": "schedule",
-      "data": {},
-      "order": 1
-    },
-    {
-      "id": "card-init-003",
-      "type": "iframe",
-      "data": {},
-      "order": 2
-    },
+    { "id": "card-init-001", "type": "today", "data": {}, "order": 0 },
+    { "id": "card-init-002", "type": "schedule", "data": {}, "order": 1 },
+    { "id": "card-init-003", "type": "iframe", "data": {}, "order": 2 },
     {
       "id": "card-init-004",
       "type": "quote",
-      "data": {},
+      "data": {
+        "quotes": [
+          { "text": "Cónocete a tí mismo", "author": "Sócrates" },
+          { "text": "No sabes nada, John Nieve", "author": "Igritte" },
+          { "text": "Piensa por ti mismo, usa el pensamiento crítico.", "author": "Sócrates" },
+          { "text": "No hay que confundir la verdad con la opinión de la mayoría", "author": "Jean Cocteau" },
+          { "text": "No juzgues, sé curioso", "author": "Ted Lasso" },
+          { "text": "Extremismo mal, ni nazis ni judíos", "author": "Ojete Calor" },
+          { "text": "Hay que dejar de proyectarnos en el futuro y de dar vueltas al pasado, y aprovechar el instante presente, CARPE DIEM", "author": "Sin autor" },
+          { "text": "La pobreza no viene por la disminución de las riquezas, sino por la multiplicación de los deseos", "author": "Platón" },
+          { "text": "No eches a perder lo que tienes por desear lo que no tienes . Los placeres, llevados al exceso, nos convierten en dependientes", "author": "Epicuro" },
+          { "text": "Un gran poder conlleva una gran responsabilidad", "author": "Spider-Man" },
+          { "text": "Exígete mucho a ti mismo y espera poco de los demás. Así te ahorrarás disgustos", "author": "Confucio" },
+          { "text": "La medida de la inteligencia es la capacidad de cambiar", "author": "Albert Einstein" },
+          { "text": "No es lo que te ocurre, sino cómo reaccionas lo que importa", "author": "Epícteto" },
+          { "text": "Es sencillo hacer que las cosas sean complicadas, pero difícil hacer que sean sencillas", "author": "Friedrich Nietzsche" },
+          { "text": "La vida es muy simple, pero insistimos en hacerla complicada", "author": "Confucio" },
+          { "text": "La paciencia es amarga, pero su fruto es dulce", "author": "Jean-Jacques Rousseau" },
+          { "text": "La prisa en todos los negocios trae fracasos", "author": "Heródoto" },
+          { "text": "Si abordas cada situación como asunto de vida o muerte, morirás muchas veces", "author": "Adam Smith" },
+          { "text": "La verdadera grandeza consiste en hacer que todos se sientan grandes", "author": "Charles Dickens" },
+          { "text": "Si quieres saber quién te controla, fíjate en quién es la persona a la que no se te permite criticar", "author": "Voltaire" }
+        ],
+        "currentIndex": 0
+      },
       "order": 3
     },
     {
@@ -29,72 +38,20 @@
       "type": "bookmarks",
       "data": {
         "bookmarks": [
-          {
-            "title": "ChatGPT",
-            "url": "https://chat.openai.com",
-            "icon": "https://www.google.com/s2/favicons?domain=openai.com&sz=64"
-          },
-          {
-            "title": "Gemini",
-            "url": "https://gemini.google.com",
-            "icon": "https://www.google.com/s2/favicons?domain=gemini.google.com&sz=64"
-          },
-          {
-            "title": "Claude",
-            "url": "https://claude.ai",
-            "icon": "https://www.google.com/s2/favicons?domain=claude.ai&sz=64"
-          },
-          {
-            "title": "Perplexity",
-            "url": "https://www.perplexity.ai",
-            "icon": "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64"
-          },
-          {
-            "title": "Copilot",
-            "url": "https://copilot.microsoft.com",
-            "icon": "https://www.google.com/s2/favicons?domain=microsoft.com&sz=64"
-          },
-          {
-            "title": "NotebookLM",
-            "url": "https://notebooklm.google.com",
-            "icon": "https://www.google.com/s2/favicons?domain=google.com&sz=64"
-          },
-          {
-            "title": "AI Studio",
-            "url": "https://aistudio.google.com",
-            "icon": "https://www.google.com/s2/favicons?domain=google.com&sz=64"
-          },
-          {
-            "title": "LMArena",
-            "url": "https://lmarena.ai",
-            "icon": "https://www.google.com/s2/favicons?domain=lmarena.ai&sz=64"
-          }
+          { "title": "ChatGPT", "url": "https://chat.openai.com" },
+          { "title": "Gemini", "url": "https://gemini.google.com" },
+          { "title": "Claude", "url": "https://claude.ai" },
+          { "title": "Perplexity", "url": "https://www.perplexity.ai" },
+          { "title": "Copilot", "url": "https://copilot.microsoft.com" },
+          { "title": "NotebookLM", "url": "https://notebooklm.google.com" },
+          { "title": "AI Studio", "url": "https://aistudio.google.com" },
+          { "title": "LMArena", "url": "https://lmarena.ai" }
         ]
       },
       "order": 4
     },
-    {
-      "id": "card-init-006",
-      "type": "helpers",
-      "data": {
-        "bookmarks": []
-      },
-      "order": 5
-    },
-    {
-      "id": "card-init-007",
-      "type": "countdowns",
-      "data": {
-        "countdowns": []
-      },
-      "order": 6
-    },
-    {
-      "id": "card-1761714693090-zu5vxe8ya",
-      "type": "today",
-      "data": {},
-      "order": 7
-    }
+    { "id": "card-init-006", "type": "helpers", "data": { "bookmarks": [] }, "order": 5 },
+    { "id": "card-init-007", "type": "countdowns", "data": { "countdowns": [] }, "order": 6 }
   ],
-  "lastUpdated": "2025-10-29T05:11:42.622Z"
+  "lastUpdated": "2025-10-29T00:00:00.000Z"
 }
