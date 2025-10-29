@@ -1,7 +1,7 @@
 {
   "cards": [
     { "id": "card-init-001", "type": "today", "data": {}, "order": 0 },
-    { "id": "card-init-002", "type": "schedule", "data": {}, "order": 1 },
+    { "id": "card-init-002", "type": "schedule", "data": { "countdowns": [] }, "order": 1 },
     { "id": "card-init-003", "type": "iframe", "data": {}, "order": 2 },
     {
       "id": "card-init-004",
@@ -50,8 +50,7 @@
       },
       "order": 4
     },
-    { "id": "card-init-006", "type": "helpers", "data": { "bookmarks": [] }, "order": 5 },
-    { "id": "card-init-007", "type": "countdowns", "data": { "countdowns": [] }, "order": 6 }
+    { "id": "card-init-006", "type": "helpers", "data": { "bookmarks": [] }, "order": 5 }
   ],
   "lastUpdated": "2025-10-29T00:00:00.000Z"
 }
