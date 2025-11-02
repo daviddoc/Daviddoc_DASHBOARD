@@ -2,7 +2,7 @@
   "cards": [
     { "id": "card-init-001", "type": "today", "data": {}, "order": 0 },
     { "id": "card-init-002", "type": "schedule", "data": { "countdowns": [] }, "order": 1 },
-    { "id": "card-init-003", "type": "iframe", "data": {}, "order": 2 },
+    { "id": "card-init-003", "type": "iframe", "data": { "url": "https://www.educa.jcyl.es/profesorado/es/formacion-profesorado/actualidad-formacion-profesorado", "cropHeight": 500 }, "order": 2 },
     {
       "id": "card-init-004",
       "type": "quote",
@@ -50,7 +50,8 @@
       },
       "order": 4
     },
-    { "id": "card-init-006", "type": "helpers", "data": { "bookmarks": [] }, "order": 5 }
+    { "id": "card-init-006", "type": "helpers", "data": { "bookmarks": [] }, "order": 5 },
+    { "id": "card-init-007", "type": "calculator", "data": {}, "order": 6 }
   ],
-  "lastUpdated": "2025-10-29T12:00:00.000Z"
+  "lastUpdated": "2025-10-30T12:00:00.000Z"
 }
