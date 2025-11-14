@@ -25,8 +25,6 @@
         .iframe-clipper {
             flex-grow: 1; /* Ocupa el espacio restante */
             overflow: hidden; /* ¡La magia! Oculta lo que se desborda. */
-            border-radius: 0.5rem; /* Esquinas redondeadas */
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
 
         /*
@@ -44,31 +42,10 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 p-4 md:p-8">
-
-    <header class="mb-4">
-        <h1 class="text-2xl font-bold text-gray-800">Visor de Formación</h1>
-        <p class="text-sm text-gray-600">Mostrando contenido de educa.jcyl.es</p>
-    </header>
-
-    <!-- 
-      NOTA IMPORTANTE DE SEGURIDAD:
-      Muchos sitios web (especialmente los gubernamentales como jcyl.es) 
-      usan una cabecera de seguridad llamada 'X-Frame-Options' para 
-      prevenir que su contenido sea mostrado en iframes en otros dominios.
-
-      Si ves este cuadro en blanco, es porque el sitio de destino está 
-      bloqueando activamente ser "incrustado" de esta manera.
-      Este código es la forma correcta de hacerlo, pero depende 
-      del permiso del sitio externo.
-    -->
-    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-lg" role="alert">
-        <p class="font-bold">¡Atención!</p>
-        <p>Si el cuadro de abajo aparece en blanco, es porque la web de 'jcyl.es' no permite ser mostrada dentro de otra página por motivos de seguridad. No es un error del código, sino una restricción del sitio de origen.</p>
-    </div>
+<body class="">
 
     <!-- El contenedor que "recorta" el iframe -->
-    <main class="iframe-clipper bg-white">
+    <main class="iframe-clipper">
         <iframe 
             class="iframe-content"
             src="https://www.educa.jcyl.es/profesorado/es/formacion-profesorado/actualidad-formacion-profesorado"
