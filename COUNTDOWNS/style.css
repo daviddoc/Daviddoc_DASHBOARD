@@ -1,0 +1,110 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    background: #f4f4f4;
+    color: #333;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+}
+
+/* Formulario */
+.form-container {
+    display: flex;
+    flex-wrap: wrap; /* Para que se ajuste en móviles */
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.form-container input[type="text"] {
+    flex: 2; /* El título ocupa más espacio */
+    min-width: 150px;
+}
+.form-container input[type="datetime-local"] {
+    flex: 1.5;
+    min-width: 150px;
+}
+.form-container button {
+    flex: 0.5;
+    min-width: 80px;
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+/* --- ESTA ES LA PARTE IMPORTANTE (Requisito de "misma línea") --- */
+
+.countdown-item {
+    display: flex;
+    justify-content: space-between; /* Título a la izq, tiempo y botón a la der */
+    align-items: center;
+    background: #fff;
+    padding: 15px 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.countdown-item .details {
+    /* Esto agrupa el título y el tiempo */
+    flex-grow: 1; /* Ocupa el espacio disponible */
+}
+
+.countdown-item .title {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-right: 20px;
+}
+
+.countdown-item .time {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.2em;
+    color: #0056b3;
+    font-weight: bold;
+}
+
+.countdown-item .delete-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-left: 20px; /* Espacio entre el tiempo y el botón */
+}
+/* ------------------------------------------------------------- */
+
+.loading {
+    text-align: center;
+    color: #888;
+}
+
+/* Para pantallas pequeñas, apila el tiempo debajo del título */
+@media (max-width: 600px) {
+    .countdown-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .countdown-item .details {
+        margin-bottom: 10px;
+    }
+
+    .countdown-item .time {
+        display: block; /* Ocupa su propia línea */
+        margin-top: 5px;
+    }
+
+    .countdown-item .delete-btn {
+        margin-left: 0;
+        width: 100%; /* Botón ocupa todo el ancho */
+    }
+}
