@@ -1,5 +1,5 @@
 // 1. 🛑 ¡IMPORTANTE! Pega aquí la URL de tu App Web de Google Apps Script
-const GAS_URL = 'URL_DE_APPS_SCRIPT_QUE_COPIASTE_EN_PASO_1C';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwmtF0a-nxgZ1TpW-PvVGazxQslF7cVawbv2USBjpF38bxDNoPqpP5RD0SjoHEM6zBTnw/exec';
 
 // 2. Estado global (la "fuente de la verdad")
 let countdowns = []; // Array de objetos: {title: "...", targetDate: "..."}
