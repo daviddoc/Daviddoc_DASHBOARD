@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel IA Móvil</title>
+    <title>Panel IA Final</title>
     <style>
         :root {
             --bg: #121212;
@@ -14,7 +14,7 @@
             --danger: #ff4444;
             --warn: #ffbb33;
             --border: #333;
-            --selected: #2c4c3b; /* Color para indicar selección */
+            --selected: #2c4c3b;
         }
 
         body {
@@ -28,13 +28,12 @@
             flex-direction: column;
             box-sizing: border-box;
             overflow: hidden;
-            user-select: none; /* Evita selección de texto al tocar mucho */
+            user-select: none;
         }
 
         /* --- HEADER --- */
         .header {
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
             gap: 8px;
             margin-bottom: 15px;
@@ -43,7 +42,6 @@
         .search-container {
             position: relative;
             flex-grow: 1;
-            min-width: 150px;
         }
 
         input[type="text"] {
@@ -54,7 +52,7 @@
             padding: 10px 30px 10px 10px;
             border-radius: 8px;
             outline: none;
-            font-size: 16px; /* 16px evita zoom en iOS al escribir */
+            font-size: 16px;
             box-sizing: border-box;
         }
 
@@ -68,12 +66,10 @@
             display: none;
         }
 
-        /* BOTONES SUPERIORES */
         .btn {
             background: var(--card-bg);
             border: 1px solid var(--border);
             color: var(--text);
-            padding: 0;
             width: 40px;
             height: 40px;
             border-radius: 8px;
@@ -82,13 +78,11 @@
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
-            transition: all 0.2s;
+            transition: background 0.2s;
         }
 
         .btn:hover { background: #2a2a2a; }
-        .btn:active { transform: scale(0.95); }
 
-        /* Botón Guardar (parpadea) */
         #btnSave {
             display: none;
             background-color: var(--danger);
@@ -97,7 +91,6 @@
             animation: pulse 2s infinite;
         }
 
-        /* Botón Modo Organización (Amarillo cuando activo) */
         #btnEdit.active {
             background-color: var(--warn);
             color: #000;
@@ -110,61 +103,60 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
         }
 
-        /* --- GRID --- */
+        /* --- LISTA --- */
         .grid-container {
             flex-grow: 1;
             overflow-y: auto;
             padding-bottom: 20px;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px; 
         }
 
+        /* Estilo base de enlace (a) */
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 15px 5px;
+            border-radius: 8px;
+            padding: 12px 15px;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            text-align: center;
-            cursor: pointer;
-            text-decoration: none;
+            gap: 15px;
+            text-decoration: none; /* Quitar subrayado */
             color: var(--text);
-            transition: transform 0.1s, background 0.2s;
+            transition: background 0.2s;
+            cursor: pointer;
             position: relative;
-            /* Evita el comportamiento nativo de arrastrar imagen */
-            -webkit-user-drag: none; 
         }
 
-        /* Estilos para cuando estamos reorganizando */
+        .card:hover {
+            background: #252525;
+            border-color: #555;
+        }
+
         .edit-mode .card {
             border: 1px dashed #666;
+            cursor: move; 
         }
 
-        /* Estilo para la tarjeta seleccionada para mover */
         .card.selected-swap {
             background-color: var(--selected);
-            border: 2px solid #4caf50;
-            transform: scale(0.95);
+            border: 1px solid #4caf50;
         }
 
         .card img {
-            width: 32px;
-            height: 32px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            pointer-events: none; /* Importante para toques */
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            pointer-events: none;
         }
 
         .card span {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 500;
-            line-height: 1.2;
             pointer-events: none;
         }
 
@@ -177,9 +169,7 @@
             justify-content: center;
             align-items: center;
             z-index: 100;
-            backdrop-filter: blur(2px);
         }
-
         .modal {
             background: var(--card-bg);
             padding: 20px;
@@ -187,19 +177,15 @@
             width: 85%;
             max-width: 320px;
             border: 1px solid var(--border);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-
-        .modal h3 { margin-top: 0; color: var(--text); }
+        .modal h3 { margin-top: 0; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 12px; margin-bottom: 5px; color: var(--text-muted); }
         .form-group input { width: 100%; padding: 10px; background: #111; border: 1px solid #333; color: white; border-radius: 6px; box-sizing: border-box;}
-        
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
         .btn-text { padding: 8px 15px; background: #333; border: none; color: white; border-radius: 5px; cursor: pointer; }
         .btn-primary { background: var(--accent); }
 
-        /* Instrucciones flotantes en modo edición */
         .edit-hint {
             display: none;
             font-size: 0.8rem;
@@ -210,7 +196,6 @@
             padding: 5px;
             border-radius: 4px;
         }
-
     </style>
 </head>
 <body>
@@ -220,20 +205,17 @@
             <input type="text" id="searchInput" placeholder="Buscar..." autocomplete="off">
             <span class="clear-search" id="clearSearch">✕</span>
         </div>
-        
-        <button class="btn" id="btnSave" title="Guardar y Descargar">💾</button>
-
+        <button class="btn" id="btnSave" title="Guardar Cambios">💾</button>
         <button class="btn" id="btnEdit" title="Reorganizar">⇄</button>
-
         <button class="btn" id="btnAdd" title="Añadir">➕</button>
     </div>
 
     <div class="edit-hint" id="editHint">
-        Modo Organización: Toca una tarjeta y luego otra para intercambiarlas.
+        Modo Organización: Toca dos elementos para intercambiarlos.
     </div>
 
     <div class="grid-container">
-        <div class="grid" id="bookmarksGrid"></div>
+        <div class="list" id="bookmarksList"></div>
     </div>
 
     <div class="modal-overlay" id="modal">
@@ -255,18 +237,17 @@
     </div>
 
     <script>
-        // --- DATOS INICIALES ---
+        // --- DATOS ---
         /*DATA_START*/
         let bookmarks = [
-            { name: "Copilot", url: "https://copilot.microsoft.com/" },
+            { name: "Copilot", url: "https://m365.cloud.microsoft/chat?auth=2&origindomain=Office" },
             { name: "Gemini", url: "https://gemini.google.com/" },
             { name: "Claude", url: "https://claude.ai/" },
             { name: "ChatGPT", url: "https://chatgpt.com/" },
-            // FIX: Icono manual para NotebookLM
             { name: "NotebookLM", url: "https://notebooklm.google.com/", customIcon: "https://www.gstatic.com/lamda/images/favicons/notebooklm_favicon_dark_192.png" },
             { name: "Perplexity", url: "https://www.perplexity.ai/" },
             { name: "LM Arena", url: "https://lmarena.ai/" },
-            { name: "DuckDuckGo", url: "https://duckduckgo.com/?q=Chat&ia=chat" },
+            { name: "DuckDuckGo AI", url: "https://duckduckgo.com/?q=Chat&ia=chat" },
             { name: "Qwen", url: "https://chat.qwenlm.ai/" },
             { name: "DeepSeek", url: "https://chat.deepseek.com/" },
             { name: "AI Studio", url: "https://aistudio.google.com/" },
@@ -278,89 +259,78 @@
         ];
         /*DATA_END*/
 
-        const grid = document.getElementById('bookmarksGrid');
+        const listContainer = document.getElementById('bookmarksList');
         const searchInput = document.getElementById('searchInput');
         const clearSearchBtn = document.getElementById('clearSearch');
         const btnSave = document.getElementById('btnSave');
-        const btnAdd = document.getElementById('btnAdd');
         const btnEdit = document.getElementById('btnEdit');
         const editHint = document.getElementById('editHint');
-        const modal = document.getElementById('modal');
         
         let isEditMode = false;
-        let selectedIndex = null; // Para el intercambio
+        let selectedIndex = null;
 
-        // --- GENERADOR DE ICONOS ---
         function getFavicon(bm) {
             if (bm.customIcon) return bm.customIcon;
             return `https://s2.googleusercontent.com/s2/favicons?domain=${bm.url}&sz=64`;
         }
 
-        // --- RENDERIZADO ---
         function render(filter = "") {
-            grid.innerHTML = "";
+            listContainer.innerHTML = "";
+            
             bookmarks.forEach((bm, index) => {
                 if (bm.name.toLowerCase().includes(filter.toLowerCase())) {
-                    // Usamos DIV en lugar de A para tener control total de click en JS
-                    const card = document.createElement('div');
+                    // Usamos etiqueta 'a' simple
+                    const card = document.createElement('a');
                     card.className = 'card';
-                    card.dataset.index = index;
-                    card.dataset.url = bm.url;
+                    card.href = bm.url;
+                    
+                    // IMPORTANTE: NO ponemos target="_blank" por defecto.
+                    // Dejamos que el navegador decida (Left Click = self, Middle/Ctrl = new tab)
 
                     if (index === selectedIndex && isEditMode) {
                         card.classList.add('selected-swap');
                     }
 
                     card.innerHTML = `
-                        <img src="${getFavicon(bm)}" onerror="this.src='https://via.placeholder.com/32/444444/ffffff?text=AI'">
+                        <img src="${getFavicon(bm)}" onerror="this.src='https://via.placeholder.com/24'">
                         <span>${bm.name}</span>
                     `;
-                    
-                    // Gestor de clicks unificado
-                    card.onclick = () => handleCardClick(index);
-                    
-                    grid.appendChild(card);
+
+                    // Interceptor de clicks SOLO para el modo edición
+                    card.addEventListener('click', (e) => {
+                        if (isEditMode) {
+                            e.preventDefault(); // Bloquear cualquier navegación
+                            handleSwapLogic(index);
+                        }
+                        // Si no estamos editando, no hacemos nada especial.
+                        // El evento "click" nativo del enlace <a> funcionará.
+                    });
+
+                    listContainer.appendChild(card);
                 }
             });
         }
 
-        // --- LÓGICA PRINCIPAL ---
-        
-        // 1. Manejo de Click en Tarjeta
-        function handleCardClick(index) {
-            if (isEditMode) {
-                // Lógica de Intercambio (Swap)
-                if (selectedIndex === null) {
-                    // Primera selección
-                    selectedIndex = index;
-                    render(searchInput.value); // Re-render para mostrar selección
-                } else {
-                    // Segunda selección: Intercambiar
-                    if (selectedIndex !== index) {
-                        swapItems(selectedIndex, index);
-                    }
-                    selectedIndex = null; // Reset
-                    render(searchInput.value);
-                }
+        function handleSwapLogic(index) {
+            if (selectedIndex === null) {
+                selectedIndex = index;
+                render(searchInput.value);
             } else {
-                // Navegación Normal
-                const url = bookmarks[index].url;
-                window.location.href = url;
+                if (selectedIndex !== index) {
+                    const temp = bookmarks[selectedIndex];
+                    bookmarks[selectedIndex] = bookmarks[index];
+                    bookmarks[index] = temp;
+                    markAsDirty();
+                }
+                selectedIndex = null;
+                render(searchInput.value);
             }
         }
 
-        function swapItems(from, to) {
-            const temp = bookmarks[from];
-            bookmarks[from] = bookmarks[to];
-            bookmarks[to] = temp;
-            markAsDirty();
-        }
-
-        // 2. Toggle Modo Edición
+        // --- BOTONES Y UI ---
         btnEdit.addEventListener('click', () => {
             isEditMode = !isEditMode;
             selectedIndex = null;
-            
             if (isEditMode) {
                 btnEdit.classList.add('active');
                 document.body.classList.add('edit-mode');
@@ -373,24 +343,21 @@
             render(searchInput.value);
         });
 
-        // 3. Búsqueda
         searchInput.addEventListener('input', (e) => {
             const val = e.target.value;
             clearSearchBtn.style.display = val ? 'block' : 'none';
             render(val);
         });
-
-        document.getElementById('clearSearch').addEventListener('click', () => {
+        clearSearchBtn.addEventListener('click', () => {
             searchInput.value = '';
             render();
-            document.getElementById('clearSearch').style.display = 'none';
+            clearSearchBtn.style.display = 'none';
         });
 
-        // 4. Añadir Marcador
-        btnAdd.addEventListener('click', () => modal.style.display = 'flex');
-        document.getElementById('btnCancel').addEventListener('click', () => modal.style.display = 'none');
-        
-        document.getElementById('btnConfirmAdd').addEventListener('click', () => {
+        const modal = document.getElementById('modal');
+        document.getElementById('btnAdd').onclick = () => modal.style.display = 'flex';
+        document.getElementById('btnCancel').onclick = () => modal.style.display = 'none';
+        document.getElementById('btnConfirmAdd').onclick = () => {
             const name = document.getElementById('newName').value;
             let url = document.getElementById('newUrl').value;
             if (name && url) {
@@ -402,9 +369,8 @@
                 document.getElementById('newUrl').value = '';
                 markAsDirty();
             }
-        });
+        };
 
-        // 5. Guardar Archivo
         function markAsDirty() {
             btnSave.style.display = 'flex';
             document.title = "Guardar cambios...";
@@ -413,7 +379,6 @@
         btnSave.addEventListener('click', () => {
             const htmlContent = document.documentElement.outerHTML;
             const newDataString = JSON.stringify(bookmarks, null, 4);
-            // Regex para reemplazar el bloque de datos con precisión
             const regex = /(\/\*DATA_START\*\/)([\s\S]*?)(\/\*DATA_END\*\/)/;
             const newScriptContent = `$1\n        let bookmarks = ${newDataString};\n        $3`;
             
@@ -423,21 +388,19 @@
             
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'panel_ia_movil.html';
+            a.download = 'panel_ia_final.html';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
             btnSave.style.display = 'none';
-            document.title = "Panel IA";
-            
-            // Desactiva modo edición al guardar
-            if (isEditMode) btnEdit.click();
-            alert("Archivo descargado. Reemplaza el antiguo.");
+            document.title = "Panel IA Final";
+            if(isEditMode) btnEdit.click();
+            alert("Archivo actualizado descargado.");
         });
 
-        // Iniciar
+        // Start
         render();
     </script>
 </body>
