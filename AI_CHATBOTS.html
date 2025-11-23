@@ -3,282 +3,442 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marcadores IA</title>
-    <meta name="description" content="Acceso rápido a las principales herramientas de Inteligencia Artificial">
-
-    <!-- FAVICON HARDCODEADO (SVG Data URI) -->
-    <!-- Rectángulo blanco, bordes redondeados, letras IA grandes extra bold en morado -->
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='5' y='5' width='90' height='90' rx='25' fill='white' /%3E%3Ctext x='50' y='72' font-family='Arial, sans-serif' font-weight='900' font-size='60' text-anchor='middle' fill='%23800080'%3EIA%3C/text%3E%3C/svg%3E">
-
+    <title>Panel IA Móvil</title>
     <style>
-        /* RESET Y VARIABLES */
         :root {
-            --bg-color: #0f0f11; /* Fondo muy oscuro */
-            --card-bg: #1a1a1d;  /* Fondo de tarjeta */
-            --card-hover: #252529;
-            --text-main: #ffffff;
-            --text-secondary: #a1a1aa;
-            --accent: #9333ea;   /* Morado */
-            --border: #2f2f35;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text: #e0e0e0;
+            --text-muted: #888;
+            --accent: #007acc;
+            --danger: #ff4444;
+            --warn: #ffbb33;
+            --border: #333;
+            --selected: #2c4c3b; /* Color para indicar selección */
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            min-height: 100vh;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 15px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            overflow: hidden;
+            user-select: none; /* Evita selección de texto al tocar mucho */
+        }
+
+        /* --- HEADER --- */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .search-container {
+            position: relative;
+            flex-grow: 1;
+            min-width: 150px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 30px 10px 10px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 16px; /* 16px evita zoom en iOS al escribir */
+            box-sizing: border-box;
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--text-muted);
+            display: none;
+        }
+
+        /* BOTONES SUPERIORES */
+        .btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { background: #2a2a2a; }
+        .btn:active { transform: scale(0.95); }
+
+        /* Botón Guardar (parpadea) */
+        #btnSave {
+            display: none;
+            background-color: var(--danger);
+            border-color: var(--danger);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        /* Botón Modo Organización (Amarillo cuando activo) */
+        #btnEdit.active {
+            background-color: var(--warn);
+            color: #000;
+            border-color: var(--warn);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(255, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
+        }
+
+        /* --- GRID --- */
+        .grid-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px 5px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 2rem 1rem;
-        }
-
-        /* HEADER */
-        header {
             text-align: center;
-            margin-bottom: 3rem;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(to right, #fff, #a1a1aa);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        p.subtitle {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-        }
-
-        /* GRID LAYOUT */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 1.5rem;
-            width: 100%;
-            max-width: 1200px;
-        }
-
-        /* TARJETAS (LINKS) */
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
+            cursor: pointer;
             text-decoration: none;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text);
+            transition: transform 0.1s, background 0.2s;
             position: relative;
-            overflow: hidden;
+            /* Evita el comportamiento nativo de arrastrar imagen */
+            -webkit-user-drag: none; 
         }
 
-        .card:hover {
-            background-color: var(--card-hover);
-            transform: translateY(-4px);
-            border-color: var(--accent);
-            box-shadow: 0 10px 20px -5px rgba(147, 51, 234, 0.15);
+        /* Estilos para cuando estamos reorganizando */
+        .edit-mode .card {
+            border: 1px dashed #666;
         }
 
-        /* ICONOS */
-        .card-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 10px;
-            background-color: #000; /* Fondo negro por si el icono es transparente */
-            padding: 4px;
-            object-fit: contain;
-            flex-shrink: 0;
+        /* Estilo para la tarjeta seleccionada para mover */
+        .card.selected-swap {
+            background-color: var(--selected);
+            border: 2px solid #4caf50;
+            transform: scale(0.95);
         }
 
-        .card-content {
-            flex-grow: 1;
+        .card img {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            pointer-events: none; /* Importante para toques */
         }
 
-        .card-title {
-            font-weight: 600;
-            font-size: 1.1rem;
-            display: block;
-            margin-bottom: 0.2rem;
+        .card span {
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.2;
+            pointer-events: none;
         }
 
-        .card-url {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            display: block;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 180px;
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(2px);
         }
 
-        /* INDICADOR DE SALIDA */
-        .external-icon {
-            opacity: 0;
-            transform: translateX(-10px);
-            transition: all 0.3s ease;
-            color: var(--accent);
+        .modal {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            width: 85%;
+            max-width: 320px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
 
-        .card:hover .external-icon {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        /* FOOTER */
-        footer {
-            margin-top: auto;
-            padding-top: 3rem;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        /* ANIMACIONES */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .card {
-            animation: fadeIn 0.5s ease-out forwards;
-            opacity: 0;
-        }
+        .modal h3 { margin-top: 0; color: var(--text); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 12px; margin-bottom: 5px; color: var(--text-muted); }
+        .form-group input { width: 100%; padding: 10px; background: #111; border: 1px solid #333; color: white; border-radius: 6px; box-sizing: border-box;}
         
-        /* Stagger animation delay */
-        .card:nth-child(1) { animation-delay: 0.1s; }
-        .card:nth-child(2) { animation-delay: 0.15s; }
-        .card:nth-child(3) { animation-delay: 0.2s; }
-        .card:nth-child(4) { animation-delay: 0.25s; }
-        .card:nth-child(5) { animation-delay: 0.3s; }
-        .card:nth-child(6) { animation-delay: 0.35s; }
-        .card:nth-child(7) { animation-delay: 0.4s; }
-        .card:nth-child(8) { animation-delay: 0.45s; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-text { padding: 8px 15px; background: #333; border: none; color: white; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: var(--accent); }
 
-        /* Responsive adjustments */
-        @media (max-width: 600px) {
-            h1 { font-size: 2rem; }
-            .grid-container { grid-template-columns: 1fr; }
+        /* Instrucciones flotantes en modo edición */
+        .edit-hint {
+            display: none;
+            font-size: 0.8rem;
+            color: var(--warn);
+            text-align: center;
+            margin-bottom: 10px;
+            background: rgba(255, 187, 51, 0.1);
+            padding: 5px;
+            border-radius: 4px;
         }
+
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Centro de Mando IA</h1>
-        <p class="subtitle">Acceso directo a los modelos de lenguaje más avanzados</p>
-    </header>
+    <div class="header">
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Buscar..." autocomplete="off">
+            <span class="clear-search" id="clearSearch">✕</span>
+        </div>
+        
+        <button class="btn" id="btnSave" title="Guardar y Descargar">💾</button>
 
-    <div class="grid-container" id="bookmarks-list">
-        <!-- Los enlaces se generarán aquí pero para mantenerlo "sin dependencias JS" 
-             los escribiré directamente en HTML para asegurar robustez -->
+        <button class="btn" id="btnEdit" title="Reorganizar">⇄</button>
 
-        <!-- Microsoft Copilot -->
-        <a href="https://copilot.microsoft.com/" target="_blank" rel="noopener noreferrer" class="card">
-            <img src="https://www.google.com/s2/favicons?domain=copilot.microsoft.com&sz=128" alt="Copilot Icon" class="card-icon">
-            <div class="card-content">
-                <span class="card-title">Microsoft Copilot</span>
-                <span class="card-url">copilot.microsoft.com</span>
-            </div>
-            <span class="external-icon">➜</span>
-        </a>
-
-        <!-- ChatGPT -->
-        <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" class="card">
-            <img src="https://www.google.com/s2/favicons?domain=chatgpt.com&sz=128" alt="ChatGPT Icon" class="card-icon">
-            <div class="card-content">
-                <span class="card-title">ChatGPT</span>
-                <span class="card-url">chatgpt.com</span>
-            </div>
-            <span class="external-icon">➜</span>
-        </a>
-
-        <!-- Claude -->
-        <a href="https://claude.ai/" target="_blank" rel="noopener noreferrer" class="card">
-            <img src="https://www.google.com/s2/favicons?domain=claude.ai&sz=128" alt="Claude Icon" class="card-icon">
-            <div class="card-content">
-                <span class="card-title">Claude</span>
-                <span class="card-url">claude.ai</span>
-            </div>
-            <span class="external-icon">➜</span>
-        </a>
-
-        <!-- Gemini -->
-        <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="card">
-            <img src="https://www.google.com/s2/favicons?domain=gemini.google.com&sz=128" alt="Gemini Icon" class="card-icon">
-            <div class="card-content">
-                <span class="card-title">Gemini</span>
-                <span class="card-url">gemini.google.com</span>
-            </div>
-            <span class="external-icon">➜</span>
-        </a>
-
-        <!-- Google NotebookLM -->
-        <a href="https://notebooklm.google.com/" target="_blank" rel="noopener noreferrer" class="card">
-            <img src="https://www.google.com/s2/favicons?domain=notebooklm.google.com&sz=128" alt="NotebookLM Icon" class="card-icon">
-            <div class="card-content">
-                <span class="card-title">Google NotebookLM</span>
-                <span class="card-url">notebooklm.google.com</span>
-            </div>
-            <span class="external-icon">➜</span>
-        </a>
-
-        <!-- Qwen (Alibaba) -->
-        <a href="https://chat.qwenlm.ai/" target="_blank" rel="noopener noreferrer" class="card">
-            <img src="https://www.google.com/s2/favicons?domain=chat.qwenlm.ai&sz=128" alt="Qwen Icon" class="card-icon">
-            <div class="card-content">
-                <span class="card-title">Qwen</span>
-                <span class="card-url">chat.qwenlm.ai</span>
-            </div>
-            <span class="external-icon">➜</span>
-        </a>
-
-        <!-- DeepSeek -->
-        <a href="https://chat.deepseek.com/" target="_blank" rel="noopener noreferrer" class="card">
-            <img src="https://www.google.com/s2/favicons?domain=chat.deepseek.com&sz=128" alt="DeepSeek Icon" class="card-icon">
-            <div class="card-content">
-                <span class="card-title">DeepSeek</span>
-                <span class="card-url">chat.deepseek.com</span>
-            </div>
-            <span class="external-icon">➜</span>
-        </a>
-
-        <!-- LM Arena -->
-        <a href="https://lmarena.ai/" target="_blank" rel="noopener noreferrer" class="card">
-            <img src="https://www.google.com/s2/favicons?domain=chat.lmsys.org&sz=128" alt="LM Arena Icon" class="card-icon">
-            <div class="card-content">
-                <span class="card-title">LM Arena</span>
-                <span class="card-url">lmarena.ai</span>
-            </div>
-            <span class="external-icon">➜</span>
-        </a>
-
-        <!-- Google AI Studio -->
-        <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" class="card">
-            <img src="https://www.google.com/s2/favicons?domain=aistudio.google.com&sz=128" alt="AI Studio Icon" class="card-icon">
-            <div class="card-content">
-                <span class="card-title">Google AI Studio</span>
-                <span class="card-url">aistudio.google.com</span>
-            </div>
-            <span class="external-icon">➜</span>
-        </a>
+        <button class="btn" id="btnAdd" title="Añadir">➕</button>
     </div>
 
-    <footer>
-        &copy; 2024 Directorio de Modelos IA
-    </footer>
+    <div class="edit-hint" id="editHint">
+        Modo Organización: Toca una tarjeta y luego otra para intercambiarlas.
+    </div>
 
+    <div class="grid-container">
+        <div class="grid" id="bookmarksGrid"></div>
+    </div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="modal">
+            <h3>Añadir IA</h3>
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="newName">
+            </div>
+            <div class="form-group">
+                <label>URL</label>
+                <input type="text" id="newUrl" placeholder="https://...">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-text" id="btnCancel">Cancelar</button>
+                <button class="btn-text btn-primary" id="btnConfirmAdd">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATOS INICIALES ---
+        /*DATA_START*/
+        let bookmarks = [
+            { name: "Copilot", url: "https://copilot.microsoft.com/" },
+            { name: "Gemini", url: "https://gemini.google.com/" },
+            { name: "Claude", url: "https://claude.ai/" },
+            { name: "ChatGPT", url: "https://chatgpt.com/" },
+            // FIX: Icono manual para NotebookLM
+            { name: "NotebookLM", url: "https://notebooklm.google.com/", customIcon: "https://www.gstatic.com/lamda/images/favicons/notebooklm_favicon_dark_192.png" },
+            { name: "Perplexity", url: "https://www.perplexity.ai/" },
+            { name: "LM Arena", url: "https://lmarena.ai/" },
+            { name: "DuckDuckGo", url: "https://duckduckgo.com/?q=Chat&ia=chat" },
+            { name: "Qwen", url: "https://chat.qwenlm.ai/" },
+            { name: "DeepSeek", url: "https://chat.deepseek.com/" },
+            { name: "AI Studio", url: "https://aistudio.google.com/" },
+            { name: "Firebase", url: "https://console.firebase.google.com/" },
+            { name: "Canva", url: "https://www.canva.com/" },
+            { name: "Teachable", url: "https://teachablemachine.withgoogle.com/" },
+            { name: "Adobe Firefly", url: "https://firefly.adobe.com/" },
+            { name: "Leonardo.ai", url: "https://leonardo.ai/" }
+        ];
+        /*DATA_END*/
+
+        const grid = document.getElementById('bookmarksGrid');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearch');
+        const btnSave = document.getElementById('btnSave');
+        const btnAdd = document.getElementById('btnAdd');
+        const btnEdit = document.getElementById('btnEdit');
+        const editHint = document.getElementById('editHint');
+        const modal = document.getElementById('modal');
+        
+        let isEditMode = false;
+        let selectedIndex = null; // Para el intercambio
+
+        // --- GENERADOR DE ICONOS ---
+        function getFavicon(bm) {
+            if (bm.customIcon) return bm.customIcon;
+            return `https://s2.googleusercontent.com/s2/favicons?domain=${bm.url}&sz=64`;
+        }
+
+        // --- RENDERIZADO ---
+        function render(filter = "") {
+            grid.innerHTML = "";
+            bookmarks.forEach((bm, index) => {
+                if (bm.name.toLowerCase().includes(filter.toLowerCase())) {
+                    // Usamos DIV en lugar de A para tener control total de click en JS
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.dataset.index = index;
+                    card.dataset.url = bm.url;
+
+                    if (index === selectedIndex && isEditMode) {
+                        card.classList.add('selected-swap');
+                    }
+
+                    card.innerHTML = `
+                        <img src="${getFavicon(bm)}" onerror="this.src='https://via.placeholder.com/32/444444/ffffff?text=AI'">
+                        <span>${bm.name}</span>
+                    `;
+                    
+                    // Gestor de clicks unificado
+                    card.onclick = () => handleCardClick(index);
+                    
+                    grid.appendChild(card);
+                }
+            });
+        }
+
+        // --- LÓGICA PRINCIPAL ---
+        
+        // 1. Manejo de Click en Tarjeta
+        function handleCardClick(index) {
+            if (isEditMode) {
+                // Lógica de Intercambio (Swap)
+                if (selectedIndex === null) {
+                    // Primera selección
+                    selectedIndex = index;
+                    render(searchInput.value); // Re-render para mostrar selección
+                } else {
+                    // Segunda selección: Intercambiar
+                    if (selectedIndex !== index) {
+                        swapItems(selectedIndex, index);
+                    }
+                    selectedIndex = null; // Reset
+                    render(searchInput.value);
+                }
+            } else {
+                // Navegación Normal
+                const url = bookmarks[index].url;
+                window.location.href = url;
+            }
+        }
+
+        function swapItems(from, to) {
+            const temp = bookmarks[from];
+            bookmarks[from] = bookmarks[to];
+            bookmarks[to] = temp;
+            markAsDirty();
+        }
+
+        // 2. Toggle Modo Edición
+        btnEdit.addEventListener('click', () => {
+            isEditMode = !isEditMode;
+            selectedIndex = null;
+            
+            if (isEditMode) {
+                btnEdit.classList.add('active');
+                document.body.classList.add('edit-mode');
+                editHint.style.display = 'block';
+            } else {
+                btnEdit.classList.remove('active');
+                document.body.classList.remove('edit-mode');
+                editHint.style.display = 'none';
+            }
+            render(searchInput.value);
+        });
+
+        // 3. Búsqueda
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            clearSearchBtn.style.display = val ? 'block' : 'none';
+            render(val);
+        });
+
+        document.getElementById('clearSearch').addEventListener('click', () => {
+            searchInput.value = '';
+            render();
+            document.getElementById('clearSearch').style.display = 'none';
+        });
+
+        // 4. Añadir Marcador
+        btnAdd.addEventListener('click', () => modal.style.display = 'flex');
+        document.getElementById('btnCancel').addEventListener('click', () => modal.style.display = 'none');
+        
+        document.getElementById('btnConfirmAdd').addEventListener('click', () => {
+            const name = document.getElementById('newName').value;
+            let url = document.getElementById('newUrl').value;
+            if (name && url) {
+                if (!url.startsWith('http')) url = 'https://' + url;
+                bookmarks.push({ name, url });
+                render();
+                modal.style.display = 'none';
+                document.getElementById('newName').value = '';
+                document.getElementById('newUrl').value = '';
+                markAsDirty();
+            }
+        });
+
+        // 5. Guardar Archivo
+        function markAsDirty() {
+            btnSave.style.display = 'flex';
+            document.title = "Guardar cambios...";
+        }
+
+        btnSave.addEventListener('click', () => {
+            const htmlContent = document.documentElement.outerHTML;
+            const newDataString = JSON.stringify(bookmarks, null, 4);
+            // Regex para reemplazar el bloque de datos con precisión
+            const regex = /(\/\*DATA_START\*\/)([\s\S]*?)(\/\*DATA_END\*\/)/;
+            const newScriptContent = `$1\n        let bookmarks = ${newDataString};\n        $3`;
+            
+            const newHtml = htmlContent.replace(regex, newScriptContent);
+            const blob = new Blob([newHtml], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'panel_ia_movil.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            btnSave.style.display = 'none';
+            document.title = "Panel IA";
+            
+            // Desactiva modo edición al guardar
+            if (isEditMode) btnEdit.click();
+            alert("Archivo descargado. Reemplaza el antiguo.");
+        });
+
+        // Iniciar
+        render();
+    </script>
 </body>
 </html>
