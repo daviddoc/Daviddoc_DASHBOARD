@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Informe - Dark Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            850: '#1f2937',
+                            900: '#111827',
+                            950: '#030712',
+                        }
+                    }
+                }
+            }
+        }
+        // Configurar worker de PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0; /* Slate 200 */
+        }
+        .font-mono-report {
+            font-family: 'Roboto Mono', monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
+        /* Drag and drop active state */
+        .drag-active {
+            background-color: #374151 !important; /* gray-700 */
+            border-color: #6366f1 !important; /* indigo-500 */
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 font-sans antialiased">
+
+    <div class="max-w-4xl mx-auto bg-gray-800 shadow-2xl rounded-xl overflow-hidden border border-gray-700">
+        <!-- Header -->
+        <div class="bg-indigo-900 text-white p-6 border-b border-indigo-800">
+            <h1 class="text-2xl font-bold tracking-tight">Generador de Informe de Actividad</h1>
+            <p class="text-indigo-200 mt-2 text-sm">Procesamiento automático de PDFs (Apartado 5.4)</p>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-6 space-y-6">
+            
+            <!-- File Upload with Drag & Drop Fix -->
+            <div class="flex flex-col items-center justify-center w-full">
+                <label 
+                    for="dropzone-file" 
+                    id="dropzone"
+                    class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700 hover:bg-gray-600 transition-colors relative"
+                    ondragover="handleDragOver(event)"
+                    ondragleave="handleDragLeave(event)"
+                    ondrop="handleDrop(event)"
+                >
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
+                        <svg class="w-8 h-8 mb-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                        </svg>
+                        <p class="text-sm text-gray-300"><span class="font-semibold">Haz clic para subir</span> o arrastra el PDF aquí</p>
+                        <p class="text-xs text-gray-400 mt-1">Formato PDF estándar (Memoria de actividad)</p>
+                    </div>
+                    <input id="dropzone-file" type="file" class="hidden" accept="application/pdf" onchange="handleFileUpload(this)" />
+                </label>
+                <div id="fileNameDisplay" class="mt-2 text-sm text-indigo-400 hidden font-medium"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-center">
+                <button id="btnProcesar" onclick="procesarPDF()" disabled class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-lg transition duration-300 flex items-center shadow-lg transform active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                    Procesar Informe
+                </button>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="hidden flex justify-center items-center space-x-2 text-indigo-400">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-400"></div>
+                <span>Analizando documento...</span>
+            </div>
+
+            <!-- Output Area -->
+            <div id="resultadoContainer" class="hidden border-t border-gray-700 pt-6 mt-6 animate-fade-in">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                    <h2 class="text-lg font-bold text-gray-200">Informe Generado</h2>
+                    <div class="flex space-x-3">
+                        <button onclick="limpiarTexto()" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 py-2 px-3 rounded border border-gray-600 transition-colors flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Limpiar
+                        </button>
+                        <button onclick="copiarAlPortapapeles()" class="text-xs bg-indigo-700 hover:bg-indigo-600 text-white py-2 px-3 rounded border border-indigo-600 transition-colors flex items-center shadow">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                            </svg>
+                            Copiar Texto
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-gray-950 text-green-400 p-4 rounded-md shadow-inner border border-gray-800 overflow-x-auto relative">
+                    <div id="informeOutput" class="font-mono-report text-xs md:text-sm leading-relaxed selection:bg-green-900 selection:text-white"></div>
+                </div>
+            </div>
+
+            <!-- Status Messages -->
+            <div id="statusMessage" class="text-center text-sm text-red-400 hidden"></div>
+
+        </div>
+        
+        <!-- Footer -->
+        <div class="bg-gray-900 px-6 py-4 border-t border-gray-800 text-xs text-gray-500 text-center">
+            Generador de Informes V2.1 | Modo Oscuro
+        </div>
+    </div>
+
+    <script>
+        let currentFile = null;
+        let extractedText = "";
+
+        // Drag and Drop Handlers
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            document.getElementById('dropzone').classList.add('drag-active');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            document.getElementById('dropzone').classList.remove('drag-active');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            document.getElementById('dropzone').classList.remove('drag-active');
+            
+            if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+                const file = event.dataTransfer.files[0];
+                if (file.type === 'application/pdf') {
+                    // Manually update input and trigger handler
+                    const input = document.getElementById('dropzone-file');
+                    // We can't set input.files programmatically from drop directly in all browsers easily, 
+                    // but we can call our handler directly with a mock object or just set the currentFile directly.
+                    currentFile = file;
+                    
+                    // Update UI
+                    const display = document.getElementById('fileNameDisplay');
+                    const btn = document.getElementById('btnProcesar');
+                    const status = document.getElementById('statusMessage');
+
+                    status.classList.add('hidden');
+                    display.textContent = `Archivo cargado: ${file.name}`;
+                    display.classList.remove('hidden');
+                    btn.disabled = false;
+                } else {
+                    const status = document.getElementById('statusMessage');
+                    status.textContent = "Por favor, arrastra un archivo PDF válido.";
+                    status.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Input Change Handler
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            const display = document.getElementById('fileNameDisplay');
+            const btn = document.getElementById('btnProcesar');
+            const status = document.getElementById('statusMessage');
+
+            status.classList.add('hidden');
+            
+            if (file && file.type === 'application/pdf') {
+                currentFile = file;
+                display.textContent = `Archivo seleccionado: ${file.name}`;
+                display.classList.remove('hidden');
+                btn.disabled = false;
+            } else {
+                currentFile = null;
+                display.textContent = '';
+                display.classList.add('hidden');
+                btn.disabled = true;
+                status.textContent = "Por favor, selecciona un archivo PDF válido.";
+                status.classList.remove('hidden');
+            }
+        }
+
+        // Lista de preguntas esperadas para buscar en el PDF
+        const preguntasEsperadas = [
+            "Nota global de la actividad",
+            "Adecuación de Instalaciones y espacios",
+            "Adecuación de equipamiento y materiales",
+            "Interés de los contenidos",
+            "Utilidad para su aplicación al aula/trabajo",
+            "Adecuación metodológica innovación",
+            "Distribución de tiempos",
+            "Organización gestión de la actividad",
+            "Organización - gestión de la actividad",
+            "Clima ambiente de realización",
+            "Valoración global de los formadores",
+            "Grado de cumplimiento de las expectativas",
+            "Grado de aprovechamiento individual",
+            "Desarrollo de competencias profesionales",
+            "Compromiso de aplicación al aula/trabajo",
+            "Satisfacción con la formación realizada"
+        ];
+
+        async function procesarPDF() {
+            if (!currentFile) return;
+
+            const loading = document.getElementById('loadingIndicator');
+            const resultado = document.getElementById('resultadoContainer');
+            const status = document.getElementById('statusMessage');
+            const btn = document.getElementById('btnProcesar');
+
+            loading.classList.remove('hidden');
+            resultado.classList.add('hidden');
+            status.classList.add('hidden');
+            btn.disabled = true;
+
+            try {
+                // 1. Leer el array buffer del archivo
+                const arrayBuffer = await currentFile.arrayBuffer();
+
+                // 2. Cargar documento PDF
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                
+                // 3. Extraer texto de todas las páginas
+                let fullText = "";
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(" ");
+                    fullText += pageText + "\n\n"; 
+                }
+
+                // 4. Parsear datos
+                const datos = parsearDatos(fullText);
+                
+                if (datos.items.length === 0) {
+                    throw new Error("No se encontraron datos cuantitativos en el apartado 5.4.");
+                }
+
+                // 5. Generar Informe
+                generarInformeVisual(datos.items, datos.observaciones);
+
+            } catch (error) {
+                console.error(error);
+                status.textContent = `Error al procesar el PDF: ${error.message}`;
+                status.classList.remove('hidden');
+            } finally {
+                loading.classList.add('hidden');
+                btn.disabled = false;
+            }
+        }
+
+        function parsearDatos(text) {
+            const normalizedText = text.replace(/\s+/g, ' ');
+            const startRegex = /5\.4\.?-?\s*Valoración/i;
+            const startMatch = normalizedText.match(startRegex);
+            
+            if (!startMatch) {
+                return { items: [], observaciones: "No se encontró la sección 5.4." };
+            }
+
+            const startIndex = startMatch.index;
+            const textFrom54 = normalizedText.substring(startIndex);
+
+            const items = [];
+            const preguntasEncontradas = new Set();
+
+            preguntasEsperadas.forEach(pregunta => {
+                const escapedPregunta = pregunta.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                                                .replace(/\s+/g, '\\s+'); 
+                const regexValor = new RegExp(`${escapedPregunta}.{0,50}?(\\d+[,.]\\d{2})`, 'i');
+                const match = textFrom54.match(regexValor);
+                if (match) {
+                    let valorStr = match[1].replace(',', '.');
+                    let valor = parseFloat(valorStr);
+                    let nombreLimpio = pregunta.replace(' - ', ' ').replace('  ', ' ');
+
+                    if (!preguntasEncontradas.has(nombreLimpio)) {
+                        items.push({ pregunta: pregunta, valor: valor });
+                        preguntasEncontradas.add(nombreLimpio);
+                    }
+                }
+            });
+
+            // 3. Extraer Observaciones
+            let observaciones = "(No se han registrado observaciones en el apartado correspondiente)";
+            const obsRegex = /Observaciones:/i;
+            const obsMatch = textFrom54.match(obsRegex);
+
+            if (obsMatch) {
+                const obsStart = obsMatch.index + obsMatch[0].length;
+                let rawObs = textFrom54.substring(obsStart);
+                const endRegex = /(6\.-|Código:|Página \d|Junta de Castilla)/i;
+                const endMatch = rawObs.match(endRegex);
+                if (endMatch) {
+                    rawObs = rawObs.substring(0, endMatch.index);
+                }
+                const cleanedObs = rawObs.trim();
+                if (cleanedObs.length > 3 && cleanedObs.toUpperCase() !== 'BOR') {
+                    observaciones = cleanedObs;
+                }
+            }
+
+            return { items, observaciones };
+        }
+
+        function generarInformeVisual(items, observacionesTexto) {
+            const datosOrdenados = [...items].sort((a, b) => b.valor - a.valor);
+            const maxVal = Math.max(...datosOrdenados.map(d => d.valor));
+            const minVal = Math.min(...datosOrdenados.map(d => d.valor));
+
+            let grafico = "";
+            
+            datosOrdenados.forEach(item => {
+                // Etiqueta 45 chars
+                let etiqueta = item.pregunta;
+                if (etiqueta.length > 44) {
+                    etiqueta = etiqueta.substring(0, 44);
+                }
+                const etiquetaPadding = etiqueta.padEnd(45, " ");
+                
+                let charBarra = "▒";
+                if (item.valor === maxVal) charBarra = "█";
+                else if (item.valor === minVal) charBarra = "░";
+
+                // Ajustar longitud para parecerse al ejemplo (approx x2.25)
+                const longitudBarra = Math.round(item.valor * 2.25);
+                const barra = charBarra.repeat(longitudBarra);
+
+                grafico += `${etiquetaPadding} | ${barra} ${item.valor.toFixed(2)}\n`;
+            });
+
+            const informe = `## 🔴🔒✔️ VALORACIÓN WEB
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+${grafico}
+
+## 🔴🔒⚠️ OBSERVACIONES VALORACIÓN
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+${observacionesTexto}`;
+
+            const outputDiv = document.getElementById('informeOutput');
+            outputDiv.textContent = informe;
+            document.getElementById('resultadoContainer').classList.remove('hidden');
+            document.getElementById('resultadoContainer').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copiarAlPortapapeles() {
+            const texto = document.getElementById('informeOutput').textContent;
+            if (!texto) return;
+            navigator.clipboard.writeText(texto).then(() => {
+                const btn = document.querySelector('button[onclick="copiarAlPortapapeles()"]');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>¡Copiado!`;
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+
+        function limpiarTexto() {
+            document.getElementById('informeOutput').textContent = "";
+            document.getElementById('resultadoContainer').classList.add('hidden');
+            document.getElementById('dropzone-file').value = "";
+            document.getElementById('fileNameDisplay').textContent = "";
+            document.getElementById('fileNameDisplay').classList.add('hidden');
+            document.getElementById('btnProcesar').disabled = true;
+            currentFile = null;
+        }
+    </script>
+</body>
+</html>

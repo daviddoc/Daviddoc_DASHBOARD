@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LocalDOCtoMarkdown</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              gray: {
+                750: '#2d3748',
+                850: '#1a202c',
+                950: '#0b0f19',
+              }
+            }
+          }
+        }
+      }
+    </script>
+
+    <!-- Styles -->
+    <style>
+      html, body, #root {
+        height: 100%;
+        overflow: hidden;
+      }
+      
+      /* Custom Scrollbar Styles */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #0d1117;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #30363d;
+        border-radius: 5px;
+        border: 2px solid #0d1117;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #484f58;
+      }
+      
+      .cursor-wait {
+        cursor: wait;
+      }
+
+      /* Animation Utilities */
+      .animate-in {
+        animation-duration: 150ms;
+        animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+        animation-fill-mode: both;
+      }
+      .fade-in {
+        animation-name: fadeIn;
+      }
+      .zoom-in-95 {
+        animation-name: zoomIn95;
+      }
+      .slide-in-from-top-2 {
+        animation-name: slideInFromTop2;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes zoomIn95 {
+        from { transform: scale(0.95); }
+        to { transform: scale(1); }
+      }
+      @keyframes slideInFromTop2 {
+        from { transform: translateY(-0.5rem); }
+        to { transform: translateY(0); }
+      }
+    </style>
+
+    <!-- React & ReactDOM (cdnjs - often more reliable than unpkg in corp environments) -->
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel Standalone -->
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+    <!-- PDF.js -->
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      // Initialize PDF.js worker immediately
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    </script>
+    
+    <!-- Mammoth.js for Word -->
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    
+    <!-- Turndown for HTML -->
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/turndown/7.1.2/turndown.min.js"></script>
+    <script crossorigin src="https://unpkg.com/turndown-plugin-gfm/dist/turndown-plugin-gfm.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-950 text-gray-100 font-sans antialiased selection:bg-blue-500 selection:text-white">
+    <div id="root" class="h-full"></div>
+
+    <!-- Application Code -->
+    <script type="text/babel" data-presets="react,typescript">
+      // ----------------------------------------------------------------------
+      // GLOBALS & UTILS
+      // ----------------------------------------------------------------------
+      const { useState, useRef, useEffect, useMemo, useCallback } = React;
+      
+      // ----------------------------------------------------------------------
+      // ICONS (Inlined to prevent CDN loading errors)
+      // ----------------------------------------------------------------------
+      const Icon = ({ children, className, ...props }) => (
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          width="24" 
+          height="24" 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="2" 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          className={className} 
+          {...props}
+        >
+          {children}
+        </svg>
+      );
+
+      const Upload = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></Icon>;
+      const AlertTriangle = (props) => <Icon {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></Icon>;
+      const Loader2 = (props) => <Icon {...props}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></Icon>;
+      const Info = (props) => <Icon {...props}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></Icon>;
+      const Plus = (props) => <Icon {...props}><path d="M5 12h14"/><path d="M12 5v14"/></Icon>;
+      const ChevronLeft = (props) => <Icon {...props}><path d="m15 18-6-6 6-6"/></Icon>;
+      const Copy = (props) => <Icon {...props}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></Icon>;
+      const Download = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></Icon>;
+      const Trash2 = (props) => <Icon {...props}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></Icon>;
+      const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
+      const Settings = (props) => <Icon {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Icon>;
+      const X = (props) => <Icon {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></Icon>;
+      const Wand2 = (props) => <Icon {...props}><path d="m19 2 2 2-2 2-2-2 2-2Z"/><path d="m5 17 2 2-2 2-2-2 2-2Z"/><path d="m9 9 11 11"/><path d="m15.5 12.5 1.41-1.42a2 2 0 1 0-2.82-2.82L12.5 9.5a2 2 0 1 0 0 2.82"/></Icon>;
+      const FileText = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></Icon>;
+      const FileCode = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 13-2 2 2 2"/><path d="m15 13 2 2-2 2"/></Icon>;
+      const FileType = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13v-1h6v1"/><path d="M12 12v6"/></Icon>;
+      const ChevronDown = (props) => <Icon {...props}><path d="m6 9 6 6 6-6"/></Icon>;
+      const Check = (props) => <Icon {...props}><polyline points="20 6 9 17 4 12"/></Icon>;
+
+
+      // ----------------------------------------------------------------------
+      // SERVICES
+      // ----------------------------------------------------------------------
+
+      // --- PDF Service ---
+      const parsePdfToRawData = async (file) => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            try {
+              if (!window.pdfjsLib) throw new Error("PDF.js library not loaded");
+              
+              const typedarray = new Uint8Array(e.target.result);
+              const pdf = await window.pdfjsLib.getDocument(typedarray).promise;
+              
+              const allItems = [];
+
+              for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                
+                // Map to our internal format
+                const pageItems = textContent.items.map((item) => ({
+                  str: item.str,
+                  x: item.transform[4],
+                  y: item.transform[5],
+                  h: Math.sqrt(item.transform[0] * item.transform[0] + item.transform[1] * item.transform[1]),
+                  w: item.width,
+                  hasEOL: item.hasEOL
+                }));
+
+                // Process Page Items (Sort Y desc [Top to Bottom], X asc [Left to Right])
+                pageItems.sort((a, b) => {
+                  const yDiff = b.y - a.y;
+                  if (Math.abs(yDiff) > 4) return yDiff; 
+                  return a.x - b.x;
+                });
+                
+                allItems.push(...pageItems);
+                allItems.push({ str: "---PAGE_BREAK---", x: 0, y: -99999, h: 0, w: 0, hasEOL: true });
+              }
+
+              resolve({ items: allItems, pageCount: pdf.numPages });
+            } catch (err) {
+              console.error("PDF Parsing Error", err);
+              reject(err);
+            }
+          };
+          reader.onerror = reject;
+          reader.readAsArrayBuffer(file);
+        });
+      };
+
+      const generateMarkdownFromPdf = (data, options) => {
+        let fullMarkdown = "";
+        const items = data.items;
+
+        let lastY = -1;
+        
+        // Group items into lines
+        const lines = [];
+        let currentLine = [];
+        
+        for (const item of items) {
+          if (item.str === "---PAGE_BREAK---") {
+            if (currentLine.length > 0) lines.push(currentLine);
+            currentLine = [];
+            lines.push({...item}); // Push as new object to be safe
+            lastY = -1;
+            continue;
+          }
+
+          if (lastY !== -1 && Math.abs(lastY - item.y) > 4) {
+              if (currentLine.length > 0) lines.push(currentLine);
+              currentLine = [];
+          }
+          
+          currentLine.push(item);
+          lastY = item.y;
+        }
+        if (currentLine.length > 0) lines.push(currentLine);
+
+        // Process lines
+        for (let i = 0; i < lines.length; i++) {
+          const line = Array.isArray(lines[i]) ? lines[i] : [lines[i]]; // Handle single item page break
+          const isPageBreak = line.length === 1 && line[0].str === "---PAGE_BREAK---";
+          
+          if (isPageBreak) {
+            fullMarkdown += "\n\n---\n\n";
+            continue;
+          }
+
+          // A. Header Detection
+          const maxHeight = Math.max(...line.map(i => i.h));
+          let prefix = "";
+          if (maxHeight >= options.pdfMinHeaderSize) {
+            if (maxHeight > options.pdfMinHeaderSize + 6) prefix = "# ";
+            else if (maxHeight > options.pdfMinHeaderSize + 2) prefix = "## ";
+            else prefix = "### ";
+          }
+
+          // B. Table / Column Detection
+          let lineText = "";
+          let isTableCandidate = false;
+
+          if (line.length > 1) {
+              let largeGaps = 0;
+              for (let j = 0; j < line.length - 1; j++) {
+                  const gap = line[j+1].x - (line[j].x + line[j].w);
+                  if (gap > 15) largeGaps++;
+              }
+              if (largeGaps >= 1 && prefix === "") isTableCandidate = true;
+          }
+
+          for (let j = 0; j < line.length; j++) {
+              const item = line[j];
+              if (j > 0) {
+                  const prev = line[j-1];
+                  const gap = item.x - (prev.x + prev.w);
+                  if (gap > 15 && isTableCandidate) {
+                       lineText += " | ";
+                  } else if (gap > 2) {
+                       lineText += " ";
+                  }
+              }
+              lineText += item.str;
+          }
+
+          if (isTableCandidate) {
+              lineText = "| " + lineText + " |";
+          }
+
+          // C. Vertical Spacing
+          if (i > 0) {
+              const prevLine = Array.isArray(lines[i-1]) ? lines[i-1] : [lines[i-1]];
+              if (prevLine[0].str !== "---PAGE_BREAK---") {
+                  const prevY = prevLine[0].y;
+                  const currY = line[0].y;
+                  const diff = prevY - currY;
+
+                  if (diff > options.pdfVerticalSpacing) {
+                      fullMarkdown += "\n\n";
+                  } else {
+                      fullMarkdown += " ";
+                  }
+              }
+          }
+
+          fullMarkdown += prefix + lineText;
+        }
+
+        return fullMarkdown;
+      };
+
+      // --- Word Service ---
+      const convertWordToMarkdown = async (file) => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            try {
+              if (!window.mammoth) throw new Error("Mammoth library not loaded");
+              if (!window.TurndownService) throw new Error("Turndown library not loaded");
+
+              const arrayBuffer = e.target.result;
+              
+              // DEEP RESEARCH: Word Structure
+              // Word uses 'w:styleId' (internal ID) and 'w:name' (display name).
+              // Mammoth prioritizes semantic structure.
+              // To catch all titles, we must map both internal IDs (reliable) and Names (localized).
+              
+              const options = {
+                  styleMap: [
+                      // --- STANDARD INTERNAL IDS (Most Reliable) ---
+                      // These work regardless of language (e.g., 'Heading1' is usually the ID for 'Título 1')
+                      "p[style-id='Heading1'] => h1:fresh",
+                      "p[style-id='Heading2'] => h2:fresh",
+                      "p[style-id='Heading3'] => h3:fresh",
+                      "p[style-id='Heading4'] => h4:fresh",
+                      "p[style-id='Heading5'] => h5:fresh",
+                      "p[style-id='Heading6'] => h6:fresh",
+                      "p[style-id='Title'] => h1:fresh",
+                      "p[style-id='Subtitle'] => h2:fresh",
+                      
+                      // --- ENGLISH DISPLAY NAMES ---
+                      "p[style-name='Heading 1'] => h1:fresh",
+                      "p[style-name='Heading 2'] => h2:fresh",
+                      "p[style-name='Heading 3'] => h3:fresh",
+                      "p[style-name='Title'] => h1:fresh",
+                      "p[style-name='Subtitle'] => h2:fresh",
+                      "p[style-name='Quote'] => blockquote:fresh",
+                      
+                      // --- SPANISH DISPLAY NAMES (Common Variations) ---
+                      "p[style-name='Título 1'] => h1:fresh",
+                      "p[style-name='Título 2'] => h2:fresh",
+                      "p[style-name='Título 3'] => h3:fresh",
+                      "p[style-name='Título'] => h1:fresh",
+                      "p[style-name='Subtítulo'] => h2:fresh",
+                      "p[style-name='Encabezado 1'] => h1:fresh",
+                      "p[style-name='Encabezado 2'] => h2:fresh",
+                      "p[style-name='Cita'] => blockquote:fresh",
+                      
+                      // --- GENERIC / FALLBACKS ---
+                      "r[style-name='Strong'] => strong" 
+                  ],
+                  ignoreEmptyParagraphs: false // Keep structure
+              };
+
+              const result = await window.mammoth.convertToHtml({ arrayBuffer: arrayBuffer }, options);
+              let html = result.value;
+
+              const turndownService = new window.TurndownService({
+                headingStyle: 'atx',
+                codeBlockStyle: 'fenced'
+              });
+              
+              if (window.turndownPluginGfm) {
+                const gfm = window.turndownPluginGfm.gfm;
+                turndownService.use(gfm);
+              }
+
+              let markdown = turndownService.turndown(html);
+
+              // --- HEURISTIC POST-PROCESSING (The "Fake Title" Fixer) ---
+              // Many users use "Normal" style + "Bold" + "FontSize" instead of real Headers.
+              // Mammoth loses font size, but usually preserves Bold. 
+              // If a line is:
+              // 1. Surrounded by blank lines
+              // 2. Short (< 80 chars)
+              // 3. Entirely Bold (**Text**)
+              // We treat it as a Header 3 (###).
+
+              const lines = markdown.split('\n');
+              const processedLines = [];
+              
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                const prevLine = i > 0 ? lines[i-1].trim() : '';
+                const nextLine = i < lines.length - 1 ? lines[i+1].trim() : '';
+                
+                // Check for pure bold line: **Text**
+                const boldMatch = line.match(/^\*\*([^*\n]+)\*\*$/);
+                
+                if (boldMatch && line.length < 100) {
+                    // It is a candidate. Is it isolated?
+                    // Allow if it's the first line, or prev is empty/header
+                    const isIsolatedTop = prevLine === '' || prevLine.startsWith('#');
+                    // Allow if it's the last line, or next is empty
+                    const isIsolatedBottom = nextLine === '';
+
+                    if (isIsolatedTop) {
+                        // Convert to H3 (Safe default for visual headers)
+                        processedLines.push(`### ${boldMatch[1]}`);
+                        continue;
+                    }
+                }
+                processedLines.push(lines[i]);
+              }
+
+              resolve(processedLines.join('\n'));
+
+            } catch (err) {
+              console.error("Word Parsing Error", err);
+              reject(err);
+            }
+          };
+          reader.onerror = reject;
+          reader.readAsArrayBuffer(file);
+        });
+      };
+
+      // --- HTML Service ---
+      const convertHtmlToMarkdown = async (file) => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              if (!window.TurndownService) throw new Error("Turndown library not loaded");
+
+              const htmlContent = e.target.result;
+
+              // Parse HTML string to DOM to remove non-visual elements
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(htmlContent, 'text/html');
+              
+              // Remove scripts, styles, meta tags, etc.
+              const elementsToRemove = doc.querySelectorAll('script, style, link, meta, noscript, head, iframe, object, embed');
+              elementsToRemove.forEach(el => el.remove());
+
+              const turndownService = new window.TurndownService({
+                  headingStyle: 'atx',
+                  codeBlockStyle: 'fenced',
+                  hr: '---'
+              });
+
+              if (window.turndownPluginGfm) {
+                  const gfm = window.turndownPluginGfm.gfm;
+                  turndownService.use(gfm);
+              }
+              
+              // Pass the cleaned body to Turndown
+              const markdown = turndownService.turndown(doc.body || doc.documentElement);
+              resolve(markdown);
+            } catch (err) {
+              reject(err);
+            }
+          };
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
+      };
+
+      // ----------------------------------------------------------------------
+      // COMPONENTS
+      // ----------------------------------------------------------------------
+
+      // --- Button ---
+      const Button = ({ 
+        children, 
+        variant = 'primary', 
+        icon, 
+        className = '', 
+        ...props 
+      }) => {
+        const baseStyles = "inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+        
+        const variants = {
+          primary: "bg-blue-600 text-white hover:bg-blue-500 focus:ring-blue-500 border border-transparent shadow-md shadow-blue-900/20",
+          secondary: "bg-gray-800 text-gray-200 border border-gray-700 hover:bg-gray-700 focus:ring-blue-500 hover:text-white",
+          danger: "bg-red-900/50 text-red-200 border border-red-900 hover:bg-red-900 hover:text-white focus:ring-red-500",
+          ghost: "text-gray-400 hover:bg-gray-800 hover:text-gray-200 focus:ring-gray-500"
+        };
+
+        return (
+          <button 
+            className={`${baseStyles} ${variants[variant]} ${className}`} 
+            {...props}
+          >
+            {icon && <span className="mr-2 -ml-1">{icon}</span>}
+            {children}
+          </button>
+        );
+      };
+
+      // --- Editor ---
+      const Editor = ({ 
+        content, 
+        onChange, 
+        onClear,
+        pdfOptions,
+        onPdfOptionChange,
+        showPdfSettings = false
+      }) => {
+        const [copied, setCopied] = useState(false);
+        const [showSettings, setShowSettings] = useState(false);
+        const [showMagicTools, setShowMagicTools] = useState(false);
+
+        const stats = useMemo(() => {
+          const text = content.trim();
+          if (!text) return { words: 0, chars: 0, time: 0 };
+          const words = text.split(/\s+/).length;
+          const chars = text.length;
+          const time = Math.ceil(words / 200);
+          return { words, chars, time };
+        }, [content]);
+
+        const handleCleanNewlines = () => {
+          const newContent = content.replace(/\n{3,}/g, '\n\n');
+          onChange(newContent);
+          setShowMagicTools(false);
+        };
+
+        const handleStripLinks = () => {
+          const newContent = content.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+          onChange(newContent);
+          setShowMagicTools(false);
+        };
+
+        const handleAnonymizeEmails = () => {
+          const newContent = content.replace(/[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}/g, '[EMAIL_REMOVED]');
+          onChange(newContent);
+          setShowMagicTools(false);
+        };
+
+        const handleCopy = useCallback(() => {
+          navigator.clipboard.writeText(content);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }, [content]);
+
+        const handleDownload = useCallback(() => {
+          const blob = new Blob([content], { type: 'text/markdown' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `converted_${new Date().toISOString().slice(0, 10)}.md`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, [content]);
+
+        return (
+          <div className="flex flex-col h-full bg-[#0d1117] rounded-xl shadow-2xl border border-gray-800 overflow-hidden ring-1 ring-white/5 relative">
+            <div className="flex flex-wrap items-center justify-between p-2 sm:p-3 border-b border-gray-800 bg-[#161b22] sticky top-0 z-20 shrink-0 gap-2">
+              <h3 className="hidden sm:flex text-sm font-semibold text-gray-300 pl-2 items-center gap-2">
+                 Markdown Editor
+              </h3>
+              
+              <div className="sm:hidden text-xs text-gray-500 pl-2">
+                 {stats.words} words
+              </div>
+
+              <div className="flex gap-1.5 items-center ml-auto">
+                  <div className="relative">
+                      <Button 
+                         variant={showMagicTools ? "primary" : "secondary"}
+                         onClick={() => setShowMagicTools(!showMagicTools)}
+                         className="!p-2 !h-8 w-8 sm:w-auto sm:!px-3 sm:!h-9 text-xs"
+                         title="Quick Cleanup Tools"
+                      >
+                         <Wand2 className="w-4 h-4 sm:mr-1" />
+                         <span className="hidden sm:inline">Cleanup</span>
+                      </Button>
+                      {showMagicTools && (
+                          <div className="absolute right-0 top-full mt-2 w-56 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95">
+                              <div className="text-xs font-bold text-gray-400 px-2 py-1 mb-1">QUICK ACTIONS</div>
+                              <button onClick={handleCleanNewlines} className="w-full text-left text-sm px-2 py-2 hover:bg-gray-700 rounded text-gray-200">
+                                 Remove extra newlines
+                              </button>
+                              <button onClick={handleStripLinks} className="w-full text-left text-sm px-2 py-2 hover:bg-gray-700 rounded text-gray-200">
+                                 Unlink URLs (keep text)
+                              </button>
+                               <button onClick={handleAnonymizeEmails} className="w-full text-left text-sm px-2 py-2 hover:bg-gray-700 rounded text-gray-200">
+                                 Anonymize Emails
+                              </button>
+                          </div>
+                      )}
+                  </div>
+
+                  {showPdfSettings && pdfOptions && onPdfOptionChange && (
+                      <div className="relative">
+                          <Button 
+                              variant={showSettings ? "primary" : "secondary"} 
+                              onClick={() => setShowSettings(!showSettings)}
+                              className="!p-2 !h-8 w-8 sm:w-auto sm:!px-3 sm:!h-9 text-xs"
+                          >
+                              <Settings className="w-4 h-4 sm:mr-1" />
+                              <span className="hidden sm:inline">PDF Settings</span>
+                          </Button>
+
+                          {showSettings && (
+                              <div className="absolute right-0 top-full mt-2 w-72 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 p-4 animate-in fade-in zoom-in-95 duration-100">
+                                  <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                                      <h4 className="text-sm font-bold text-white">Parser Settings</h4>
+                                      <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-white"><X className="w-4 h-4"/></button>
+                                  </div>
+                                  
+                                  <div className="space-y-4">
+                                      <div>
+                                          <div className="flex justify-between mb-1">
+                                              <label className="text-xs font-medium text-gray-300">Paragraph Spacing</label>
+                                              <span className="text-xs font-mono text-blue-400">{pdfOptions.pdfVerticalSpacing}px</span>
+                                          </div>
+                                          <input 
+                                              type="range" min="5" max="50" 
+                                              value={pdfOptions.pdfVerticalSpacing}
+                                              onChange={(e) => onPdfOptionChange({...pdfOptions, pdfVerticalSpacing: Number(e.target.value)})}
+                                              className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                          />
+                                      </div>
+                                      <div>
+                                          <div className="flex justify-between mb-1">
+                                              <label className="text-xs font-medium text-gray-300">Header Size Threshold</label>
+                                              <span className="text-xs font-mono text-blue-400">{pdfOptions.pdfMinHeaderSize}px</span>
+                                          </div>
+                                          <input 
+                                              type="range" min="8" max="40" 
+                                              value={pdfOptions.pdfMinHeaderSize}
+                                              onChange={(e) => onPdfOptionChange({...pdfOptions, pdfMinHeaderSize: Number(e.target.value)})}
+                                              className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                                          />
+                                      </div>
+                                  </div>
+                              </div>
+                          )}
+                      </div>
+                  )}
+
+                <div className="h-6 w-px bg-gray-700 mx-1 hidden sm:block"></div>
+
+                <Button variant="secondary" onClick={handleCopy} title="Copy" className="!p-2 !h-8 w-8 sm:w-auto sm:!px-3 sm:!h-9">
+                  {copied ? <CheckCircle className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                  <span className="hidden sm:inline ml-2">Copy</span>
+                </Button>
+                <Button variant="secondary" onClick={handleDownload} title="Save" className="!p-2 !h-8 w-8 sm:w-auto sm:!px-3 sm:!h-9">
+                   <Download className="w-4 h-4" />
+                   <span className="hidden sm:inline ml-2">Save</span>
+                </Button>
+                <Button variant="danger" onClick={onClear} title="Clear" className="!p-2 !h-8 w-8 sm:w-auto sm:!px-3 sm:!h-9">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex-1 relative bg-[#0d1117] min-h-0">
+              <textarea
+                  className="w-full h-full p-6 font-mono text-sm leading-6 resize-none focus:outline-none bg-[#0d1117] text-gray-300 caret-blue-500 selection:bg-blue-900/50 selection:text-blue-200 placeholder-gray-700 custom-scrollbar"
+                  value={content}
+                  onChange={(e) => onChange(e.target.value)}
+                  spellCheck={false}
+                  placeholder="Drag & Drop files or Select files to start..."
+                  style={{
+                      fontFamily: '"Menlo", "Monaco", "Courier New", monospace',
+                      whiteSpace: 'pre-wrap',
+                      wordWrap: 'break-word',
+                  }}
+              />
+            </div>
+            
+            <div className="bg-[#161b22] border-t border-gray-800 px-4 py-1 flex justify-end gap-4 text-[10px] text-gray-500 font-mono uppercase tracking-wider shrink-0">
+                <span>{stats.words} words</span>
+                <span>{stats.chars} chars</span>
+                <span className="hidden sm:inline">~{stats.time} min read</span>
+            </div>
+          </div>
+        );
+      };
+
+      // ----------------------------------------------------------------------
+      // MAIN APP
+      // ----------------------------------------------------------------------
+
+      const App = () => {
+        const [markdownContent, setMarkdownContent] = useState('');
+        const [isProcessing, setIsProcessing] = useState(false);
+        const [error, setError] = useState(null);
+        const [isDragOver, setIsDragOver] = useState(false);
+        
+        const [mobileView, setMobileView] = useState('upload'); // 'upload' | 'editor'
+        const [rawPdfData, setRawPdfData] = useState(null);
+        
+        const [pdfOptions, setPdfOptions] = useState({
+          pdfVerticalSpacing: 10, 
+          pdfMinHeaderSize: 14,
+        });
+
+        const fileInputRef = useRef(null);
+
+        useEffect(() => {
+          if (rawPdfData) {
+              const newMarkdown = generateMarkdownFromPdf(rawPdfData, pdfOptions);
+              setMarkdownContent(newMarkdown); 
+          }
+        }, [pdfOptions, rawPdfData]);
+
+        const processFiles = async (files) => {
+          if (!files || files.length === 0) return;
+
+          setIsProcessing(true);
+          setError(null);
+          let newContent = "";
+
+          try {
+            const fileArray = Array.from(files);
+            
+            let batchHasPdf = false;
+
+            for (let i = 0; i < fileArray.length; i++) {
+              const file = fileArray[i];
+              let result = "";
+
+              if (i > 0 || markdownContent.length > 0) {
+                  newContent += `\n\n---\n**Source: ${file.name}**\n---\n\n`;
+              } else if (fileArray.length > 1) {
+                  newContent += `**Source: ${file.name}**\n\n`;
+              }
+
+              if (file.type === 'application/pdf') {
+                const raw = await parsePdfToRawData(file);
+                setRawPdfData(raw); 
+                batchHasPdf = true;
+                result = generateMarkdownFromPdf(raw, pdfOptions);
+              } else if (file.name.endsWith('.docx') || file.type.includes('word') || file.type.includes('officedocument')) {
+                result = await convertWordToMarkdown(file);
+              } else if (file.type === 'text/html' || file.name.endsWith('.html') || file.name.endsWith('.htm')) {
+                result = await convertHtmlToMarkdown(file);
+              } else {
+                   result = `\n\n> **Warning**: Skipped ${file.name} (Unsupported format)\n\n`;
+              }
+              
+              newContent += result;
+            }
+
+            if (!batchHasPdf && fileArray.length > 0) {
+              setRawPdfData(null);
+            }
+
+            setMarkdownContent(prev => prev ? prev + "\n\n" + newContent : newContent);
+            setMobileView('editor');
+
+          } catch (err) {
+            setError("Error processing file. Please ensure the file is not corrupted or the browser blocks the script.");
+            console.error(err);
+          } finally {
+            setIsProcessing(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+          }
+        };
+
+        const handleFileChange = (e) => {
+          if (e.target.files) processFiles(e.target.files);
+        };
+
+        const triggerUpload = () => {
+          fileInputRef.current?.click();
+        };
+
+        const handleDragOver = (e) => {
+          e.preventDefault();
+          setIsDragOver(true);
+        };
+
+        const handleDragLeave = (e) => {
+          e.preventDefault();
+          setIsDragOver(false);
+        };
+
+        const handleDrop = (e) => {
+          e.preventDefault();
+          setIsDragOver(false);
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              processFiles(e.dataTransfer.files);
+          }
+        };
+
+        const handleClear = () => {
+          setMarkdownContent('');
+          setRawPdfData(null);
+          setMobileView('upload'); 
+        };
+
+        return (
+          <div 
+              className="h-full bg-gray-950 text-gray-200 flex flex-col font-sans selection:bg-blue-500/30 selection:text-blue-100 overflow-hidden"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+          >
+            {isDragOver && (
+              <div className="fixed inset-0 bg-blue-600/20 backdrop-blur-sm z-50 flex items-center justify-center border-4 border-blue-500 border-dashed m-4 rounded-3xl pointer-events-none">
+                  <div className="text-3xl font-bold text-white flex flex-col items-center gap-4 animate-bounce">
+                      <Upload className="w-16 h-16" />
+                      Drop files to convert
+                  </div>
+              </div>
+            )}
+
+            <header className="bg-[#161b22] border-b border-gray-800 shrink-0 z-30 shadow-lg shadow-black/20">
+              <div className="max-w-[1800px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                      <div className="bg-gradient-to-br from-blue-700 to-indigo-900 p-1.5 rounded-lg shadow-inner border border-white/10">
+                      <Upload className="w-4 h-4 text-white" />
+                      </div>
+                      <h1 className="text-lg font-bold text-gray-100 tracking-tight">LocalDOCtoMarkdown</h1>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                   <div className="lg:hidden">
+                      {mobileView === 'editor' && markdownContent.length > 0 ? (
+                          <button 
+                              onClick={() => setMobileView('upload')}
+                              className="p-2 bg-gray-800 rounded-lg text-gray-300 hover:text-white border border-gray-700"
+                              title="Add more files"
+                          >
+                              <Plus className="w-5 h-5" />
+                          </button>
+                      ) : mobileView === 'upload' && markdownContent.length > 0 ? (
+                          <button 
+                              onClick={() => setMobileView('editor')}
+                              className="p-2 bg-gray-800 rounded-lg text-gray-300 hover:text-white border border-gray-700"
+                              title="Back to Editor"
+                          >
+                              <ChevronLeft className="w-5 h-5" />
+                          </button>
+                      ) : null}
+                   </div>
+
+                   <div className="hidden sm:flex text-xs font-medium text-gray-400 bg-gray-900/50 border border-gray-700/50 px-3 py-1.5 rounded-full items-center gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Client-side Secure</span>
+                   </div>
+                </div>
+              </div>
+            </header>
+
+            <main className="flex-1 max-w-[1800px] w-full mx-auto px-4 sm:px-6 py-4 sm:py-6 h-full overflow-hidden relative">
+              <div className="flex flex-col lg:flex-row gap-6 h-full">
+                
+                <div className={`
+                    w-full lg:w-[320px] xl:w-[380px] flex-col gap-4 shrink-0 h-auto
+                    ${mobileView === 'editor' ? 'hidden lg:flex' : 'flex'}
+                `}>
+                  
+                  <div className="bg-[#161b22] p-5 rounded-xl shadow-xl border border-gray-800 flex-1 lg:flex-none">
+                    <div className="flex flex-col gap-6">
+                      
+                      <input 
+                        type="file" 
+                        ref={fileInputRef}
+                        className="hidden" 
+                        accept=".pdf,.docx,.doc,.html,.htm"
+                        multiple
+                        onChange={handleFileChange}
+                      />
+
+                      <Button 
+                        onClick={triggerUpload} 
+                        disabled={isProcessing}
+                        className={`w-full py-8 text-lg shadow-xl transition-all border-0 text-white
+                          ${isProcessing 
+                            ? 'bg-amber-600/10 border-2 border-dashed border-amber-500 text-amber-400 cursor-wait' 
+                            : 'bg-gradient-to-br from-blue-700 to-indigo-900 hover:from-blue-600 hover:to-indigo-800 shadow-blue-900/40'
+                          }`}
+                        icon={isProcessing ? <Loader2 className="animate-spin w-8 h-8 mb-2"/> : <Upload className="w-8 h-8 mb-2" />}
+                      >
+                        <div className="flex flex-col items-center">
+                          <span>{isProcessing ? 'Processing...' : 'Select files or drag and drop'}</span>
+                          {!isProcessing && <span className="text-xs font-normal text-blue-200 mt-2 opacity-80">Supports PDF, docx & HTML</span>}
+                        </div>
+                      </Button>
+                      
+                      {isProcessing && (
+                        <div className="flex items-center justify-center gap-2 text-amber-400 text-sm animate-pulse bg-amber-950/30 p-2 rounded border border-amber-900/50">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Converting your documents...</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-950/20 p-5 rounded-xl border border-blue-900/20">
+                     <div className="flex items-start gap-3">
+                       <Info className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
+                       <div className="text-xs text-blue-300/70 leading-relaxed">
+                         <strong>Privacy Notice:</strong> No data leaves this device. Ideal for converting sensitive internal documents, contracts, or personal data.
+                       </div>
+                     </div>
+                  </div>
+                </div>
+
+                <div className={`
+                  flex-1 min-h-0 flex-col overflow-hidden
+                  ${mobileView === 'upload' ? 'hidden lg:flex' : 'flex'}
+                `}>
+                  {error && (
+                    <div className="mb-4 bg-red-950/30 border border-red-900/50 text-red-200 px-4 py-3 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                      <AlertTriangle className="w-5 h-5 text-red-500" />
+                      {error}
+                    </div>
+                  )}
+                  <div className="flex-1 h-full relative rounded-xl overflow-hidden shadow-2xl">
+                     <Editor 
+                       content={markdownContent} 
+                       onChange={setMarkdownContent} 
+                       onClear={handleClear}
+                       pdfOptions={pdfOptions}
+                       onPdfOptionChange={setPdfOptions}
+                       showPdfSettings={!!rawPdfData}
+                     />
+                  </div>
+                </div>
+
+              </div>
+
+            </main>
+          </div>
+        );
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
