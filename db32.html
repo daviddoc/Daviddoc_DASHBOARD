@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Mando</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } },
+            },
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FUENTE MANUSCRITA PARA FRASES -->
+    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s ease; }
+        .sortable-ghost { opacity: 0.4; background-color: #334155; border: 2px dashed #475569; }
+        .card-locked { border: 1px solid #7f1d1d; } 
+        .transition-height { transition: height 0.3s ease-in-out; }
+        
+        .weather-widget-container {
+            display: flex; justify-content: center; align-items: center;
+            width: 100%; height: 100%; overflow: auto; background: white; 
+        }
+
+        /* Estilo para Frases */
+        .handwritten-font {
+            font-family: 'Patrick Hand', cursive;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+
+    <!-- Nav / Encabezado -->
+    <nav class="bg-gray-800 shadow-lg border-b border-gray-700 sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            
+            <!-- Izquierda: Logo Star Trek + Título -->
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 w-10 h-10 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/50">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-white">
+                        <path d="M12 2L5.5 20.5L12 14L18.5 20.5L12 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h1 class="text-xl font-bold text-white tracking-wide hidden sm:block">CENTRO DE MANDO</h1>
+                <h1 class="text-xl font-bold text-white tracking-wide sm:hidden">MANDO</h1>
+            </div>
+
+            <!-- Derecha: Botonera -->
+            <div class="flex items-center gap-2">
+                <button id="toggle-all-btn" class="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors" title="Plegar/Desplegar todo">
+                    <i data-lucide="chevrons-up"></i>
+                </button>
+                <button id="settings-button" class="p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition-colors" title="Configuración">
+                    <i data-lucide="settings"></i>
+                </button>
+                <button id="add-card-button" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/20 transition-transform active:scale-95" title="Añadir Tarjeta">
+                    <i data-lucide="plus" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Grid -->
+    <main class="p-4 sm:p-6">
+        <div id="dashboard-grid" class="grid grid-cols-1 gap-4 sm:gap-6"></div>
+    </main>
+
+    <!-- ============================================================ -->
+    <!-- PLANTILLA CALCULADORA                                        -->
+    <!-- ============================================================ -->
+    <template id="calculator-source">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calculadora</title>
+    <style>
+        :root { --bg: #1a1d24; --surf: #2a2d35; --txt: #f0f0f0; --accent: #4e525f; --org: #ff9500; --red: #d9534f; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--txt); font-family: -apple-system, BlinkMacSystemFont, sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .app { width: 100%; height: 100%; display: flex; flex-direction: column; padding: 8px; gap: 8px; }
+        .display-wrap { background: var(--bg); border-radius: 8px; padding: 10px 15px; height: 90px; min-height: 90px; display: flex; flex-direction: column; justify-content: center; position: relative; border: 1px solid #333; flex-shrink: 0; }
+        #kb-trigger { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; z-index: 10; cursor: text; font-size: 16px; color: transparent; background: transparent; border: none; }
+        .eq { font-size: 0.85rem; color: #aaa; text-align: right; min-height: 1.2em; margin-bottom: 2px; }
+        .res { font-size: 2.2rem; font-weight: bold; text-align: right; white-space: nowrap; overflow: hidden; pointer-events: none; flex-grow: 1; margin-right: 5px; }
+        .res-container { display: flex; align-items: center; justify-content: flex-end; position: relative; z-index: 20; }
+        .btn-copy-res { background: transparent; border: none; color: #555; cursor: pointer; padding: 5px; transition: color 0.2s; display: flex; align-items: center; }
+        .btn-copy-res:hover { color: #fff; }
+        .btn-copy-res svg { width: 18px; height: 18px; }
+        .controls { display: flex; gap: 8px; justify-content: space-between; margin-top: auto; }
+        .col-l { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .col-r { display: flex; flex-direction: column; gap: 8px; }
+        button, select { background: var(--surf); color: var(--txt); border: 1px solid var(--accent); padding: 10px; border-radius: 6px; font-size: 0.95rem; outline: none; touch-action: manipulation; }
+        button:active { background: #3a3d45; transform: translateY(1px); }
+        .btn-red { background: var(--red); border-color: var(--red); color: white; }
+        .btn-org { background: var(--org); border-color: var(--org); color: white; }
+        .modal { display: none; position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:20; flex-direction:column; padding:15px; }
+        .hist-item { border-bottom: 1px solid #444; padding: 8px 0; font-size: 0.9rem; display: flex; justify-content: space-between; }
+        #copy-toast { visibility: hidden; opacity: 0; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #333; color: #fff; padding: 8px 16px; border-radius: 5px; transition: opacity 0.3s, visibility 0.3s; z-index: 10000; font-size: 0.9rem; pointer-events: none; }
+        #copy-toast.show { visibility: visible; opacity: 1; }
+        .conv-row { display: flex; gap: 5px; align-items: center; width: 100%; }
+        .conv-input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #444; background: #2a2d35; color: #fff; outline: none; font-size: 1rem; min-width: 0; }
+        .conv-select { width: 110px; flex-shrink: 0; padding: 10px 5px; font-size: 0.9rem; background: #1a1d24; text-overflow: ellipsis; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="display-wrap" onclick="document.getElementById('kb-trigger').focus()">
+            <input type="text" id="kb-trigger" autocomplete="off" spellcheck="false" inputmode="text">
+            <div class="eq" id="eq-disp"></div>
+            <div class="res-container">
+                <button id="btn-copy-res" class="btn-copy-res" title="Copiar resultado" onclick="event.stopPropagation(); copyToClipboard(document.getElementById('res-disp').textContent)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+                <div class="res" id="res-disp">0</div>
+            </div>
+        </div>
+        <div class="controls">
+            <div class="col-l">
+                <select id="rounding">
+                    <option value="-1">Sin redondeo</option>
+                    <option value="0">Entero</option>
+                    <option value="1">1 decimal</option>
+                    <option value="2" selected>2 decimales</option>
+                    <option value="3">3 decimales</option>
+                </select>
+                <div style="display:flex; gap:5px;">
+                    <button onclick="showHist()" style="flex:1">Historial</button>
+                    <button onclick="showConv()" style="flex:1">Conversor</button>
+                </div>
+            </div>
+            <div class="col-r">
+                <button class="btn-org" onclick="input('CE')">CE</button>
+                <button class="btn-red" onclick="input('AC')">AC</button>
+            </div>
+        </div>
+    </div>
+    <div id="copy-toast">¡Copiado!</div>
+    <div id="hist-modal" class="modal">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
+            <h3 style="margin:0; font-size:1.1rem;">Historial</h3>
+            <button onclick="document.getElementById('hist-modal').style.display='none'" style="padding:6px 12px;">Cerrar</button>
+        </div>
+        <div id="hist-list" style="flex:1; overflow-y:auto; color:#ccc; margin-bottom:10px;"></div>
+        <button onclick="hist=[]; renderHist();" style="width:100%;">Borrar Todo</button>
+    </div>
+    <div id="converter-modal" class="modal">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
+            <h3 style="margin:0; font-size:1.1rem;">Conversor</h3>
+            <button onclick="document.getElementById('converter-modal').style.display='none'" style="padding:6px 12px;">Cerrar</button>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:12px;">
+            <select id="converter-type" style="width:100%; padding:10px;">
+                <option value="length">Longitud</option>
+                <option value="mass">Masa</option>
+                <option value="volume">Volumen</option>
+                <option value="time">Tiempo</option>
+                <option value="currency">Moneda (Online)</option>
+            </select>
+            <div class="conv-row">
+                <input type="text" id="converter-input1" inputmode="decimal" placeholder="0" class="conv-input">
+                <select id="converter-unit1" class="conv-select"></select>
+            </div>
+            <div style="text-align:center; color:#aaa; font-size:1.2rem;">=</div>
+            <div class="conv-row">
+                <input type="text" id="converter-input2" readonly placeholder="0" class="conv-input" style="background:#222; color:#aaa;">
+                <select id="converter-unit2" class="conv-select"></select>
+            </div>
+        </div>
+    </div>
+    <script>
+        let curr = '0'; let prev = ''; let op = null; let reset = false; let hist = [];
+        const resDisp = document.getElementById('res-disp'); const eqDisp = document.getElementById('eq-disp'); const kb = document.getElementById('kb-trigger'); const copyToast = document.getElementById('copy-toast');
+        window.copyToClipboard = function(text) {
+            if (!text || text === 'Error') return;
+            navigator.clipboard.writeText(text).then(showToast).catch(() => {
+                const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+                ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast();
+            });
+        }
+        function showToast() { copyToast.classList.add('show'); setTimeout(() => copyToast.classList.remove('show'), 1500); }
+        kb.addEventListener('input', (e) => { const val = e.target.value; if (e.inputType === 'deleteContentBackward') input('CE'); else if (val.length > 0) processChar(val.slice(-1)); kb.value = ''; });
+        kb.addEventListener('keydown', (e) => { if (e.key === 'Backspace') input('CE'); if (e.key === 'Enter') { e.preventDefault(); input('='); } if (e.key === 'Escape') input('AC'); });
+        function processChar(key) { if(/[0-9]/.test(key)) input(key); if(key === '.' || key === ',') input('.'); if(['+','-','*','/'].includes(key)) input(key); if(key === '=') input('='); }
+        window.input = function(key) {
+            if(curr === 'Error' && key !== 'AC') input('AC');
+            if(/[0-9]/.test(key)) { if(reset) { curr = key; reset = false; } else { curr = curr === '0' ? key : curr + key; } }
+            else if(key === '.') { if(reset) { curr = '0,'; reset = false; } else if(!curr.includes(',')) curr += ','; }
+            else if(['+','-','*','/'].includes(key)) { if(curr !== '') { if(op) calc(); prev = curr; op = key; reset = true; } }
+            else if(key === '=') calc(); else if(key === 'AC') { curr='0'; prev=''; op=null; reset=false; }
+            else if(key === 'CE') { if(reset) { curr = '0'; reset = false; } else { curr = curr.length > 1 ? curr.slice(0, -1) : '0'; } }
+            render();
+        }
+        function calc() {
+            if(!op || !prev) return; const segundoOperando = curr; const p = parseFloat(prev.replace(',','.')); const c = parseFloat(curr.replace(',','.')); let r = 0;
+            switch(op) { case '+': r = p + c; break; case '-': r = p - c; break; case '*': r = p * c; break; case '/': r = c === 0 ? 'Error' : p / c; break; }
+            if(r !== 'Error') { const dec = parseInt(document.getElementById('rounding').value); if (dec === -1) curr = String(Math.round(r * 1e10) / 1e10).replace('.', ','); else curr = r.toFixed(dec).replace('.', ',').replace(/,00$/, ''); addToHist(`${prev} ${op} ${segundoOperando} =`, curr); } else { curr = 'Error'; } op = null; prev = ''; reset = true; render();
+        }
+        function render() { resDisp.textContent = curr; eqDisp.textContent = op ? `${prev} ${op}` : ''; }
+        window.showHist = function() { document.getElementById('hist-modal').style.display = 'flex'; renderHist(); }
+        function addToHist(eq, res) { hist.unshift({ eq, res }); }
+        window.renderHist = function() { document.getElementById('hist-list').innerHTML = hist.map(h => `<div class="hist-item"><span>${h.eq}</span> <b style="color:#fff">${h.res}</b></div>`).join(''); }
+        const u1 = document.getElementById('converter-unit1'), u2 = document.getElementById('converter-unit2'), i1 = document.getElementById('converter-input1'), i2 = document.getElementById('converter-input2');
+        const units = { length: {'mm':0.001, 'cm':0.01, 'dm':0.1, 'm':1, 'dam':10, 'hm':100, 'km':1000, 'in':0.0254, 'ft':0.3048, 'yd':0.9144, 'mi':1609.34}, mass: {'g':1, 'kg':1000, 'lb':453.592, 'oz':28.3495}, volume: {'ml':0.001, 'L':1, 'gal':3.78541}, time: {'s':1, 'min':60, 'h':3600, 'día':86400, 'sem':604800, 'mes':2592000, 'año':31536000}, currency: {'EUR':1, 'USD':1.05, 'GBP':0.83, 'CHF':0.93, 'SEK':11.35, 'NOK':11.05, 'DKK':7.46, 'PLN':4.65, 'HUF':410, 'CZK':25.3, 'RON':4.97, 'BGN':1.95, 'ISK':148, 'ETB':128} };
+        fetch('https://open.er-api.com/v6/latest/EUR').then(r => r.json()).then(d => { if(d && d.rates) { const targets = Object.keys(units.currency); targets.forEach(c => { if(d.rates[c]) units.currency[c] = d.rates[c]; }); } }).catch(() => console.log('Offline rates'));
+        window.showConv = function() { populateUnits(); document.getElementById('converter-modal').style.display = 'flex'; }
+        document.getElementById('converter-type').addEventListener('change', populateUnits);
+        function populateUnits() { const type = document.getElementById('converter-type').value; u1.innerHTML = u2.innerHTML = ''; for (let u in units[type]) { u1.innerHTML += `<option value="${u}">${u}</option>`; u2.innerHTML += `<option value="${u}">${u}</option>`; } u2.selectedIndex = 1; i1.value = i2.value = ''; }
+        function convert(src) { const rate = units[document.getElementById('converter-type').value]; const val = parseFloat((src===i1 ? i1 : i2).value.replace(',','.')); if (isNaN(val)) { if(src===i1) i2.value = ''; else i1.value = ''; return; } const base = val * rate[(src===i1 ? u1 : u2).value]; const res = base / rate[(src===i1 ? u2 : u1).value]; (src===i1 ? i2 : i1).value = res.toFixed(4).replace('.',',').replace(/,0000$/, ''); }
+        i1.addEventListener('input', () => convert(i1)); u1.addEventListener('change', () => convert(i1)); i2.addEventListener('input', () => convert(i2)); u2.addEventListener('change', () => convert(i2));
+        render();
+    </script>
+</body>
+</html>
+    </template>
+
+    <!-- Modal Añadir/Editar -->
+    <div id="card-modal" class="fixed inset-0 bg-gray-900/75 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-lg w-full max-w-md p-6 m-4 max-h-[90vh] overflow-y-auto border border-gray-700 shadow-2xl">
+            <div class="flex justify-between mb-4">
+                <h2 class="text-xl font-bold text-white">Tarjeta</h2>
+                <button id="close-card-modal-button" class="text-gray-400 hover:text-white"><i data-lucide="x"></i></button>
+            </div>
+            <form id="card-form">
+                <input type="hidden" id="card-id-input">
+                <div class="mb-3">
+                    <label class="text-sm text-gray-300 font-medium">Título</label>
+                    <input type="text" id="card-title-input" class="w-full p-2.5 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" required>
+                </div>
+                <div class="mb-3">
+                    <label class="text-sm text-gray-300 font-medium">Tipo</label>
+                    <select id="card-type-input" class="w-full p-2.5 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 outline-none">
+                        <option value="text">Texto Simple</option>
+                        <option value="quotes">Frases Célebres</option>
+                        <option value="calculator">Calculadora Personal</option>
+                        <option value="web-mobile">Navegador Móvil</option>
+                        <option value="weather">Widget del Tiempo</option>
+                    </select>
+                </div>
+                <div id="field-content" class="mb-3">
+                    <label class="text-sm text-gray-300 font-medium">Contenido</label>
+                    <textarea id="card-content-input" class="w-full p-2.5 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 outline-none" rows="4"></textarea>
+                </div>
+                <div id="field-url" class="mb-3 hidden">
+                    <label class="text-sm text-gray-300 font-medium">URL / Archivo</label>
+                    <input type="text" id="card-url-input" class="w-full p-2.5 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 outline-none" placeholder="https://ejemplo.com">
+                </div>
+                <div id="field-offset" class="mb-3 hidden">
+                    <label class="text-sm text-gray-300 font-medium">Desplazamiento Vertical (px)</label>
+                    <input type="number" id="card-offset-input" class="w-full p-2.5 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 outline-none" placeholder="0">
+                    <p class="text-xs text-gray-400 mt-1">Recorta la parte superior de la web.</p>
+                </div>
+                <div class="mb-6">
+                    <label class="text-sm text-gray-300 font-medium">Ancho</label>
+                    <select id="card-span-input" class="w-full p-2.5 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 outline-none">
+                        <option value="1">1 Columna</option>
+                        <option value="2">2 Columnas</option>
+                        <option value="3">3 Columnas</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-lg shadow-blue-900/20">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Settings -->
+    <div id="settings-modal" class="fixed inset-0 bg-gray-900/75 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-lg p-6 m-4 w-72 border border-gray-700 shadow-2xl">
+            <h2 class="font-bold text-white mb-4 text-lg">Columnas</h2>
+            <div class="flex justify-between items-center mb-6 bg-gray-700 p-1 rounded-lg">
+                <button id="dec-col" class="p-2 hover:bg-gray-600 rounded text-gray-300"><i data-lucide="minus"></i></button>
+                <span id="col-val" class="text-xl font-bold text-white">3</span>
+                <button id="inc-col" class="p-2 hover:bg-gray-600 rounded text-gray-300"><i data-lucide="plus"></i></button>
+            </div>
+            <button id="save-settings" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors">Aceptar</button>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar -->
+    <div id="confirm-modal" class="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+        <div class="bg-gray-800 rounded-lg shadow-2xl w-full max-w-sm p-6 m-4 border border-gray-700 transform transition-all scale-100">
+            <div class="flex items-center mb-4">
+                <div class="bg-red-900/30 p-3 rounded-full mr-4 border border-red-900/50">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-red-500"></i>
+                </div>
+                <h2 id="confirm-modal-title" class="text-lg font-bold text-white">¿Eliminar Tarjeta?</h2>
+            </div>
+            <p class="text-gray-400 mb-6 ml-1 text-sm leading-relaxed">Esta acción no se puede deshacer. ¿Estás seguro de que quieres continuar?</p>
+            <div class="flex justify-end space-x-3">
+                <button id="confirm-modal-cancel" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg transition-colors text-sm font-medium">Cancelar</button>
+                <button id="confirm-modal-confirm" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors shadow-lg shadow-red-900/20 text-sm font-medium">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- DATOS DE FRASES CÉLEBRES ---
+            const FAMOUS_QUOTES = [
+                { text: 'Cónocete a tí mismo', author: 'Sócrates' },
+                { text: 'No sabes nada, John Nieve', author: 'Igritte' },
+                { text: 'Piensa por ti mismo, usa el pensamiento crítico.', author: 'Sócrates' },
+                { text: 'No hay que confundir la verdad con la opinión de la mayoría', author: 'Jean Cocteau' },
+                { text: 'No juzgues, sé curioso', author: 'Ted Lasso' },
+                { text: 'Extremismo mal, ni nazis ni judíos', author: 'Ojete Calor' },
+                { text: 'Hay que dejar de proyectarnos en el futuro y de dar vueltas al pasado, y aprovechar el instante presente, CARPE DIEM', author: 'Sin autor' },
+                { text: 'La pobreza no viene por la disminución de las riquezas, sino por la multiplicación de los deseos', author: 'Platón' },
+                { text: 'No eches a perder lo que tienes por desear lo que no tienes . Los placeres, llevados al exceso, nos convierten en dependientes', author: 'Epicuro' },
+                { text: 'Un gran poder conlleva una gran responsabilidad', author: 'Spider-Man' },
+                { text: 'Exígete mucho a ti mismo y espera poco de los demás. Así te ahorrarás disgustos', author: 'Confucio' },
+                { text: 'La medida de la inteligencia es la capacidad de cambiar', author: 'Albert Einstein' },
+                { text: 'No es lo que te ocurre, sino cómo reaccionas lo que importa', author: 'Epícteto' },
+                { text: 'Es sencillo hacer que las cosas sean complicadas, pero difícil hacer que sean sencillas', author: 'Friedrich Nietzsche' },
+                { text: 'La vida es muy simple, pero insistimos en hacerla complicada', author: 'Confucio' },
+                { text: 'La paciencia es amarga, pero su fruto es dulce', author: 'Jean-Jacques Rousseau' },
+                { text: 'La prisa en todos los negocios trae fracasos', author: 'Heródoto' },
+                { text: 'Si abordas cada situación como asunto de vida o muerte, morirás muchas veces', author: 'Adam Smith' },
+                { text: 'La verdadera grandeza consiste en hacer que todos se sientan grandes', author: 'Charles Dickens' },
+                { text: 'Si quieres saber quién te controla, fíjate en quién es la persona a la que no se te permite criticar', author: 'Voltaire' }
+            ];
+
+            const quotesState = {};
+
+            // --- STATE ---
+            let cards = JSON.parse(localStorage.getItem('dashboardCards')) || [
+                { id: '1', title: 'Bienvenida', type: 'text', content: 'Usa el icono de la flecha para plegar la tarjeta.', span: 1, locked: false, collapsed: false },
+                { id: '2', title: 'Calculadora', type: 'calculator', span: 1, locked: true, collapsed: false },
+                { id: '3', title: 'Wikipedia', type: 'web-mobile', url: 'https://es.m.wikipedia.org', span: 1, offset: 0, locked: false, viewMode: 'mobile', collapsed: false },
+                { id: '4', title: 'El Tiempo', type: 'weather', span: 1, locked: false, collapsed: false },
+                { id: '5', title: 'Frase del Día', type: 'quotes', span: 1, locked: false, collapsed: false }
+            ];
+            let currentColumns = parseInt(localStorage.getItem('dashboardColumns')) || 3;
+            
+            let globalCollapsedState = false;
+
+            const grid = document.getElementById('dashboard-grid');
+
+            // --- RENDER ---
+            function render() {
+                grid.innerHTML = '';
+                
+                for(let i=1; i<=5; i++) grid.classList.remove(`md:grid-cols-${i}`);
+                grid.classList.add(`md:grid-cols-${currentColumns}`);
+
+                cards.forEach(card => {
+                    const el = document.createElement('div');
+                    const span = Math.min(card.span, currentColumns);
+                    const isLocked = card.locked === true;
+                    const isCollapsed = card.collapsed === true;
+                    const isWebMobile = card.type === 'web-mobile';
+                    const isCalculator = card.type === 'calculator';
+                    const isWeather = card.type === 'weather';
+                    const isQuotes = card.type === 'quotes';
+                    
+                    el.className = `bg-gray-800 rounded-lg shadow-md flex flex-col overflow-hidden md:col-span-${span} ${isLocked ? 'card-locked' : ''}`;
+                    
+                    let heightStyle = '';
+                    if (isCollapsed) {
+                        heightStyle = 'height: auto;';
+                    } else if (isWebMobile || isCalculator) {
+                        heightStyle = 'height: 400px;';
+                    } else if (isWeather) {
+                        heightStyle = 'height: auto; min-height: 300px;'; 
+                    } else if (isQuotes) {
+                        heightStyle = 'min-height: 200px;';
+                    }
+                    
+                    el.style = heightStyle;
+                    el.dataset.id = card.id;
+
+                    const lockIcon = isLocked ? 'lock' : 'lock-open'; 
+                    const collapseIcon = isCollapsed ? 'chevron-down' : 'chevron-up';
+                    const dragHandleClass = isLocked ? 'cursor-default' : 'drag-handle cursor-grab';
+                    const lockColor = isLocked ? 'text-red-500 hover:text-red-400' : 'text-gray-500 hover:text-green-400';
+
+                    let contentHtml = '';
+                    let footerHtml = '';
+
+                    const contentVisibility = isCollapsed ? 'hidden md:flex' : 'flex';
+
+                    if (isQuotes) {
+                        if (!quotesState[card.id]) {
+                            const randomIndex = Math.floor(Math.random() * FAMOUS_QUOTES.length);
+                            quotesState[card.id] = { history: [randomIndex], ptr: 0 };
+                        }
+                        const state = quotesState[card.id];
+                        const quote = FAMOUS_QUOTES[state.history[state.ptr]];
+
+                        contentHtml = `
+                            <div id="quote-content-${card.id}" class="w-full h-full ${contentVisibility} flex-col flex-grow relative p-6 items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-700 text-white text-center">
+                                <div class="flex-grow flex flex-col justify-center">
+                                    <p class="handwritten-font text-3xl mb-4 leading-relaxed">"${quote.text}"</p>
+                                    <p class="handwritten-font text-xl opacity-80 text-right">— ${quote.author}</p>
+                                </div>
+                                <div class="flex justify-between w-full mt-4 pt-4 border-t border-white/20" data-sortable-ignore="true">
+                                    <button class="quote-prev-btn p-2 hover:bg-white/20 rounded-full transition-colors ${state.ptr === 0 ? 'opacity-30 cursor-not-allowed' : ''}" title="Anterior">
+                                        <i data-lucide="arrow-left"></i>
+                                    </button>
+                                    <button class="quote-next-btn p-2 hover:bg-white/20 rounded-full transition-colors" title="Siguiente">
+                                        <i data-lucide="arrow-right"></i>
+                                    </button>
+                                </div>
+                                ${!isLocked ? '<div class="absolute inset-0 pointer-events-none z-0"></div>' : ''}
+                            </div>
+                        `;
+
+                    } else if (isCalculator) {
+                        const calcSource = document.getElementById('calculator-source').innerHTML;
+                        contentHtml = `
+                            <div class="relative w-full h-full bg-gray-900 ${contentVisibility} flex-grow" style="${isCollapsed ? 'min-height:400px' : ''}">
+                                <iframe srcdoc="${calcSource.replace(/"/g, '&quot;')}" class="w-full h-full border-0"></iframe>
+                                ${!isLocked ? '<div class="absolute inset-0 pointer-events-none"></div>' : ''}
+                            </div>
+                        `;
+
+                    } else if (isWebMobile) {
+                        const offset = card.offset || 0;
+                        const viewMode = card.viewMode || 'mobile';
+                        const widthClass = viewMode === 'mobile' ? 'max-w-[375px] mx-auto border-x border-gray-700' : 'w-full';
+                        const viewIcon = viewMode === 'mobile' ? 'smartphone' : 'monitor';
+                        const viewTitle = viewMode === 'mobile' ? 'Vista Móvil' : 'Vista Escritorio';
+
+                        contentHtml = `
+                            <div class="relative w-full h-full bg-gray-200 ${contentVisibility} flex-grow overflow-hidden items-center justify-center" style="${isCollapsed ? 'min-height:400px' : ''}">
+                                <div class="${widthClass} h-full relative overflow-hidden bg-white shadow-inner transition-all duration-300">
+                                    <iframe id="iframe-${card.id}" src="${card.url}" 
+                                        class="w-full border-0 absolute top-0 left-0"
+                                        style="width:100%; height:calc(100% + ${offset}px); margin-top:-${offset}px;">
+                                    </iframe>
+                                    ${!isLocked ? '<div class="absolute inset-0 pointer-events-none"></div>' : ''}
+                                </div>
+                            </div>
+                        `;
+                        
+                        footerHtml = `
+                            <div class="bg-gray-800 border-t border-gray-700 p-2 justify-around items-center h-12 shrink-0 ${contentVisibility}" data-sortable-ignore="true">
+                                <button class="nav-btn text-gray-400 hover:text-white transition-colors" onclick="navFrame('${card.id}', 'back')" title="Atrás">
+                                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                                </button>
+                                <button class="nav-btn text-gray-400 hover:text-white transition-colors" onclick="navFrame('${card.id}', 'home', '${card.url}')" title="Inicio">
+                                    <i data-lucide="home" class="w-5 h-5"></i>
+                                </button>
+                                <button class="nav-btn text-gray-400 hover:text-white transition-colors" onclick="navFrame('${card.id}', 'forward')" title="Adelante">
+                                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                                </button>
+                                <button class="view-toggle-btn text-blue-400 hover:text-blue-300 mx-2 transition-colors" title="${viewTitle}">
+                                    <i data-lucide="${viewIcon}" class="w-5 h-5"></i>
+                                </button>
+                                <button class="config-btn text-gray-400 hover:text-blue-400 transition-colors" title="Configurar">
+                                    <i data-lucide="settings" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        `;
+
+                    } else if (isWeather) {
+                        // --- WIDGET TIEMPO (AISLADO EN IFRAME) ---
+                        const weatherWidgetCode = `
+                            <div id="ww_3eca4de1fe1df" v='1.3' loc='id' a='{"t":"responsive","lang":"es","sl_lpl":1,"ids":["wl6521"],"font":"Arial","sl_ics":"one_a","sl_sot":"celsius","cl_bkg":"#FFFFFF","cl_font":"#000000","cl_cloud":"#d4d4d4","cl_persp":"#2196F3","cl_sun":"#FFC107","cl_moon":"#FFC107","cl_thund":"#FF5722","cl_odd":"#0000000a","sl_tof":"5"}'>Más previsiones: <a href="https://tiempolargo.com/madrid_tiempo_25_dias/" id="ww_3eca4de1fe1df_u" target="_blank">Madrid tiempo 25 días</a></div><script async src="https://app3.weatherwidget.org/js/?id=ww_3eca4de1fe1df"><\/script>
+                        `;
+                        
+                        // Plantilla limpia para el widget (fondo blanco forzado)
+                        const weatherSrcDoc = `
+                            <html>
+                                <head><style>body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: white; overflow: hidden; }</style></head>
+                                <body>
+                                    <div style="width:100%; height:100%; overflow:auto; display:flex; justify-content:center; align-items:center;">
+                                        <div style="width:100%; max-width:600px;">${weatherWidgetCode}</div>
+                                    </div>
+                                </body>
+                            </html>
+                        `;
+
+                        contentHtml = `
+                            <div class="w-full h-full ${contentVisibility} flex-grow relative p-0 overflow-hidden">
+                                <!-- Escudo de Clics -->
+                                <div onclick="window.open('https://www.tiempo.com/valladolid.htm', '_blank')" 
+                                     class="absolute inset-0 z-50 cursor-pointer bg-transparent" 
+                                     title="Ver predicción completa">
+                                </div>
+                                <!-- Iframe Aislado -->
+                                <iframe srcdoc='${weatherSrcDoc.replace(/'/g, "&apos;")}' 
+                                        class="w-full h-full border-0 bg-white" 
+                                        scrolling="no">
+                                </iframe>
+                                ${!isLocked ? '<div class="absolute inset-0 pointer-events-none z-50"></div>' : ''}
+                            </div>
+                        `;
+                    } else {
+                        // TEXTO
+                        contentHtml = `<div class="p-4 text-gray-300 whitespace-pre-wrap flex-grow overflow-auto ${contentVisibility}">${card.content || ''}</div>`;
+                    }
+
+                    el.innerHTML = `
+                        <div class="bg-gray-700 p-2 flex justify-between items-center ${dragHandleClass} flex-shrink-0 min-h-[40px]">
+                            <div class="flex items-center overflow-hidden">
+                                <button class="collapse-btn p-1 mr-2 text-gray-400 hover:text-white transition-transform md:hidden" title="${isCollapsed ? 'Desplegar' : 'Plegar'}" data-sortable-ignore="true">
+                                    <i data-lucide="${collapseIcon}" class="w-4 h-4"></i>
+                                </button>
+                                <h3 class="font-bold text-white text-sm truncate px-1 select-none">${card.title}</h3>
+                            </div>
+
+                            <div class="flex items-center space-x-1" data-sortable-ignore="true">
+                                <button class="lock-btn p-1 ${lockColor}" title="${isLocked ? 'Desbloquear' : 'Bloquear'}">
+                                    <i data-lucide="${lockIcon}" class="w-4 h-4"></i>
+                                </button>
+                                
+                                ${!isWebMobile && !isCalculator && !isWeather && !isQuotes ? `
+                                <button class="edit-btn p-1 text-gray-400 hover:text-blue-400">
+                                    <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                </button>` : ''}
+                                
+                                ${!isLocked ? `
+                                <button class="del-btn p-1 text-gray-400 hover:text-red-500">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>` : ''}
+                            </div>
+                        </div>
+                        
+                        ${contentHtml}
+                        ${footerHtml}
+                    `;
+                    grid.appendChild(el);
+                });
+                lucide.createIcons();
+                initSortable();
+                updateToggleAllIcon();
+            }
+
+            // --- ACTUALIZACIÓN PARCIAL FRASES ---
+            function updateQuoteCard(cardId) {
+                const container = document.getElementById(`quote-content-${cardId}`);
+                if (!container || !quotesState[cardId]) return;
+                const state = quotesState[cardId];
+                const quote = FAMOUS_QUOTES[state.history[state.ptr]];
+                container.innerHTML = `
+                    <div class="flex-grow flex flex-col justify-center">
+                        <p class="handwritten-font text-3xl mb-4 leading-relaxed">"${quote.text}"</p>
+                        <p class="handwritten-font text-xl opacity-80 text-right">— ${quote.author}</p>
+                    </div>
+                    <div class="flex justify-between w-full mt-4 pt-4 border-t border-white/20" data-sortable-ignore="true">
+                        <button class="quote-prev-btn p-2 hover:bg-white/20 rounded-full transition-colors ${state.ptr === 0 ? 'opacity-30 cursor-not-allowed' : ''}" title="Anterior"><i data-lucide="arrow-left"></i></button>
+                        <button class="quote-next-btn p-2 hover:bg-white/20 rounded-full transition-colors" title="Siguiente"><i data-lucide="arrow-right"></i></button>
+                    </div>
+                    <div class="absolute inset-0 pointer-events-none z-0"></div>
+                `;
+                lucide.createIcons();
+            }
+
+            window.navFrame = function(cardId, action, url) {
+                const iframe = document.getElementById(`iframe-${cardId}`);
+                if (!iframe) return;
+                try {
+                    if (action === 'back') iframe.contentWindow.history.back();
+                    if (action === 'forward') iframe.contentWindow.history.forward();
+                    if (action === 'home') iframe.src = url;
+                } catch (e) {
+                    if (action === 'home') iframe.src = url;
+                }
+            };
+
+            function initSortable() {
+                new Sortable(grid, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    filter: '[data-sortable-ignore]', 
+                    preventOnFilter: false, 
+                    onEnd: (evt) => {
+                        const item = cards.splice(evt.oldIndex, 1)[0];
+                        cards.splice(evt.newIndex, 0, item);
+                        save();
+                    }
+                });
+            }
+
+            function save() {
+                localStorage.setItem('dashboardCards', JSON.stringify(cards));
+                localStorage.setItem('dashboardColumns', currentColumns);
+            }
+
+            const toggleAllBtn = document.getElementById('toggle-all-btn');
+            function updateToggleAllIcon() {
+                const iconName = globalCollapsedState ? 'chevrons-down' : 'chevrons-up';
+                toggleAllBtn.innerHTML = `<i data-lucide="${iconName}"></i>`;
+                lucide.createIcons();
+            }
+
+            toggleAllBtn.addEventListener('click', () => {
+                globalCollapsedState = !globalCollapsedState;
+                cards = cards.map(card => ({ ...card, collapsed: globalCollapsedState }));
+                save(); render();
+            });
+
+            const confirmModal = document.getElementById('confirm-modal');
+            const confirmTitle = document.getElementById('confirm-modal-title');
+            let confirmCallback = null;
+
+            function openConfirmModal(title, callback) {
+                confirmTitle.textContent = `¿Eliminar "${title}"?`;
+                confirmCallback = callback;
+                confirmModal.classList.remove('hidden');
+            }
+
+            document.getElementById('confirm-modal-cancel').addEventListener('click', () => {
+                confirmModal.classList.add('hidden');
+            });
+
+            document.getElementById('confirm-modal-confirm').addEventListener('click', () => {
+                if (confirmCallback) confirmCallback();
+                confirmModal.classList.add('hidden');
+            });
+
+            grid.addEventListener('click', (e) => {
+                const cardEl = e.target.closest('[data-id]');
+                if(!cardEl) return;
+                const id = cardEl.dataset.id;
+                const card = cards.find(c => c.id === id);
+
+                if(e.target.closest('.collapse-btn')) {
+                    card.collapsed = !card.collapsed;
+                    save(); render();
+                }
+                else if(e.target.closest('.lock-btn')) {
+                    card.locked = !card.locked;
+                    save(); render();
+                }
+                // --- LOGICA FRASES (Actualización Parcial) ---
+                else if(e.target.closest('.quote-next-btn')) {
+                    const state = quotesState[id];
+                    if (state.ptr < state.history.length - 1) {
+                        state.ptr++;
+                    } else {
+                        const nextIdx = Math.floor(Math.random() * FAMOUS_QUOTES.length);
+                        state.history.push(nextIdx);
+                        state.ptr++;
+                    }
+                    updateQuoteCard(id); 
+                }
+                else if(e.target.closest('.quote-prev-btn')) {
+                    const state = quotesState[id];
+                    if (state.ptr > 0) {
+                        state.ptr--;
+                        updateQuoteCard(id);
+                    }
+                }
+                // ---------------------
+                else if(e.target.closest('.view-toggle-btn')) {
+                    card.viewMode = (card.viewMode === 'mobile') ? 'desktop' : 'mobile';
+                    save(); render();
+                }
+                else if(e.target.closest('.edit-btn') || e.target.closest('.config-btn')) {
+                    openModal(card);
+                }
+                else if(e.target.closest('.del-btn')) {
+                    openConfirmModal(card.title, () => {
+                        cards = cards.filter(c => c.id !== id);
+                        save(); render();
+                    });
+                }
+            });
+
+            const modal = document.getElementById('card-modal');
+            const typeInput = document.getElementById('card-type-input');
+            const fieldContent = document.getElementById('field-content');
+            const fieldUrl = document.getElementById('field-url');
+            const fieldOffset = document.getElementById('field-offset');
+            
+            function openModal(card = null) {
+                document.getElementById('card-form').reset();
+                if(card) {
+                    document.getElementById('card-id-input').value = card.id;
+                    document.getElementById('card-title-input').value = card.title;
+                    typeInput.value = card.type || 'text';
+                    document.getElementById('card-content-input').value = card.content || '';
+                    document.getElementById('card-url-input').value = card.url || '';
+                    document.getElementById('card-offset-input').value = card.offset || 0;
+                    document.getElementById('card-span-input').value = card.span;
+                }
+                updateFields();
+                modal.classList.remove('hidden');
+            }
+            
+            function updateFields() {
+                const t = typeInput.value;
+                fieldContent.classList.toggle('hidden', t !== 'text');
+                fieldUrl.classList.toggle('hidden', t !== 'web-mobile'); 
+                fieldOffset.classList.toggle('hidden', t !== 'web-mobile'); 
+            }
+            
+            typeInput.addEventListener('change', updateFields);
+
+            document.getElementById('card-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const id = document.getElementById('card-id-input').value;
+                const type = typeInput.value;
+                
+                const newData = {
+                    title: document.getElementById('card-title-input').value,
+                    type,
+                    span: parseInt(document.getElementById('card-span-input').value),
+                    content: type === 'text' ? document.getElementById('card-content-input').value : null,
+                    url: (type === 'web-mobile') ? document.getElementById('card-url-input').value : null,
+                    offset: type === 'web-mobile' ? parseInt(document.getElementById('card-offset-input').value) : 0,
+                    locked: id ? cards.find(c => c.id === id).locked : false,
+                    collapsed: id ? cards.find(c => c.id === id).collapsed : false,
+                    viewMode: id ? (cards.find(c => c.id === id).viewMode || 'mobile') : 'mobile'
+                };
+
+                if(id) cards = cards.map(c => c.id === id ? {...c, ...newData} : c);
+                else cards.push({...newData, id: Date.now().toString()});
+                
+                save(); render();
+                modal.classList.add('hidden');
+            });
+
+            document.getElementById('add-card-button').addEventListener('click', () => openModal());
+            document.getElementById('close-card-modal-button').addEventListener('click', () => modal.classList.add('hidden'));
+            
+            const setModal = document.getElementById('settings-modal');
+            const colDisplay = document.getElementById('col-val');
+            document.getElementById('settings-button').addEventListener('click', () => {
+                colDisplay.textContent = currentColumns;
+                setModal.classList.remove('hidden');
+            });
+            document.getElementById('inc-col').addEventListener('click', () => { if(currentColumns < 5) colDisplay.textContent = ++currentColumns; });
+            document.getElementById('dec-col').addEventListener('click', () => { if(currentColumns > 1) colDisplay.textContent = --currentColumns; });
+            document.getElementById('save-settings').addEventListener('click', () => {
+                currentColumns = parseInt(colDisplay.textContent);
+                save(); render(); setModal.classList.add('hidden');
+            });
+
+            render();
+        });
+    </script>
+</body>
+</html>
+
+
