@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Validator Pro | Carga Masiva</title>
+    <title>Carga Masiva</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%225%22 y=%2282%22 width=%2290%22 height=%2218%22 rx=%224%22 fill=%22%2392278f%22/><rect x=%2238%22 y=%2230%22 width=%2224%22 height=%2245%22 fill=%22%2392278f%22/><path d=%22M10 35 L50 0 L90 35 Z%22 fill=%22%2392278f%22/></svg>">
     <style>
         :root {
             /* Palette - Deep Dark & Clean */
@@ -11,10 +12,10 @@
             --surface: #16181c;
             --surface-hover: #1e2126;
             --border: #2f3336;
-            
+
             --text-main: #e7e9ea;
             --text-dim: #71767b;
-            
+
             /* Brand Colors */
             --brand: #1d9bf0;
             --success: #00ba7c;
@@ -41,18 +42,18 @@
         header {
             height: var(--header-h); padding: 0 20px;
             display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--border); 
+            border-bottom: 1px solid var(--border);
             background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             position: fixed; top: 0; left: 0; right: 0; z-index: 50;
         }
         .brand { font-weight: 900; font-size: 18px; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
         .brand span { background: linear-gradient(45deg, var(--brand), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
+
         /* --- 2. LAYOUT PRINCIPAL --- */
         .main-container {
             margin-top: var(--header-h);
-            flex: 1; 
-            display: grid; 
+            flex: 1;
+            display: grid;
             grid-template-columns: 1fr;
             overflow: hidden;
         }
@@ -80,7 +81,7 @@
         .drop-zone.dragover textarea { border-color: var(--brand); }
 
         textarea {
-            flex: 1; width: 100%; 
+            flex: 1; width: 100%;
             background: var(--surface); color: var(--text-main);
             border: 2px dashed var(--border); border-radius: var(--radius);
             padding: 20px; font-family: 'SF Mono', 'Courier New', monospace; font-size: 15px; line-height: 1.6;
@@ -97,8 +98,8 @@
         }
 
         .btn {
-            padding: 12px 20px; border-radius: 50px; 
-            font-weight: 700; font-size: 14px; 
+            padding: 12px 20px; border-radius: 50px;
+            font-weight: 700; font-size: 14px;
             display: flex; align-items: center; justify-content: center; gap: 8px;
             transition: transform 0.1s, opacity 0.2s;
         }
@@ -124,8 +125,8 @@
             z-index: 10;
         }
         .tab {
-            padding: 10px 16px; 
-            color: var(--text-dim); 
+            padding: 10px 16px;
+            color: var(--text-dim);
             font-weight: 600; font-size: 14px;
             position: relative; cursor: pointer;
             transition: 0.2s;
@@ -136,9 +137,9 @@
             content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px;
             background: var(--brand); border-radius: 3px 3px 0 0;
         }
-        .badge { 
-            background: var(--border); color: var(--text-main); 
-            padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px; 
+        .badge {
+            background: var(--border); color: var(--text-main);
+            padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 6px;
         }
         .tab.active .badge { background: var(--brand); color: white; }
 
@@ -146,7 +147,7 @@
         .results-list {
             flex: 1; overflow-y: auto; padding-bottom: 100px; /* Espacio para FAB */
         }
-        
+
         .empty-state {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             height: 100%; color: var(--text-dim); text-align: center; padding: 40px;
@@ -173,7 +174,7 @@
         }
         .status-valid { background: rgba(0, 186, 124, 0.15); color: var(--success); }
         .status-invalid { background: rgba(249, 24, 128, 0.15); color: var(--danger); }
-        
+
         /* Correcciones Automáticas resaltadas */
         .fix-highlight { color: var(--success); font-weight: bold; }
 
@@ -183,7 +184,7 @@
             display: flex; justify-content: flex-end; gap: 10px;
             pointer-events: none; /* Dejar pasar clics si no hay botones */
         }
-        
+
         .btn-fab {
             pointer-events: auto;
             background: var(--brand); color: white;
@@ -210,7 +211,7 @@
 
         /* --- UTILS --- */
         .hidden { display: none !important; }
-        
+
         /* Toast Notification */
         .toast {
             position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px);
@@ -243,14 +244,14 @@
                 <defs><linearGradient id="grad" x1="0" y1="0" x2="100%" y2="100%"><stop offset="0%" stop-color="#1d9bf0"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
-            <span>Validator Pro</span>
+            <span>Carga Masiva<span>
         </div>
         <div>
             </div>
     </header>
 
     <div class="main-container">
-        
+
         <div class="input-panel" id="inputPanel">
             <div class="drop-zone" id="dropZone">
                 <textarea id="dniInput" placeholder="Pega tu lista aquí...&#10;&#10;Soporta:&#10;• DNIs mezclados con texto&#10;• Archivos arrastrados (.txt/.csv)&#10;• Formatos sucios (con espacios, guiones)" spellcheck="false"></textarea>
@@ -262,7 +263,7 @@
         </div>
 
         <div class="dashboard-panel" id="resultsPanel">
-            
+
             <div class="stats-bar" id="statsBar">
                 <div class="stat-item">
                     <span class="stat-val" id="countTotal">0</span>
@@ -314,7 +315,7 @@
             const nieRegex = /^([XYZ])(\d{7})([A-Z])$/;
             let match = cleaned.match(dniRegex);
             let numbers, letter;
-            
+
             if (match) {
                 numbers = match[1];
                 letter = match[2];
@@ -362,7 +363,7 @@
         function extractPotentialIDs(text) {
             // Regex que busca patrones parecidos a DNI/NIE incluso dentro de texto sucio
             // Busca secuencias de 8 numeros o X/Y/Z seguido de numeros
-            const broadRegex = /([XYZ]?\s*\d{7,8}\s*-?\s*[A-Z]?)/gi; 
+            const broadRegex = /([XYZ]?\s*\d{7,8}\s*-?\s*[A-Z]?)/gi;
             const matches = text.match(broadRegex);
             return matches ? matches : text.split('\n');
         }
@@ -374,7 +375,7 @@
             // Usamos lógica de extracción más inteligente si hay mucho texto basura
             // Si parece una lista limpia, usamos split por linea. Si no, regex.
             let lines = inputVal.split('\n').filter(l => l.trim().length > 0);
-            
+
             // Si las lineas son muy largas, asumimos que es texto mezclado y usamos regex extractor
             if(lines.some(l => l.length > 20)) {
                const extracted = extractPotentialIDs(inputVal);
@@ -390,7 +391,7 @@
                 const original = line.trim();
                 // Limpieza básica para eliminar comas o puntos finales comunes en copy-paste
                 const sanitized = original.replace(/[.,;:]$/, '');
-                
+
                 const cleaned = cleanDNI(sanitized);
                 // Evitar procesar lineas vacías o muy cortas tras limpieza
                 if(cleaned.length < 5) return;
@@ -414,11 +415,11 @@
             document.getElementById('cleanList').value = cleanCSVLines.join('\n');
             updateStats(currentResults.length, validCount, invalidCount);
             renderResults();
-            
+
             // UI Feedback
             document.getElementById('tabsHeader').classList.remove('hidden');
             document.getElementById('statsBar').style.display = 'flex';
-            
+
             if(cleanCSVLines.length > 0) {
                 document.getElementById('btnDownload').classList.add('visible');
             } else {
@@ -431,7 +432,7 @@
                 // Scroll suave hacia resultados
                 document.getElementById('resultsPanel').scrollIntoView({behavior: 'smooth'});
             }
-            
+
             showToast(`✅ Procesados ${currentResults.length} registros`);
         }
 
@@ -453,7 +454,7 @@
             filtered.forEach(r => {
                 const item = document.createElement('div');
                 item.className = 'result-item';
-                
+
                 let icon = r.isValid ? 'check_circle' : 'error';
                 let statusClass = r.isValid ? 'status-valid' : 'status-invalid';
                 let statusText = r.isValid ? 'Válido' : 'Inválido';
@@ -487,7 +488,7 @@
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => {
-                if(t.innerText.toLowerCase().includes(tab === 'all' ? 'todos' : tab === 'valid' ? 'válidos' : 'errores')) 
+                if(t.innerText.toLowerCase().includes(tab === 'all' ? 'todos' : tab === 'valid' ? 'válidos' : 'errores'))
                     t.classList.add('active');
             });
             renderResults();
@@ -497,7 +498,7 @@
             document.getElementById('countTotal').innerText = total;
             document.getElementById('countValid').innerText = valid;
             document.getElementById('countInvalid').innerText = invalid;
-            
+
             document.getElementById('badgeAll').innerText = total;
             document.getElementById('badgeValid').innerText = valid;
             document.getElementById('badgeInvalid').innerText = invalid;
@@ -571,7 +572,7 @@
             const url = URL.createObjectURL(blob);
             const now = new Date();
             const filename = `Carga_MASIVA_${now.toISOString().slice(0,19).replace('T','_').replace(/:/g,'.')}.csv`;
-            
+
             link.setAttribute('href', url);
             link.setAttribute('download', filename);
             link.style.visibility = 'hidden';
