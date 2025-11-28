@@ -259,17 +259,17 @@
     <div class="container">
         <div class="header">
             <h1>🇪🇸 Validador de DNI/NIE para REFORACEN</h1>
-            <p>Pega tu lista de DNIs o NIEs y comprobaré cada uno</p>
+            <p>Pega tu lista de DNI o NIE y comprobaré cada uno</p>
         </div>
 
         <div class="content">
             <div class="input-section">
-                <label for="dniInput">Introduce los DNIs o NIEs copiados del documento de "Recogida de datos"(uno por línea):</label>
+                <label for="dniInput">Introduce los DNI o NIE copiados del documento de "Recogida de datos"(uno por línea):</label>
                 <textarea id="dniInput" placeholder="Ejemplo:&#10;71119995Q&#10;Y1234567Z&#10;71119995 Q&#10;X-1234567-L"></textarea>
             </div>
 
             <div class="button-group">
-                <button class="btn-validate" onclick="validateDNIs()">Validar DNIs/NIEs</button>
+                <button class="btn-validate" onclick="validateDNIs()">Validar DNI/NIE</button>
                 <button class="btn-clear" onclick="clearAll()">Limpiar</button>
             </div>
 
@@ -293,7 +293,7 @@
 
                 <div class="export-section">
                     <h3>📋 Listado preparado para CARGA MASIVA en REFORACEN (Formato CSV)</h3>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Incluye DNIs / NIE válidos y los inválidos corregidos automáticamente</p>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Incluye DNI / NIE válidos y los inválidos corregidos automáticamente</p>
                     <textarea id="cleanList" readonly></textarea>
                     <button class="btn-download" onclick="downloadCSV()">⬇️ Descargar CSV</button>
                 </div>
@@ -310,16 +310,16 @@
 
         function validateDNI(dni) {
             const cleaned = cleanDNI(dni);
-            
+
             // DNI: 8 números y 1 letra
             const dniRegex = /^(\d{8})([A-Z])$/;
             // NIE: letra (X, Y, Z) + 7 números + 1 letra
             const nieRegex = /^([XYZ])(\d{7})([A-Z])$/;
-            
+
             let match = cleaned.match(dniRegex);
             let numbers;
             let letter;
-            
+
             if (match) {
                 // Es un DNI
                 numbers = match[1];
@@ -330,12 +330,12 @@
                 if (!match) {
                     return false;
                 }
-                
+
                 // Para NIE, convertir la primera letra a número
                 const niePrefix = match[1];
                 const nieNumbers = match[2];
                 letter = match[3];
-                
+
                 const nieMap = { 'X': '0', 'Y': '1', 'Z': '2' };
                 numbers = nieMap[niePrefix] + nieNumbers;
             }
@@ -349,33 +349,33 @@
 
         function correctDNI(dni) {
             const cleaned = cleanDNI(dni);
-            
+
             // Intentar extraer como DNI
             let numbersMatch = cleaned.match(/(\d{8})/);
-            
+
             if (numbersMatch) {
                 const numbers = numbersMatch[1];
                 const validLetters = 'TRWAGMYFPDXBNJZSQVHLCKE';
                 const correctLetter = validLetters[parseInt(numbers) % 23];
                 return numbers + correctLetter;
             }
-            
+
             // Intentar extraer como NIE
             const nieMatch = cleaned.match(/([XYZ])(\d{7})/);
-            
+
             if (nieMatch) {
                 const niePrefix = nieMatch[1];
                 const nieNumbers = nieMatch[2];
-                
+
                 const nieMap = { 'X': '0', 'Y': '1', 'Z': '2' };
                 const numbers = nieMap[niePrefix] + nieNumbers;
-                
+
                 const validLetters = 'TRWAGMYFPDXBNJZSQVHLCKE';
                 const correctLetter = validLetters[parseInt(numbers) % 23];
-                
+
                 return niePrefix + nieNumbers + correctLetter;
             }
-            
+
             return null; // No se puede corregir
         }
 
@@ -429,9 +429,9 @@
             results.forEach(result => {
                 const item = document.createElement('div');
                 item.className = `dni-item ${result.isValid ? 'valid' : 'invalid'}`;
-                
+
                 const dniInfo = document.createElement('div');
-                
+
                 if (result.isValid) {
                     dniInfo.innerHTML = `
                         <strong>${result.cleaned}</strong>
@@ -470,7 +470,7 @@
 
         function downloadCSV() {
             const cleanList = document.getElementById('cleanList').value;
-            
+
             if (!cleanList.trim()) {
                 alert('No hay DNIs/NIEs válidos para descargar');
                 return;
@@ -479,20 +479,20 @@
             const blob = new Blob([cleanList], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
-            
+
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
-            
+
             const filename = `Carga MASIVA - ${year}-${month}-${day}_${hours}.${minutes}.csv`;
-            
+
             link.setAttribute('href', url);
             link.setAttribute('download', filename);
             link.style.visibility = 'hidden';
-            
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
