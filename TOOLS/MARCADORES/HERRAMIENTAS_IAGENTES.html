@@ -1,8 +1,8 @@
 <html lang="es"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Centro de Mando IA</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,
+    <title>herramientas &amp; iagentes</title>
+    <link id="dynamicFavicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,
 %3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E
 %3Crect fill='%23ffffff' stroke='%23ffffff' stroke-width='10.255' width='89.745041' height='89.745041' x='5.1274805' y='5.1274796'/%3E
 %3Cpath fill='%23800080' stroke-width='0.181273' d='M14.575688,95.227221 C11.934234,94.713436 9.8622448,93.600867 8.0176176,91.705808 4.210982,87.795111 3.535061,81.865229 6.346069,77.041265 6.8021882,76.258524 11.389104,71.551536 24.683286,58.224052 L42.412226,40.4507 41.96467,38.737108 c-0.661285,-2.531902 -0.880025,-4.318452 -0.875642,-7.151808 0.0049,-3.104451 0.374846,-5.437165 1.311635,-8.268316 C47.12686,9.0335162 62.179218,1.3515306 76.566086,5.8806213 c1.280774,0.4031973 2.373017,0.8531361 2.625865,1.0817011 0.04551,0.041137 -4.053595,4.2117476 -9.109131,9.2680116 l-9.191882,9.193206 6.843986,6.842209 6.843984,6.842206 9.152881,-9.154226 c5.034087,-5.034824 9.204319,-9.154227 9.267188,-9.154227 0.379963,0 1.651104,4.071856 2.093138,6.704977 0.390423,2.325675 0.378735,6.451539 -0.02491,8.793941 C92.358769,52.015714 77.030342,62.018791 61.617858,58.126925 L59.534792,57.60092 41.677725,75.425989 C24.321969,92.750658 23.779947,93.27181 22.370467,93.989505 c-2.504633,1.275357 -5.310583,1.720905 -7.794779,1.237716 z'/%3E
@@ -164,22 +164,33 @@
             padding-right: 5px;
         }
 
-        .category-section { margin-bottom: 15px; }
+        .category-section { margin-bottom: 15px; border: 1px solid transparent; border-radius: 6px; transition: 0.2s; }
+        /* DRAG AND DROP STYLES */
+        .edit-mode .category-section.draggable-cat { cursor: grab; }
+        .category-section.drag-over-top { border-top: 2px solid var(--accent); }
+        .category-section.drag-over-bottom { border-bottom: 2px solid var(--accent); }
+        
         .category-header {
             font-size: 13px; color: var(--accent); text-transform: uppercase; font-weight: bold;
             padding: 5px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;
         }
 
-        .category-list { display: flex; flex-direction: column; gap: 6px; }
-
+        .category-list { display: flex; flex-direction: column; gap: 6px; min-height: 10px; }
+        
         .card {
             background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
             padding: 8px 12px; display: flex; align-items: center; gap: 12px;
             text-decoration: none; color: var(--text); cursor: pointer; position: relative;
-            outline: none;
+            outline: none; transition: transform 0.2s, box-shadow 0.2s;
         }
         .card:hover { background: #252525; border-color: #555; }
         .card:focus { border-color: var(--accent); background: #252525; }
+
+        /* DnD Cards */
+        .edit-mode .card { cursor: grab; }
+        .card.dragging { opacity: 0.5; transform: scale(0.98); }
+        .card.drag-over-top { border-top: 2px solid var(--accent); }
+        .card.drag-over-bottom { border-bottom: 2px solid var(--accent); }
 
         .card img { width: 20px; height: 20px; border-radius: 3px; object-fit: contain; }
         .card span { font-size: 14px; flex-grow: 1; pointer-events: none; }
@@ -195,7 +206,11 @@
         .icon-btn:hover { background: #333; color: #fff; }
         .icon-btn svg { width: 14px; height: 14px; fill: currentColor; }
         .icon-btn.delete:hover { color: var(--danger); background: rgba(255, 68, 68, 0.1); }
-        .icon-btn.move:hover { color: var(--accent); background: rgba(0, 122, 204, 0.1); }
+        
+        .drag-handle-icon {
+            color: var(--text-muted); margin-right: 5px; cursor: grab; display: none;
+        }
+        .edit-mode .drag-handle-icon { display: block; }
 
         /* MODALES */
         .modal-overlay {
@@ -221,10 +236,10 @@
 
     </style>
 </head>
-<body class="edit-mode">
+<body class="">
 
     <div class="title-container">
-        <h1 id="mainTitle">Centro de Mando IA</h1>
+        <h1 id="mainTitle">herramientas &amp; iagentes</h1>
 
         <div class="config-controls">
             <input type="text" id="titleInput" value="Centro de Mando IA" placeholder="Título...">
@@ -238,10 +253,10 @@
             <input type="text" id="searchInput" placeholder="Buscar..." autocomplete="off">
             <span class="clear-search" id="clearSearch" title="Limpiar">✕</span>
         </div>
-        <button class="btn" id="btnSave" title="Guardar cambios">
+        <button class="btn" id="btnSave" title="Guardar cambios en archivo">
             <svg viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"></path></svg>
         </button>
-        <button class="btn active" id="btnConfig" title="Configurar">
+        <button class="btn" id="btnConfig" title="Configurar y Organizar">
             <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.04.17 0 .36.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.04-.22 0-.41-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg>
         </button>
         <button class="btn" id="btnAdd" title="Añadir">
@@ -254,7 +269,7 @@
     <div class="modal-overlay" id="modalConfirm" style="display: none;">
         <div class="modal">
             <h3 id="confirmTitle">Eliminar Enlace</h3>
-            <p id="confirmMessage">¿Estás seguro de que quieres eliminar "DuckDuckGo AI"?</p>
+            <p id="confirmMessage">¿Estás seguro de que quieres eliminar este elemento?</p>
             <div class="modal-actions">
                 <button class="btn-text" onclick="closeConfirm()">Cancelar</button>
                 <button class="btn-text btn-danger" id="btnConfirmAction">Eliminar</button>
@@ -274,9 +289,9 @@
 
     <div class="modal-overlay" id="modalItem" style="display: none;">
         <div class="modal">
-            <h3 id="modalTitle">Editar Enlace</h3>
-            <input type="hidden" id="editIndex" value="2">
-            <input type="hidden" id="editCatIndex" value="1">
+            <h3 id="modalTitle">Añadir Enlace</h3>
+            <input type="hidden" id="editIndex" value="">
+            <input type="hidden" id="editCatIndex" value="">
 
             <div class="form-group">
                 <label>Nombre</label>
@@ -286,9 +301,16 @@
                 <label>URL</label>
                 <input type="text" id="itemUrl" placeholder="https://...">
             </div>
+            <!-- NUEVO CAMPO PARA ICONO PERSONALIZADO -->
+            <div class="form-group">
+                <label>URL del Icono (Opcional)</label>
+                <input type="text" id="itemIcon" placeholder="https://... o data:image/svg...">
+                <small style="color: #666; font-size: 10px;">Útil para sobrescribir el icono genérico</small>
+            </div>
+            
             <div class="form-group">
                 <label>Categoría</label>
-                <select id="itemCategory"><option value="0">IAGENTES</option><option value="1">HERRAMIENTAS</option><option value="2">REFORACEN</option><option value="3">Utilidades</option></select>
+                <select id="itemCategory"></select>
             </div>
             <div class="modal-actions">
                 <button class="btn-text" id="btnCancelItem">Cancelar</button>
@@ -300,7 +322,7 @@
     <div class="modal-overlay" id="modalCat" style="display: none;">
         <div class="modal">
             <h3>Nueva Categoría</h3>
-            <input type="hidden" id="editCatId" value="2">
+            <input type="hidden" id="editCatId" value="">
             <div class="form-group">
                 <label>Nombre de Categoría</label>
                 <input type="text" id="catName">
@@ -329,7 +351,7 @@
         // --- DATOS INICIALES ---
         /*DATA_START*/
         let appData = {
-    "title": "Centro de Mando IA",
+    "title": "HERRAMIENTAS & IAGENTES",
     "bookmarks": [
         {
             "id": "chat",
@@ -350,6 +372,24 @@
                 {
                     "name": "Actas y cargos",
                     "url": "https://notebooklm.google.com/notebook/d6f542a8-6014-4523-8475-adebb06caf3d?authuser=1"
+                },
+                {
+                    "name": "CHATGPT Twitter X CFIE",
+                    "url": "https://chatgpt.com/g/g-68041bd0c49c8191bc9aaa20e216ac62-x-com-cfie"
+                },
+                {
+                    "name": "GEMINI Twitter X CFIE",
+                    "url": "https://gemini.google.com/gem/1XxZJuRevxk_tmAYMle-dtGJz25A8x7lh?usp=sharing"
+                }
+            ]
+        },
+        {
+            "id": "cat1764503668247",
+            "title": "≡⌅ PUENTE DE MANDO ≡",
+            "items": [
+                {
+                    "name": "Estructura y Certificación",
+                    "url": "https://daviddoc.github.io/Daviddoc_DASHBOARD//TOOLS/ESTRUCTURA_Y_CERTIFICACI%C3%93N/estructura_y_certificaci%C3%B3n.html"
                 }
             ]
         },
@@ -403,9 +443,30 @@
 };
         /*DATA_END*/
 
+        // --- SISTEMA DE PERSISTENCIA (LOCALSTORAGE) ---
+        const STORAGE_KEY = 'ia_dashboard_v1';
+        
+        // Cargar desde LocalStorage si existe y es diferente
+        try {
+            const localData = localStorage.getItem(STORAGE_KEY);
+            if (localData) {
+                const parsedData = JSON.parse(localData);
+                // Simple comprobación para ver si debemos usar el local
+                if (JSON.stringify(parsedData) !== JSON.stringify(appData)) {
+                    console.log("Restaurando datos desde LocalStorage...");
+                    appData = parsedData;
+                }
+            }
+        } catch(e) { console.warn("Error leyendo LocalStorage", e); }
+
         let bookmarks = appData.bookmarks;
         let isConfigMode = false;
         let isDirty = false;
+
+        // Variables Drag & Drop
+        let draggedItem = null;
+        let draggedCat = null;
+        let dragSource = null; // { type: 'item'|'cat', fromCatIdx, fromIdx }
 
         const mainContainer = document.getElementById('mainContainer');
         const searchInput = document.getElementById('searchInput');
@@ -423,8 +484,13 @@
         window.onload = () => {
             titleLabel.innerText = appData.title || "Centro de Mando IA";
             titleInput.value = appData.title || "Centro de Mando IA";
+            // Intentar cargar favicon si está guardado en el HTML (base64)
             searchInput.focus();
             render();
+            if(localStorage.getItem(STORAGE_KEY)) {
+                // Pequeña notificación visual si se cargaron datos
+                // showAlert("Sesión Restaurada", "Se han recuperado tus cambios recientes.");
+            }
         };
 
         // --- NAVEGACIÓN TAB ---
@@ -450,17 +516,20 @@
             searchInput.focus();
         });
 
-        // --- RENDERIZADO ---
+        // --- RENDERIZADO (SIMPLIFICADO: ICONO GENÉRICO) ---
+        // Icono genérico: Círculo gris con chevron > negro
+        const GENERIC_ICON = "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23555555'/%3E%3Cpath d='M10 7l5 5-5 5' stroke='%23000000' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+
         function getFavicon(bm) {
+            // Si el usuario subió uno personalizado manualmente, úsalo. Si no, usa el genérico.
             if (bm.customIcon) return bm.customIcon;
-            return `https://s2.googleusercontent.com/s2/favicons?domain=${bm.url}&sz=64`;
+            return GENERIC_ICON;
         }
 
         const icons = {
             edit: '<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
             delete: '<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
-            up: '<svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>',
-            down: '<svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>'
+            drag: '<svg viewBox="0 0 24 24"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>'
         };
 
         function render(filter = "") {
@@ -473,23 +542,30 @@
 
                 const catSection = document.createElement('div');
                 catSection.className = 'category-section';
-
-                // Botones de orden
-                let moveButtons = '';
-                if (bookmarks.length > 1) {
-                    const upBtn = catIndex > 0
-                        ? `<button class="icon-btn move" title="Subir" onclick="moveCategory(${catIndex}, -1)">${icons.up}</button>` : '';
-                    const downBtn = catIndex < bookmarks.length - 1
-                        ? `<button class="icon-btn move" title="Bajar" onclick="moveCategory(${catIndex}, 1)">${icons.down}</button>` : '';
-                    moveButtons = upBtn + downBtn;
+                if(isConfigMode) {
+                    catSection.classList.add('draggable-cat');
+                    catSection.draggable = true;
+                    // Eventos Drag Categoría
+                    catSection.addEventListener('dragstart', (e) => handleDragStart(e, 'cat', catIndex));
+                    catSection.addEventListener('dragover', (e) => handleDragOver(e, 'cat'));
+                    catSection.addEventListener('drop', (e) => handleDrop(e, 'cat', catIndex));
+                    // Cleanup visual al salir
+                    catSection.addEventListener('dragleave', (e) => {
+                        e.currentTarget.classList.remove('drag-over-top', 'drag-over-bottom');
+                    });
                 }
 
                 const header = document.createElement('div');
                 header.className = 'category-header';
+                
+                const dragHandle = isConfigMode ? `<span class="drag-handle-icon" title="Arrastrar Categoría">${icons.drag}</span>` : '';
+                
                 header.innerHTML = `
-                    <span>${cat.title}</span>
+                    <div style="display:flex; align-items:center;">
+                        ${dragHandle}
+                        <span>${cat.title}</span>
+                    </div>
                     <div class="actions-group">
-                        ${moveButtons}
                         <button class="icon-btn" title="Editar Categoría" onclick="editCategory(${catIndex})">${icons.edit}</button>
                         <button class="icon-btn delete" title="Borrar Categoría" onclick="deleteCategory(${catIndex})">${icons.delete}</button>
                     </div>
@@ -512,25 +588,168 @@
                         card.target = "_self";
                     } else {
                         card.removeAttribute('href');
-                        card.style.cursor = "default";
+                        card.draggable = true;
+                        // Eventos Drag Item
+                        card.addEventListener('dragstart', (e) => handleDragStart(e, 'item', catIndex, realIndex));
+                        card.addEventListener('dragover', (e) => {
+                             // Si arrastramos una categoría, los items NO deben interceptar el evento
+                             if (dragSource && dragSource.type === 'cat') return;
+                             handleDragOver(e, 'item');
+                        });
+                        card.addEventListener('drop', (e) => {
+                             // Si arrastramos una categoría, los items NO deben interceptar el drop
+                             if (dragSource && dragSource.type === 'cat') return;
+                             handleDrop(e, 'item', catIndex, realIndex);
+                        });
+                        card.addEventListener('dragenter', (e) => {}); // Opcional style
+                        card.addEventListener('dragleave', (e) => {
+                            e.currentTarget.classList.remove('drag-over-top');
+                            e.currentTarget.classList.remove('drag-over-bottom');
+                        });
                     }
 
+                    // Ya no usamos onerror porque el SVG es local y siempre carga
                     card.innerHTML = `
-                        <img src="${getFavicon(bm)}" onerror="this.src='https://via.placeholder.com/20'">
+                        <img src="${getFavicon(bm)}">
                         <span>${bm.name}</span>
                         <div class="actions-group">
                             <button class="icon-btn" title="Editar" onclick="editItem(${catIndex}, ${realIndex}, event)">${icons.edit}</button>
                             <button class="icon-btn delete" title="Borrar" onclick="deleteItem(${catIndex}, ${realIndex}, event)">${icons.delete}</button>
                         </div>
                     `;
-
                     list.appendChild(card);
                 });
+
+                // Drop zone vacía para categorías sin items o para soltar al final
+                if(isConfigMode) {
+                    list.addEventListener('dragover', (e) => {
+                        // IMPORTANTE: Si es categoría, dejar pasar el evento al padre
+                        if(dragSource && dragSource.type === 'cat') return;
+                        
+                        e.preventDefault();
+                        if(dragSource && dragSource.type === 'item') {
+                            list.style.background = 'rgba(0,122,204,0.05)';
+                        }
+                    });
+                    list.addEventListener('dragleave', () => list.style.background = 'transparent');
+                    list.addEventListener('drop', (e) => {
+                        // IMPORTANTE: Si es categoría, dejar pasar el evento al padre
+                        if(dragSource && dragSource.type === 'cat') return;
+
+                        e.preventDefault();
+                        e.stopPropagation();
+                        list.style.background = 'transparent';
+                        // Si soltamos en el espacio vacío de la lista, movemos al final
+                        if(dragSource && dragSource.type === 'item') {
+                            moveItem(dragSource.fromCatIdx, dragSource.fromIdx, catIndex, cat.items.length);
+                        }
+                    });
+                }
 
                 catSection.appendChild(list);
                 mainContainer.appendChild(catSection);
             });
         }
+
+        // --- DRAG & DROP LOGIC ---
+        function handleDragStart(e, type, catIdx, itemIdx = null) {
+            e.stopPropagation();
+            dragSource = { type, fromCatIdx: catIdx, fromIdx: itemIdx };
+            e.dataTransfer.effectAllowed = 'move';
+            e.target.classList.add('dragging');
+            
+            // Hack para Firefox
+            e.dataTransfer.setData('text/plain', JSON.stringify(dragSource));
+        }
+
+        function handleDragOver(e, type) {
+            e.preventDefault();
+            e.stopPropagation();
+            if(!dragSource) return;
+
+            // Visual feedback logic
+            if(type === 'item' && dragSource.type === 'item') {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const mid = (rect.bottom - rect.top) / 2;
+                const clientY = e.clientY - rect.top;
+                
+                e.currentTarget.classList.remove('drag-over-top', 'drag-over-bottom');
+                if(clientY < mid) e.currentTarget.classList.add('drag-over-top');
+                else e.currentTarget.classList.add('drag-over-bottom');
+            }
+            
+            // Visual feedback categories (NUEVO)
+            if(type === 'cat' && dragSource.type === 'cat') {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const mid = (rect.bottom - rect.top) / 2;
+                const clientY = e.clientY - rect.top;
+                
+                e.currentTarget.classList.remove('drag-over-top', 'drag-over-bottom');
+                if(clientY < mid) e.currentTarget.classList.add('drag-over-top');
+                else e.currentTarget.classList.add('drag-over-bottom');
+            }
+        }
+
+        function handleDrop(e, type, toCatIdx, toItemIdx = null) {
+            e.preventDefault();
+            e.stopPropagation();
+            const targetEl = e.currentTarget;
+            targetEl.classList.remove('dragging', 'drag-over', 'drag-over-top', 'drag-over-bottom');
+            
+            if(!dragSource) return;
+
+            // 1. Reordenar Categorías
+            if(type === 'cat' && dragSource.type === 'cat') {
+                let finalCatIndex = toCatIdx;
+                const rect = targetEl.getBoundingClientRect();
+                const mid = (rect.bottom - rect.top) / 2;
+                if((e.clientY - rect.top) > mid) {
+                    finalCatIndex++; // Insertar después
+                }
+                
+                if(dragSource.fromCatIdx === finalCatIndex || dragSource.fromCatIdx === finalCatIndex - 1) return;
+
+                const movedCat = bookmarks.splice(dragSource.fromCatIdx, 1)[0];
+                if(dragSource.fromCatIdx < finalCatIndex) {
+                    finalCatIndex--; // Ajustar índice tras eliminación
+                }
+                
+                bookmarks.splice(finalCatIndex, 0, movedCat);
+                markAsDirty();
+                render(searchInput.value);
+            }
+
+            // 2. Reordenar/Mover Items
+            if(type === 'item' && dragSource.type === 'item') {
+                // Calcular si insertar antes o después
+                let finalIndex = toItemIdx;
+                const rect = targetEl.getBoundingClientRect();
+                const mid = (rect.bottom - rect.top) / 2;
+                if((e.clientY - rect.top) > mid) {
+                    finalIndex++; // Soltar debajo
+                }
+                
+                moveItem(dragSource.fromCatIdx, dragSource.fromIdx, toCatIdx, finalIndex);
+            }
+            
+            // Limpieza
+            document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+            dragSource = null;
+        }
+
+        function moveItem(fromCat, fromIdx, toCat, toIdx) {
+            // Ajuste de índices si es en la misma categoría
+            if(fromCat === toCat) {
+                if(fromIdx < toIdx) toIdx--; // Al quitar el item, los índices posteriores bajan
+                if(fromIdx === toIdx) return; // Mismo sitio
+            }
+
+            const item = bookmarks[fromCat].items.splice(fromIdx, 1)[0];
+            bookmarks[toCat].items.splice(toIdx, 0, item);
+            markAsDirty();
+            render(searchInput.value);
+        }
+
 
         // --- CONFIRMATION & ALERT LOGIC ---
         const modalConfirm = document.getElementById('modalConfirm');
@@ -593,24 +812,13 @@
             const reader = new FileReader();
             reader.onload = (evt) => {
                 const base64 = evt.target.result;
-                document.getElementById('dynamicFavicon').href = base64;
+                const link = document.getElementById('dynamicFavicon');
+                if(link) link.href = base64;
                 markAsDirty();
                 showAlert("Éxito", "Icono actualizado. Pulsa el botón de Guardar para hacerlo permanente.");
             };
             reader.readAsDataURL(file);
         });
-
-        // --- REORGANIZAR CATEGORÍAS ---
-        function moveCategory(index, direction) {
-            const newIndex = index + direction;
-            if (newIndex >= 0 && newIndex < bookmarks.length) {
-                const temp = bookmarks[index];
-                bookmarks[index] = bookmarks[newIndex];
-                bookmarks[newIndex] = temp;
-                markAsDirty();
-                render(searchInput.value);
-            }
-        }
 
         // --- CRUD LOGIC ---
         const modalType = document.getElementById('modalType');
@@ -646,10 +854,13 @@
                 const item = bookmarks[catIdx].items[itemIdx];
                 document.getElementById('itemName').value = item.name;
                 document.getElementById('itemUrl').value = item.url;
+                // CARGAR ICONO PERSONALIZADO SI EXISTE
+                document.getElementById('itemIcon').value = item.customIcon || '';
                 select.value = catIdx;
             } else {
                 document.getElementById('itemName').value = '';
                 document.getElementById('itemUrl').value = '';
+                document.getElementById('itemIcon').value = '';
                 select.disabled = false;
             }
             modalItem.style.display = 'flex';
@@ -677,21 +888,26 @@
         document.getElementById('btnSaveItem').onclick = () => {
             const name = document.getElementById('itemName').value;
             let url = document.getElementById('itemUrl').value;
+            const customIcon = document.getElementById('itemIcon').value; // CAPTURAR VALOR
+            
             const catIdx = parseInt(document.getElementById('itemCategory').value);
             const itemIdx = document.getElementById('editIndex').value;
             const oldCatIdx = document.getElementById('editCatIndex').value;
 
             if (name && url) {
                 if (!url.startsWith('http')) url = 'https://' + url;
+                
+                const newItem = { name, url, customIcon }; // GUARDAR OBJETO COMPLETO
+
                 if (itemIdx !== '') {
                     if (oldCatIdx != catIdx) {
                         bookmarks[oldCatIdx].items.splice(itemIdx, 1);
-                        bookmarks[catIdx].items.push({ name, url });
+                        bookmarks[catIdx].items.push(newItem);
                     } else {
-                        bookmarks[catIdx].items[itemIdx] = { name, url };
+                        bookmarks[catIdx].items[itemIdx] = newItem;
                     }
                 } else {
-                    bookmarks[catIdx].items.push({ name, url });
+                    bookmarks[catIdx].items.push(newItem);
                 }
                 markAsDirty();
                 closeAllModals();
@@ -750,12 +966,20 @@
                 document.title = "⚠️ Cambios sin guardar";
             }
             appData.bookmarks = bookmarks;
+            appData.title = titleInput.value; // Asegurar título actualizado
+            
+            // GUARDADO AUTOMÁTICO EN LOCALSTORAGE
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
         }
 
         btnSave.addEventListener('click', () => {
-            if (!isDirty) {
-                showAlert("Información", "No hay cambios para guardar.");
-                return;
+            // 0. Si está en modo edición, salir primero para guardar la vista limpia
+            if (isConfigMode) {
+                appData.title = titleInput.value;
+                titleLabel.innerText = titleInput.value;
+                isConfigMode = false;
+                btnConfig.classList.remove('active');
+                document.body.classList.remove('edit-mode');
             }
 
             // 1. Limpieza de estado visual
@@ -764,7 +988,7 @@
             document.title = appData.title;
 
             // 2. Actualizar datos en memoria
-            appData.title = document.getElementById('mainTitle').innerText;
+            appData.title = titleInput.value;
             appData.bookmarks = bookmarks;
 
             // 3. LIMPIEZA CRÍTICA DEL DOM PARA REDUCIR PESO
@@ -783,7 +1007,20 @@
 
             const newHtml = htmlContent.replace(regex, newScriptContent);
 
-            // 7. Generar descarga
+            // 7. COPIAR AL PORTAPAPELES
+            try {
+                const dummy = document.createElement("textarea");
+                document.body.appendChild(dummy);
+                dummy.value = newHtml;
+                dummy.select();
+                document.execCommand("copy");
+                document.body.removeChild(dummy);
+                console.log("Código copiado al portapapeles");
+            } catch (err) {
+                console.error("Error al copiar al portapapeles", err);
+            }
+
+            // 8. Generar descarga
             const blob = new Blob([newHtml], { type: 'text/html' });
             const url = URL.createObjectURL(blob);
 
@@ -795,9 +1032,8 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            if(isConfigMode) btnConfig.click();
+            // 9. Notificación final
+            showAlert("Guardado y Copiado", "El código se ha copiado al portapapeles y el archivo se ha descargado.");
         });
     </script>
-
-
 </body></html>
