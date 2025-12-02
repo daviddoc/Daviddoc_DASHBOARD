@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown a Word</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%2392278f%22 d=%22M0 0 H14 V22 L25 40 L36 22 V0 H50 V42 H36 L25 24 L14 42 H0 V0 Z%22/><path fill=%22%2392278f%22 fill-rule=%22evenodd%22 d=%22M60 0 H78 C92 0 98 8 98 21 C98 34 92 42 78 42 H60 V0 Z M74 13 V29 H78 C83 29 84 25 84 21 C84 17 83 13 78 13 H74 Z%22/><path fill=%22%2392278f%22 d=%22M0 68 H30 V58 L52 76 L30 94 V84 H0 V68 Z%22/><path fill=%22%2392278f%22 d=%22M56 54 L64 96 H76 L82 74 L88 96 H100 L108 54 H94 L90 76 L84 54 H70 L64 76 L60 54 H56 Z%22/></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Calibri, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f9fafb;
+        }
+
+        header {
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem 1.5rem;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        header p {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        .header-buttons {
+            margin-top: 0.75rem;
+        }
+
+        /* Pestañas móviles */
+        .mobile-tabs {
+            display: none;
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .mobile-tabs-list {
+            display: flex;
+            list-style: none;
+        }
+
+        .mobile-tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+
+        .mobile-tab.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        .mobile-tab svg {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            height: calc(100vh - 140px);
+        }
+
+        .panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            height: 100%;
+        }
+
+        .panel-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .left-panel {
+            border-right: 1px solid #e5e7eb;
+        }
+
+        #markdown-input {
+            flex: 1;
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            border: none;
+            resize: none;
+            outline: none;
+            overflow: auto;
+        }
+
+        #preview {
+            flex: 1;
+            padding: 1.5rem;
+            overflow: auto;
+            font-family: Calibri, Arial, sans-serif;
+            line-height: 1.5;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: #6b7280;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .btn-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        /* Estilos para el preview que se copiarán a Word */
+        #preview h1 {
+            font-size: 28pt;
+            font-family: Calibri, Arial, sans-serif;
+            font-weight: bold;
+            color: #000000;
+            margin-top: 0;
+            margin-bottom: 8pt;
+            text-align: center;
+        }
+
+        #preview h2 {
+            font-size: 18pt;
+            font-family: Calibri, Arial, sans-serif;
+            font-weight: bold;
+            color: #1F4E78;
+            margin-top: 12pt;
+            margin-bottom: 6pt;
+            border-bottom: 2px solid #1F4E78;
+            border-left: 4px solid #1F4E78;
+            padding-bottom: 4pt;
+            padding-left: 8pt;
+        }
+
+        #preview h3 {
+            font-size: 15pt;
+            font-family: Calibri, Arial, sans-serif;
+            font-weight: bold;
+            color: #1F4E78;
+            margin-top: 10pt;
+            margin-bottom: 6pt;
+            border-bottom: 2px dotted #1F4E78;
+            padding-bottom: 4pt;
+        }
+
+        #preview h4 {
+            font-size: 13.5pt;
+            font-family: Calibri, Arial, sans-serif;
+            font-weight: bold;
+            color: #2E5C8A;
+            margin-top: 8pt;
+            margin-bottom: 4pt;
+        }
+
+        #preview h5 {
+            font-size: 11pt;
+            font-family: Calibri, Arial, sans-serif;
+            font-weight: bold;
+            font-style: italic;
+            color: #595959;
+            margin-top: 6pt;
+            margin-bottom: 4pt;
+        }
+
+        #preview h6 {
+            font-size: 10pt;
+            font-family: Calibri, Arial, sans-serif;
+            font-weight: bold;
+            font-style: italic;
+            color: #595959;
+            margin-top: 6pt;
+            margin-bottom: 4pt;
+        }
+
+        #preview p {
+            font-size: 10.5pt;
+            font-family: Calibri, Arial, sans-serif;
+            color: #000000;
+            margin-top: 0;
+            margin-bottom: 8pt;
+        }
+
+        #preview .list-item {
+            font-size: 10.5pt;
+            font-family: Calibri, Arial, sans-serif;
+            margin-left: 24pt;
+            margin-bottom: 0;
+        }
+
+        #preview .list-item-content {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            display: inline;
+        }
+
+        #preview .list-item-nested {
+            margin-left: 48pt;
+        }
+
+        #preview strong {
+            font-weight: bold;
+        }
+
+        #preview em {
+            font-style: italic;
+        }
+
+        #preview code {
+            font-family: 'Courier New', monospace;
+            background-color: #f3f4f6;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        #preview a {
+            color: #2563eb;
+            text-decoration: underline;
+        }
+
+        #preview blockquote {
+            border-left: 4px solid #e5e7eb;
+            background-color: #f9fafb;
+            padding: 8pt 12pt;
+            margin: 8pt 0;
+            font-style: italic;
+            color: #6b7280;
+        }
+
+        #preview table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8pt 0;
+            font-size: 10.5pt;
+            font-family: Calibri, Arial, sans-serif;
+        }
+
+        #preview table th,
+        #preview table td {
+            border: 1px solid #e5e7eb;
+            padding: 6pt 8pt;
+            text-align: left;
+        }
+
+        #preview table th {
+            background-color: #f3f4f6;
+            font-weight: bold;
+        }
+
+        .spacer {
+            height: 8pt;
+        }
+
+        /* Estilos para el comparador */
+        .comparator-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .comparator-overlay.active {
+            display: flex;
+        }
+
+        .comparator-modal {
+            background: white;
+            border-radius: 0.5rem;
+            width: 100%;
+            max-width: 1200px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparator-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comparator-header h2 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0.25rem;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: #1f2937;
+        }
+
+        .comparator-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .comparator-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            overflow: hidden;
+        }
+
+        .comparator-panel:first-child {
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .comparator-panel label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .comparator-textarea {
+            flex: 1;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            resize: none;
+            outline: none;
+        }
+
+        .comparator-textarea:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .comparator-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .results-section {
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #f9fafb;
+        }
+
+        .results-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+
+        .diff-category {
+            margin-bottom: 1.5rem;
+        }
+
+        .diff-category h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .diff-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .diff-item {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.375rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+
+        .diff-item-added {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-left: 3px solid #10b981;
+        }
+
+        .diff-item-removed {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-left: 3px solid #ef4444;
+        }
+
+        .diff-item-modified {
+            background-color: #fef3c7;
+            color: #92400e;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .diff-badge {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .badge-added {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-removed {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-modified {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .no-differences {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        /* Media queries para móvil */
+        @media (max-width: 768px) {
+            header p {
+                display: none;
+            }
+
+            .mobile-tabs {
+                display: block;
+            }
+
+            .container {
+                flex-direction: column;
+            }
+
+            .panel {
+                width: 100%;
+                display: none;
+                height: 100%;
+            }
+
+            .panel.active {
+                display: flex;
+            }
+
+            .left-panel {
+                border-right: none;
+            }
+
+            .panel-header {
+                padding: 0.5rem 1rem;
+            }
+
+            .stats {
+                font-size: 0.65rem;
+                gap: 0.5rem;
+            }
+
+            .btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            #markdown-input,
+            #preview {
+                padding: 1rem;
+                font-size: 0.9rem;
+            }
+
+            .comparator-overlay {
+                padding: 0;
+            }
+
+            .comparator-modal {
+                max-width: 100%;
+                max-height: 100%;
+                height: 100%;
+                border-radius: 0;
+            }
+
+            .comparator-header {
+                padding: 1rem;
+            }
+
+            .comparator-header h2 {
+                font-size: 1rem;
+            }
+
+            .comparator-content {
+                flex-direction: column;
+                min-height: 0;
+            }
+
+            .comparator-panel {
+                min-height: 150px;
+                padding: 0.75rem;
+            }
+
+            .comparator-panel:first-child {
+                border-right: none;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .comparator-textarea {
+                font-size: 0.8rem;
+                padding: 0.75rem;
+            }
+
+            .results-section {
+                max-height: 150px;
+                padding: 1rem;
+            }
+
+            .comparator-footer {
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                padding: 0.75rem 1rem;
+            }
+
+            header h1 {
+                font-size: 1.25rem;
+            }
+
+            .mobile-tab {
+                padding: 0.75rem 0.5rem;
+                font-size: 0.8rem;
+            }
+
+            .mobile-tab span {
+                display: none;
+            }
+
+            .mobile-tab svg {
+                margin-right: 0;
+            }
+
+            .stats span {
+                display: none;
+            }
+
+            .stats::after {
+                content: attr(data-words) ' palabras';
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Markdown a Word</h1>
+        <p>Convierte tu texto Markdown a formato Word</p>
+        <div class="header-buttons">
+            <button class="btn btn-secondary" onclick="toggleComparator()">
+                <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Comparar Encabezados
+            </button>
+        </div>
+    </header>
+
+    <!-- Pestañas para móvil -->
+    <div class="mobile-tabs">
+        <ul class="mobile-tabs-list">
+            <li>
+                <button class="mobile-tab active" onclick="switchTab('editor')" id="tab-editor">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    <span>Editor</span>
+                </button>
+            </li>
+            <li>
+                <button class="mobile-tab" onclick="switchTab('preview')" id="tab-preview">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span>Vista previa</span>
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <!-- Panel izquierdo -->
+        <div class="panel left-panel active" id="panel-editor">
+            <div class="panel-header">
+                <h2>Markdown</h2>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div class="stats" id="stats-display" data-words="0">
+                        <span id="word-count">0 palabras</span>
+                        <span id="char-count">0 caracteres</span>
+                    </div>
+                    <button class="btn btn-secondary" onclick="clearMarkdown()">Limpiar</button>
+                </div>
+            </div>
+            <textarea id="markdown-input" spellcheck="false"># Título Principal
+Este es un párrafo de ejemplo.
+
+## Título 1
+Contenido bajo el título 1.
+
+### Título 2
+Contenido bajo el título 2.
+
+**Texto en negrita** y *texto en cursiva*.
+
+[Enlace a ejemplo](https://ejemplo.com)
+
+> Esta es una cita o blockquote
+
+- Lista item 1
+- Lista item 2
+  - Subitem 2.1
+  - Subitem 2.2
+- Lista item 3
+
+| Columna 1 | Columna 2 | Columna 3 |
+|-----------|-----------|-----------|
+| Dato 1    | Dato 2    | Dato 3    |
+| Dato 4    | Dato 5    | Dato 6    |</textarea>
+        </div>
+
+        <!-- Panel derecho -->
+        <div class="panel" id="panel-preview">
+            <div class="panel-header">
+                <h2>Vista previa</h2>
+                <button class="btn btn-primary" onclick="copyToClipboard()">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span id="copy-text">Copiar</span>
+                </button>
+            </div>
+            <div id="preview"></div>
+        </div>
+    </div>
+
+    <!-- Modal Comparador -->
+    <div class="comparator-overlay" id="comparator-overlay">
+        <div class="comparator-modal">
+            <div class="comparator-header">
+                <h2>Comparador de Encabezados Markdown</h2>
+                <button class="close-btn" onclick="toggleComparator()">&times;</button>
+            </div>
+            
+            <div class="comparator-content">
+                <div class="comparator-panel">
+                    <label>Nuevo</label>
+                    <textarea class="comparator-textarea" id="compare-text-1" placeholder="Pega aquí el texto markdown nuevo..."></textarea>
+                </div>
+                <div class="comparator-panel">
+                    <label>Original</label>
+                    <textarea class="comparator-textarea" id="compare-text-2" placeholder="Pega aquí el texto markdown original..."></textarea>
+                </div>
+            </div>
+
+            <div class="results-section" id="comparison-results" style="display: none;">
+                <h3>Resultados de la Comparación</h3>
+                <div id="results-content"></div>
+            </div>
+
+            <div class="comparator-footer">
+                <button class="btn btn-secondary" onclick="clearComparison()">Limpiar</button>
+                <button class="btn btn-primary" onclick="compareHeadings()">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    Comparar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let syncing = false;
+        const markdownInput = document.getElementById('markdown-input');
+        const preview = document.getElementById('preview');
+        const wordCount = document.getElementById('word-count');
+        const charCount = document.getElementById('char-count');
+        const statsDisplay = document.getElementById('stats-display');
+
+        function switchTab(tab) {
+            document.getElementById('tab-editor').classList.remove('active');
+            document.getElementById('tab-preview').classList.remove('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('panel-editor').classList.remove('active');
+            document.getElementById('panel-preview').classList.remove('active');
+            document.getElementById('panel-' + tab).classList.add('active');
+        }
+
+        function formatInlineText(text) {
+            text = text.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2">$1</a>');
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
+            text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            text = text.replace(/_(.+?)_/g, '<em>$1</em>');
+            text = text.replace(/`(.+?)`/g, '<code>$1</code>');
+            return text;
+        }
+
+        function parseMarkdown(text) {
+            const lines = text.split('\n');
+            let html = '';
+            let inTable = false;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const nextLine = i < lines.length - 1 ? lines[i + 1] : '';
+                const formatted = formatInlineText(line);
+                
+                if (line.startsWith('# ')) {
+                    html += `<h1>${formatInlineText(line.substring(2))}</h1>`;
+                } else if (line.startsWith('## ')) {
+                    html += `<h2>${formatInlineText(line.substring(3))}</h2>`;
+                } else if (line.startsWith('### ')) {
+                    html += `<h3>${formatInlineText(line.substring(4))}</h3>`;
+                } else if (line.startsWith('#### ')) {
+                    html += `<h4>${formatInlineText(line.substring(5))}</h4>`;
+                } else if (line.startsWith('##### ')) {
+                    html += `<h5>${formatInlineText(line.substring(6))}</h5>`;
+                } else if (line.startsWith('###### ')) {
+                    html += `<h6>${formatInlineText(line.substring(7))}</h6>`;
+                } else if (line.startsWith('> ')) {
+                    let blockquoteText = line.substring(2);
+                    while (i < lines.length - 1 && lines[i + 1].startsWith('> ')) {
+                        i++;
+                        blockquoteText += ' ' + lines[i].substring(2);
+                    }
+                    html += `<blockquote>${formatInlineText(blockquoteText)}</blockquote>`;
+                } else if (line.includes('|') && nextLine.match(/^\|?\s*[-:]+\s*\|/)) {
+                    inTable = true;
+                    const headers = line.split('|').map(h => h.trim()).filter(h => h);
+                    html += '<table><thead><tr>';
+                    headers.forEach(header => {
+                        html += `<th>${formatInlineText(header)}</th>`;
+                    });
+                    html += '</tr></thead><tbody>';
+                    i++;
+                } else if (inTable && line.includes('|')) {
+                    const cells = line.split('|').map(c => c.trim()).filter(c => c);
+                    html += '<tr>';
+                    cells.forEach(cell => {
+                        html += `<td>${formatInlineText(cell)}</td>`;
+                    });
+                    html += '</tr>';
+                } else if (inTable && !line.includes('|')) {
+                    html += '</tbody></table>';
+                    inTable = false;
+                    if (line.trim() !== '') {
+                        i--;
+                    }
+                } else if (line.match(/^(\s*)[\*\-\+]\s/)) {
+                    const indent = line.match(/^(\s*)/)[1].length;
+                    const content = line.replace(/^\s*[\*\-\+]\s/, '');
+                    const nestedClass = indent >= 2 ? ' list-item-nested' : '';
+                    html += `<div class="list-item${nestedClass}">• <span class="list-item-content">${formatInlineText(content)}</span></div>`;
+                } else if (line.match(/^(\s*)\d+\.\s/)) {
+                    const indent = line.match(/^(\s*)/)[1].length;
+                    const content = line.replace(/^\s*\d+\.\s/, '');
+                    const nestedClass = indent >= 2 ? ' list-item-nested' : '';
+                    html += `<div class="list-item${nestedClass}"><span class="list-item-content">${formatInlineText(content)}</span></div>`;
+                } else if (line.match(/^---+$/)) {
+                    html += '<hr style="border: none; height: 1px; background-color: #e5e7eb; margin: 12pt 0;">';
+                } else if (line.trim() !== '') {
+                    html += `<p>${formatted}</p>`;
+                } else {
+                    html += '<div class="spacer"></div>';
+                }
+            }
+            
+            if (inTable) {
+                html += '</tbody></table>';
+            }
+            
+            return html;
+        }
+
+        function updateStats(text) {
+            const cleanText = text
+                .replace(/[#*_`\[\]()>|]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            const words = cleanText ? cleanText.split(' ').length : 0;
+            const chars = text.replace(/\s/g, '').length;
+            
+            wordCount.textContent = `${words} palabra${words !== 1 ? 's' : ''}`;
+            charCount.textContent = `${chars} caracter${chars !== 1 ? 'es' : ''}`;
+            statsDisplay.setAttribute('data-words', words);
+        }
+
+        function updatePreview() {
+            const markdown = markdownInput.value;
+            preview.innerHTML = parseMarkdown(markdown);
+            updateStats(markdown);
+        }
+
+        function clearMarkdown() {
+            markdownInput.value = '';
+            updatePreview();
+        }
+
+        function copyToClipboard() {
+            try {
+                const range = document.createRange();
+                range.selectNodeContents(preview);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                
+                const success = document.execCommand('copy');
+                
+                selection.removeAllRanges();
+                
+                if (success) {
+                    const copyText = document.getElementById('copy-text');
+                    copyText.textContent = 'Copiado';
+                    setTimeout(() => {
+                        copyText.textContent = 'Copiar';
+                    }, 2000);
+                } else {
+                    throw new Error('execCommand falló');
+                }
+            } catch (err) {
+                console.error('Error al copiar:', err);
+                alert('No se pudo copiar. Por favor, intenta seleccionar y copiar manualmente con Ctrl+C.');
+            }
+        }
+
+        function syncScroll(source, target) {
+            if (syncing) return;
+            syncing = true;
+            
+            const scrollPercentage = source.scrollTop / (source.scrollHeight - source.clientHeight);
+            target.scrollTop = scrollPercentage * (target.scrollHeight - target.clientHeight);
+            
+            setTimeout(() => {
+                syncing = false;
+            }, 50);
+        }
+
+        markdownInput.addEventListener('input', updatePreview);
+        markdownInput.addEventListener('scroll', () => syncScroll(markdownInput, preview));
+        preview.addEventListener('scroll', () => syncScroll(preview, markdownInput));
+
+        updatePreview();
+
+        // ============================================
+        // MÓDULO COMPARADOR DE ENCABEZADOS
+        // ============================================
+
+        function toggleComparator() {
+            const overlay = document.getElementById('comparator-overlay');
+            overlay.classList.toggle('active');
+            
+            if (!overlay.classList.contains('active')) {
+                document.getElementById('comparison-results').style.display = 'none';
+            }
+        }
+
+        function extractHeadings(markdown) {
+            const lines = markdown.split('\n');
+            const headings = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                if (line.startsWith('#')) {
+                    const match = line.match(/^(#{1,6})\s+(.+)/);
+                    if (match) {
+                        const level = match[1].length;
+                        const text = match[2].trim();
+                        headings.push({
+                            level: level,
+                            text: text,
+                            line: i + 1,
+                            full: line
+                        });
+                    }
+                }
+            }
+            
+            return headings;
+        }
+
+        function normalizeHeading(text) {
+            return text
+                .replace(/\*\*(.+?)\*\*/g, '$1')
+                .replace(/\*(.+?)\*/g, '$1')
+                .replace(/__(.+?)__/g, '$1')
+                .replace(/_(.+?)_/g, '$1')
+                .replace(/`(.+?)`/g, '$1')
+                .replace(/\[(.+?)\]\(.+?\)/g, '$1')
+                .trim()
+                .toLowerCase();
+        }
+
+        function compareHeadings() {
+            const text1 = document.getElementById('compare-text-1').value;
+            const text2 = document.getElementById('compare-text-2').value;
+            
+            if (!text1.trim() || !text2.trim()) {
+                alert('Por favor, ingresa texto en ambos campos para comparar.');
+                return;
+            }
+
+            const headings1 = extractHeadings(text1);
+            const headings2 = extractHeadings(text2);
+
+            const map1 = new Map();
+            const map2 = new Map();
+
+            headings1.forEach(h => {
+                const key = normalizeHeading(h.text);
+                map1.set(key, h);
+            });
+
+            headings2.forEach(h => {
+                const key = normalizeHeading(h.text);
+                map2.set(key, h);
+            });
+
+            const added = [];
+            const removed = [];
+            const modified = [];
+
+            headings1.forEach(h1 => {
+                const key = normalizeHeading(h1.text);
+                const h2 = map2.get(key);
+                
+                if (!h2) {
+                    added.push(h1);
+                } else if (h1.level !== h2.level) {
+                    modified.push({
+                        nuevo: h1,
+                        original: h2
+                    });
+                }
+            });
+
+            headings2.forEach(h2 => {
+                const key = normalizeHeading(h2.text);
+                if (!map1.has(key)) {
+                    removed.push(h2);
+                }
+            });
+
+            displayComparisonResults(added, removed, modified);
+        }
+
+        function displayComparisonResults(added, removed, modified) {
+            const resultsSection = document.getElementById('comparison-results');
+            const resultsContent = document.getElementById('results-content');
+            
+            if (added.length === 0 && removed.length === 0 && modified.length === 0) {
+                resultsContent.innerHTML = '<div class="no-differences">✓ No se encontraron diferencias en los encabezados</div>';
+                resultsSection.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+
+            if (added.length > 0) {
+                html += '<div class="diff-category">';
+                html += '<h4>➕ Encabezados Agregados (en Nuevo) <span class="diff-badge badge-added">' + added.length + '</span></h4>';
+                html += '<ul class="diff-list">';
+                added.forEach(h => {
+                    html += `<li class="diff-item diff-item-added">${'#'.repeat(h.level)} ${h.text}</li>`;
+                });
+                html += '</ul></div>';
+            }
+
+            if (removed.length > 0) {
+                html += '<div class="diff-category">';
+                html += '<h4>➖ Encabezados Eliminados (solo en Original) <span class="diff-badge badge-removed">' + removed.length + '</span></h4>';
+                html += '<ul class="diff-list">';
+                removed.forEach(h => {
+                    html += `<li class="diff-item diff-item-removed">${'#'.repeat(h.level)} ${h.text}</li>`;
+                });
+                html += '</ul></div>';
+            }
+
+            if (modified.length > 0) {
+                html += '<div class="diff-category">';
+                html += '<h4>🔄 Encabezados con Cambio de Nivel <span class="diff-badge badge-modified">' + modified.length + '</span></h4>';
+                html += '<ul class="diff-list">';
+                modified.forEach(m => {
+                    html += `<li class="diff-item diff-item-modified">`;
+                    html += `<div><strong>Nuevo:</strong> ${'#'.repeat(m.nuevo.level)} ${m.nuevo.text}</div>`;
+                    html += `<div><strong>Original:</strong> ${'#'.repeat(m.original.level)} ${m.original.text}</div>`;
+                    html += `</li>`;
+                });
+                html += '</ul></div>';
+            }
+
+            resultsContent.innerHTML = html;
+            resultsSection.style.display = 'block';
+        }
+
+        function clearComparison() {
+            document.getElementById('compare-text-1').value = '';
+            document.getElementById('compare-text-2').value = '';
+            document.getElementById('comparison-results').style.display = 'none';
+        }
+
+        document.getElementById('comparator-overlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                toggleComparator();
+            }
+        });
+    </script>
+</body>
+</html>
