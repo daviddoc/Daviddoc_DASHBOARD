@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>TWITTER - X.COM POSTS</title>
-
-    <!-- Favicon X.com (SVG codificado en base64 para evitar archivos externos) -->
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231d9bf0'/%3E%3Cstop offset='100%25' stop-color='%231a8cd8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23b)'/%3E%3Cpath d='M28 28 L72 72 M72 28 L28 72' stroke='white' stroke-width='12' stroke-linecap='round'/%3E%3C/svg%3E">
+    
+    <!-- Favicon X.com (SVG actualizado con el dibujo proporcionado) -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='blueGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%231d9bf0;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%231a8cd8;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23blueGrad)'/%3E%3Cg transform='matrix(1.0339916,0,0,1.0339916,-2.7408538,-0.89600099)'%3E%3Cpath d='M75.811254 10.613182h13.107339L60.139438 43.381523l30.586846 42.87658-23.349316 1.574391-20.658303-27.012512-23.650199 27.012512H9.9611315L40.449937 52.784614 8.2514771 10.613182H35.292483l18.663713 24.675986zM71.223683 80.139056h7.266028L31.47426 18.021675h-7.807414z' style='stroke-width:.284942;fill:white'/%3E%3Crect width='53.462811' x='42.690426' y='45.678478' rx='21.384966' height='48.116653' style='fill:white;stroke:white;stroke-width:1.93425169'/%3E%3Cpath style='fill:white;stroke-width:1.93425169;stroke:white' d='M57.392687 59.043971a4.0097105 4.0097105 0 0 0-4.009712 4.00976 4.0097105 4.0097105 0 0 0 .234942 1.336556 4.0097105,4.0097105 0 0 1 3.77477-2.67321 4.0097105,4.0097105 0 0 1 3.774759 2.67321 4.0097105,4.0097105 0 0 0 .234942-1.336556 4.0097105,4.0097105 0 0 0 -4.009701-4.00976z'/%3E%3Cpath style='fill:white;stroke-width:1.93425169;stroke:white' d='M81.450952 59.044074a4.0097105 4.0097105 0 0 0-4.009713 4.009657 4.0097105,4.0097105 0 0 0 .234941 1.336556 4.0097105,4.0097105 0 0 1 3.774772-2.673107 4.0097105,4.0097105 0 0 1 3.774759 2.673107 4.0097105,4.0097105 0 0 0 .234941-1.336556 4.0097105,4.0097105 0 0 0 -4.0097-4.009657z'/%3E%3Cpath style='fill:white;stroke:white;stroke-width:1.93425169' d='M56.05612 75.082852c0 5.92369 4.76887 10.692559 10.69256 10.692559h5.34628c5.92369 0 10.692571-4.768869 10.692571-10.692559z'/%3E%3C/g%3E%3C/svg%3E">
 
     <!-- Intento de carga del dataset local (Opción B) -->
     <script src="emoji-dataset.js" onerror="console.log('Modo Servidor o Dataset no encontrado')"></script>
@@ -22,7 +22,7 @@
             --danger: #f4212e;
             --warn: #ffd400;
             --link-color: #8b5cf6;
-
+            
             --header-h: 60px;
             --mobile-bar-h: 60px;
         }
@@ -45,7 +45,7 @@
         header {
             height: var(--header-h); padding: 0 15px;
             /* Layout de 3 columnas para centrar el grupo del medio */
-            display: grid;
+            display: grid; 
             grid-template-columns: 1fr auto 1fr;
             align-items: center;
             border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
@@ -53,29 +53,29 @@
 
         /* Sección Izquierda: Logo */
         .header-left { display: flex; align-items: center; gap: 10px; }
-
+        
         .x-logo-svg {
             width: 32px; height: 32px;
             border-radius: 6px; /* Bordes redondeados */
             display: block;
         }
-
+        
         .app-title { font-weight: 800; font-size: 18px; color: var(--text); letter-spacing: 0.5px; white-space: nowrap; }
 
         /* Sección Central: Botones Acción */
         .header-center { display: flex; gap: 8px; justify-content: center; }
 
-        .btn-action {
+        .btn-action { 
             display: flex; align-items: center; gap: 6px;
-            padding: 6px 12px; border-radius: 20px;
-            font-weight: 700; font-size: 13px;
-            transition: 0.2s;
+            padding: 6px 12px; border-radius: 20px; 
+            font-weight: 700; font-size: 13px; 
+            transition: 0.2s; 
             height: 32px;
         }
-
+        
         .btn-copy { background: var(--text); color: black; }
         .btn-copy:hover { background: #fff; }
-
+        
         .btn-txt { background: transparent; border: 1px solid var(--border); color: var(--text); }
         .btn-txt:hover { background: rgba(255,255,255,0.1); }
 
@@ -84,8 +84,8 @@
         /* Sección Derecha: Limpiar */
         .header-right { display: flex; justify-content: flex-end; }
 
-        .btn-clear {
-            background: none; color: var(--text-dim);
+        .btn-clear { 
+            background: none; color: var(--text-dim); 
             width: 36px; height: 36px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             transition: 0.2s;
@@ -95,7 +95,7 @@
 
         /* --- EDITOR LAYOUT (BACKDROP + TEXTAREA) --- */
         .main-layout {
-            flex: 1; display: grid; grid-template-columns: 1fr;
+            flex: 1; display: grid; grid-template-columns: 1fr; 
             overflow: hidden; position: relative;
         }
 
@@ -129,7 +129,7 @@
             position: absolute; top: 0; left: 0;
             z-index: 2;
             background: transparent;
-            color: transparent;
+            color: transparent; 
             caret-color: var(--text);
             overflow-y: auto;
         }
@@ -137,11 +137,11 @@
         /* Resaltado de Sintaxis */
         .hl-tag { color: var(--accent); }
         .hl-url { color: var(--link-color); }
-
+        
         /* Texto Excedido (Rojo) */
-        .hl-overflow {
-            background: rgba(244, 33, 46, 0.25);
-            color: #ff8080;
+        .hl-overflow { 
+            background: rgba(244, 33, 46, 0.25); 
+            color: #ff8080; 
             border-bottom: 2px solid var(--danger);
         }
 
@@ -164,10 +164,10 @@
             display: flex; flex-direction: column; overflow-y: auto;
         }
         .tool-section { padding: 20px; border-bottom: 1px solid var(--border); }
-
+        
         /* Ajuste título para incluir botón cerrar */
-        .tool-title {
-            font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+        .tool-title { 
+            font-size: 12px; text-transform: uppercase; letter-spacing: 1px; 
             color: var(--text-dim); margin-bottom: 15px; font-weight: 800;
             display: flex; justify-content: space-between; align-items: center;
         }
@@ -202,8 +202,8 @@
 
         /* Enlaces UI Actualizada */
         .action-row { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: nowrap; }
-        .btn-tool {
-            flex: 1; padding: 10px 5px; border-radius: 8px; font-size: 12px; font-weight: 700;
+        .btn-tool { 
+            flex: 1; padding: 10px 5px; border-radius: 8px; font-size: 12px; font-weight: 700; 
             background: var(--accent); color: white; /* Color unificado */
             display: flex; align-items: center; justify-content: center; gap: 6px;
             min-width: 0; /* Permite shrink */
@@ -220,7 +220,7 @@
             flex-shrink: 0;
         }
         .user-search-btn svg { width: 20px; height: 20px; stroke-width: 2.5; }
-
+        
         /* --- ESTILOS EMOJI SEARCH & CATEGORIES --- */
         .emoji-sticky-header {
             position: sticky;
@@ -269,11 +269,11 @@
             gap: 2px;
             padding-bottom: 5px;
             /* Scrollbar oculta pero funcional */
-            scrollbar-width: none;
+            scrollbar-width: none; 
             -ms-overflow-style: none;
         }
         .category-bar::-webkit-scrollbar { display: none; }
-
+        
         .cat-btn {
             background: transparent;
             color: var(--text-dim);
@@ -289,7 +289,7 @@
         }
         .cat-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
         .cat-btn.active { background: rgba(29, 155, 240, 0.1); color: var(--accent); }
-
+        
         .cat-btn svg {
             width: 22px;
             height: 22px;
@@ -323,10 +323,10 @@
             /* En móvil ocultamos secciones y mostramos solo la activa */
             .tool-section { display: none; border: none; height: 100%; overflow-y: auto;}
             .tool-section.active { display: block; }
-
+            
             /* Mostrar botón cerrar en línea con título */
             .mobile-close-btn { display: block; }
-
+            
             .mobile-tab-bar {
                 height: var(--mobile-bar-h);
                 background: var(--surface); border-top: 1px solid var(--border);
@@ -335,7 +335,7 @@
             }
             .tab-btn { font-size: 20px; padding: 10px; color: var(--text-dim); background: none; border: none; }
             .tab-btn.active { color: var(--accent); }
-
+            
             .toast { bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); width: max-content; }
             .toast.show { transform: translateX(-50%) translateY(0); }
         }
@@ -374,9 +374,13 @@
                         <stop offset="100%" style="stop-color:#1a8cd8;stop-opacity:1" />
                     </linearGradient>
                 </defs>
-                <rect width="100" height="100" rx="20" ry="20" fill="url(#blueGrad)" />
+                <rect width="100" height="100" rx="20" fill="url(#blueGrad)" />
                 <g transform="matrix(1.0339916,0,0,1.0339916,-2.7408538,-0.89600099)">
-                    <path d="M 75.811254,10.613182 H 88.918593 L 60.139438,43.381523 90.726284,86.258103 67.376968,87.832494 46.718665,60.819982 23.068466,87.832494 H 9.9611315 L 40.449937,52.784614 8.2514771,10.613182 H 35.292483 l 18.663713,24.675986 z m -4.587571,69.525874 h 7.266028 L 31.47426,18.021675 h -7.807414 z" fill="white" />
+                    <path d="M75.811254 10.613182h13.107339L60.139438 43.381523l30.586846 42.87658-23.349316 1.574391-20.658303-27.012512-23.650199 27.012512H9.9611315L40.449937 52.784614 8.2514771 10.613182H35.292483l18.663713 24.675986zM71.223683 80.139056h7.266028L31.47426 18.021675h-7.807414z" style="stroke-width:.284942;fill:white" />
+                    <rect width="53.462811" x="42.690426" y="45.678478" rx="21.384966" height="48.116653" style="fill:white;stroke:white;stroke-width:1.93425169" />
+                    <path style="fill:white;stroke-width:1.93425169;stroke:white" d="M57.392687 59.043971a4.0097105 4.0097105 0 0 0-4.009712 4.00976 4.0097105 4.0097105 0 0 0 .234942 1.336556 4.0097105,4.0097105 0 0 1 3.77477-2.67321 4.0097105,4.0097105 0 0 1 3.774759 2.67321 4.0097105,4.0097105 0 0 0 .234942-1.336556 4.0097105,4.0097105 0 0 0 -4.009701-4.00976z" />
+                    <path style="fill:white;stroke-width:1.93425169;stroke:white" d="M81.450952 59.044074a4.0097105 4.0097105 0 0 0-4.009713 4.009657 4.0097105,4.0097105 0 0 0 .234941 1.336556 4.0097105,4.0097105 0 0 1 3.774772-2.673107 4.0097105,4.0097105 0 0 1 3.774759 2.673107 4.0097105,4.0097105 0 0 0 .234941-1.336556 4.0097105,4.0097105 0 0 0 -4.0097-4.009657z" />
+                    <path style="fill:white;stroke:white;stroke-width:1.93425169" d="M56.05612 75.082852c0 5.92369 4.76887 10.692559 10.69256 10.692559h5.34628c5.92369 0 10.692571-4.768869 10.692571-10.692559z" />
                 </g>
             </svg>
             <span class="app-title">TWITTER X.COM POSTS</span>
@@ -415,18 +419,18 @@
     </header>
 
     <div class="main-layout">
-
+        
         <div class="editor-container" id="editorContainer">
             <div id="backdrop" class="backdrop editor-content"></div>
             <textarea id="tweetText" class="editor-content" placeholder="¿Qué está pasando?" spellcheck="false"></textarea>
-
+            
             <div class="counter-box">
                 <div id="counter" class="counter">280</div>
             </div>
         </div>
 
         <div class="tools-container" id="toolsPanel">
-
+            
             <div class="tool-section" id="section-tags">
                 <div class="tool-title">
                     <span>Etiquetas</span>
@@ -440,7 +444,7 @@
                     <span>Enlaces</span>
                     <button class="mobile-close-btn" onclick="closeDrawer()">✕</button>
                 </div>
-
+                
                 <!-- Botones de Enlaces -->
                 <div class="action-row">
                     <button class="btn-tool" onclick="window.open('https://x.com/home', '_blank')">
@@ -448,13 +452,13 @@
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                             <polyline points="9 22 9 12 15 12 15 22"></polyline>
                         </svg>
-                        Inicio
+                        X.COM
                     </button>
                     <button class="btn-tool" id="autoShorten">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                         </svg>
-                        Auto
+                        TINYURL
                     </button>
                     <button class="btn-tool" id="manualShorten">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -464,7 +468,7 @@
                             <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
                             <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
                         </svg>
-                        Manual
+                        CUT.LY
                     </button>
                 </div>
 
@@ -488,7 +492,7 @@
                     <span>Emojis</span>
                     <button class="mobile-close-btn" onclick="closeDrawer()">✕</button>
                 </div>
-
+                
                 <div class="emoji-sticky-header">
                     <!-- Buscador con botón de limpiar -->
                     <div class="search-wrapper">
@@ -547,12 +551,12 @@
 
         function updateEditor() {
             const text = textarea.value;
-
+            
             // A. Lógica "Weighted Length" (URL = 23 chars)
             const urlRegex = /https?:\/\/[^\s]+/g;
             let weightedLength = text.length;
             let matches;
-
+            
             while ((matches = urlRegex.exec(text)) !== null) {
                 // Restar longitud real y sumar 23
                 weightedLength = weightedLength - matches[0].length + 23;
@@ -568,7 +572,7 @@
             // B. Renderizado (Colores + Texto Rojo)
             // Calculamos dónde cortar el texto para pintar de rojo el exceso
             let splitIndex = findSplitIndex(text, 280);
-
+            
             let safeText = text.substring(0, splitIndex);
             let overflowText = text.substring(splitIndex);
 
@@ -578,7 +582,7 @@
 
             // Aplicamos colores a tags y urls
             safeText = highlightSyntax(safeText);
-
+            
             // Construimos el HTML final
             let finalHtml = safeText;
             if(overflowText) {
@@ -586,7 +590,7 @@
             }
             // Fix para salto de línea final
             if(text.endsWith('\n')) finalHtml += '<br>';
-
+            
             backdrop.innerHTML = finalHtml;
         }
 
@@ -599,7 +603,7 @@
 
             while ((match = urlRegex.exec(text)) !== null) {
                 const preTextLen = match.index - lastIndex;
-
+                
                 // Si nos pasamos antes de llegar a la URL
                 if (weight + preTextLen > limit) {
                     return lastIndex + (limit - weight);
@@ -608,7 +612,7 @@
 
                 // Si la URL hace saltar el límite, la URL entera es overflow (simplificado)
                 if (weight + 23 > limit) {
-                    return match.index;
+                    return match.index; 
                 }
                 weight += 23;
                 lastIndex = urlRegex.lastIndex;
@@ -713,7 +717,7 @@
                 // Lógica de carga: Primero comprueba si existe window.emojiDataset (Opción local JS)
                 // Si no, intenta fetch (Opción Servidor)
                 let dataset;
-
+                
                 if (window.emojiDataset) {
                     dataset = window.emojiDataset;
                 } else {
@@ -726,7 +730,7 @@
                 }
 
                 const container = document.getElementById('emojiGrid');
-
+                
                 if (!dataset) {
                     container.innerHTML = '<div style="color:var(--text-dim); padding:20px; text-align:center;">' +
                         '⚠️ <strong>Modo Local detectado:</strong><br><br>' +
@@ -739,7 +743,7 @@
                 }
 
                 const categoryBar = document.getElementById('categoryBar');
-
+                
                 // Scroll con rueda del ratón para categorías
                 categoryBar.addEventListener('wheel', (e) => {
                     if (e.deltaY !== 0) {
@@ -754,8 +758,8 @@
                 // Renderizador ágil
                 const render = (list) => {
                     const fragment = document.createDocumentFragment();
-                    const displayList = list.slice(0, 80);
-
+                    const displayList = list.slice(0, 80); 
+                    
                     displayList.forEach(i => {
                         const b = document.createElement('div');
                         b.className = 'emoji-btn';
@@ -764,7 +768,7 @@
                         b.onclick = () => insert(i.unicode);
                         fragment.appendChild(b);
                     });
-
+                    
                     container.innerHTML = '';
                     container.appendChild(fragment);
                 };
@@ -776,9 +780,9 @@
                     if(categoryIcons[group.key]) {
                         const btn = document.createElement('button');
                         btn.className = 'cat-btn';
-                        btn.innerHTML = categoryIcons[group.key];
-                        btn.title = group.message;
-
+                        btn.innerHTML = categoryIcons[group.key]; 
+                        btn.title = group.message; 
+                        
                         btn.onclick = () => {
                             if (activeCategoryBtn) activeCategoryBtn.classList.remove('active');
                             btn.classList.add('active');
@@ -792,7 +796,7 @@
                         };
 
                         categoryBar.appendChild(btn);
-
+                        
                         if (index === 0) btn.click();
                     }
                 });
@@ -800,7 +804,7 @@
                 // 2. Lógica del Buscador
                 searchInput.addEventListener('input', (e) => {
                     const term = e.target.value.toLowerCase().trim();
-
+                    
                     if (term.length > 0) clearBtn.classList.add('visible');
                     else clearBtn.classList.remove('visible');
 
@@ -826,14 +830,14 @@
                     clearBtn.classList.remove('visible');
                     searchInput.focus();
                     if (activeCategoryBtn) {
-                        activeCategoryBtn.classList.add('active');
-                        activeCategoryBtn.click();
+                        activeCategoryBtn.classList.add('active'); 
+                        activeCategoryBtn.click(); 
                     }
                 });
 
-            } catch(e) {
+            } catch(e) { 
                 console.error(e);
-                document.getElementById('emojiGrid').innerHTML = '<div style="color:var(--danger); padding:10px;">Error crítico en emojis.</div>';
+                document.getElementById('emojiGrid').innerHTML = '<div style="color:var(--danger); padding:10px;">Error crítico en emojis.</div>'; 
             }
         }
         loadEmojis();
@@ -851,7 +855,7 @@
             btn.textContent = "⏳...";
             const text = textarea.value;
             const urls = text.match(/https?:\/\/[^\s]+/g);
-
+            
             if(!urls) {
                 showToast("No hay enlaces");
                 btn.textContent = originalText;
@@ -860,7 +864,7 @@
 
             let changed = false;
             const proxies = ['https://corsproxy.io/?', 'https://api.allorigins.win/raw?url='];
-
+            
             for(const url of urls) {
                 if(url.includes('tinyurl') || url.includes('cutt.ly')) continue;
                 for(const p of proxies) {
@@ -897,8 +901,8 @@
         };
 
         document.getElementById('clearBtn').onclick = () => {
-            if(confirm('¿Borrar todo?')) {
-                textarea.value = '';
+            if(confirm('¿Borrar todo?')) { 
+                textarea.value = ''; 
                 localStorage.removeItem(STORAGE_KEY);
                 textarea.dispatchEvent(new Event('input'));
                 showToast("Borrador eliminado");
@@ -917,7 +921,7 @@
         // --- 6. LOGICA MOVIL (CORREGIDA) ---
         const toolsPanel = document.getElementById('toolsPanel');
         const overlay = document.getElementById('overlay');
-
+        
         // Referencias a las secciones
         const sections = {
             tags: document.getElementById('section-tags'),
