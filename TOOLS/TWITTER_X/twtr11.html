@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>TWITTER - X.COM POSTS</title>
+
+    <!-- Favicon X.com (SVG codificado en base64 para evitar archivos externos) -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231d9bf0'/%3E%3Cstop offset='100%25' stop-color='%231a8cd8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23b)'/%3E%3Cpath d='M28 28 L72 72 M72 28 L28 72' stroke='white' stroke-width='12' stroke-linecap='round'/%3E%3C/svg%3E">
+
+    <!-- Intento de carga del dataset local (Opción B) -->
+    <script src="emoji-dataset.js" onerror="console.log('Modo Servidor o Dataset no encontrado')"></script>
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #16181c;
+            --border: #2f3336;
+            --text: #e7e9ea;
+            --text-dim: #71767b;
+            --accent: #1d9bf0;
+            --accent-hover: #1a8cd8;
+            --danger: #f4212e;
+            --warn: #ffd400;
+            --link-color: #8b5cf6;
+
+            --header-h: 60px;
+            --mobile-bar-h: 60px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg); color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            height: 100dvh;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- UI GLOBAL --- */
+        button { font-family: inherit; cursor: pointer; border: none; user-select: none; }
+        button:active { transform: scale(0.95); } /* Feedback visual al pulsar */
+
+        header {
+            height: var(--header-h); padding: 0 15px;
+            /* Layout de 3 columnas para centrar el grupo del medio */
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+        }
+
+        /* Sección Izquierda: Logo */
+        .header-left { display: flex; align-items: center; gap: 10px; }
+
+        .x-logo-svg {
+            width: 32px; height: 32px;
+            border-radius: 6px; /* Bordes redondeados */
+            display: block;
+        }
+
+        .app-title { font-weight: 800; font-size: 18px; color: var(--text); letter-spacing: 0.5px; white-space: nowrap; }
+
+        /* Sección Central: Botones Acción */
+        .header-center { display: flex; gap: 8px; justify-content: center; }
+
+        .btn-action {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 12px; border-radius: 20px;
+            font-weight: 700; font-size: 13px;
+            transition: 0.2s;
+            height: 32px;
+        }
+
+        .btn-copy { background: var(--text); color: black; }
+        .btn-copy:hover { background: #fff; }
+
+        .btn-txt { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-txt:hover { background: rgba(255,255,255,0.1); }
+
+        .btn-action svg { width: 16px; height: 16px; stroke-width: 2.5; }
+
+        /* Sección Derecha: Limpiar */
+        .header-right { display: flex; justify-content: flex-end; }
+
+        .btn-clear {
+            background: none; color: var(--text-dim);
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
+        }
+        .btn-clear:hover { color: var(--danger); background: rgba(244, 33, 46, 0.1); }
+        .btn-clear svg { width: 20px; height: 20px; stroke-width: 2; }
+
+        /* --- EDITOR LAYOUT (BACKDROP + TEXTAREA) --- */
+        .main-layout {
+            flex: 1; display: grid; grid-template-columns: 1fr;
+            overflow: hidden; position: relative;
+        }
+
+        .editor-container {
+            position: relative;
+            background: var(--bg);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            cursor: text;
+        }
+
+        /* Estilos compartidos EXACTOS para alinear texto y fondo */
+        .editor-content {
+            font-family: inherit; font-size: 18px; line-height: 1.6;
+            padding: 20px; padding-bottom: 60px;
+            width: 100%; height: 100%;
+            border: none; margin: 0; resize: none; outline: none;
+            white-space: pre-wrap; word-wrap: break-word;
+        }
+
+        /* Capa inferior: Renderiza colores */
+        .backdrop {
+            position: absolute; top: 0; left: 0;
+            z-index: 1; pointer-events: none;
+            color: var(--text);
+            overflow-y: auto;
+        }
+
+        /* Capa superior: Recibe input (Transparente) */
+        textarea.editor-content {
+            position: absolute; top: 0; left: 0;
+            z-index: 2;
+            background: transparent;
+            color: transparent;
+            caret-color: var(--text);
+            overflow-y: auto;
+        }
+
+        /* Resaltado de Sintaxis */
+        .hl-tag { color: var(--accent); }
+        .hl-url { color: var(--link-color); }
+
+        /* Texto Excedido (Rojo) */
+        .hl-overflow {
+            background: rgba(244, 33, 46, 0.25);
+            color: #ff8080;
+            border-bottom: 2px solid var(--danger);
+        }
+
+        /* Contador */
+        .counter-box {
+            position: absolute; bottom: 20px; right: 20px; z-index: 10;
+        }
+        .counter {
+            font-size: 13px; font-weight: 700;
+            background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px;
+            color: var(--text-dim); border: 1px solid var(--border);
+            pointer-events: none; transition: 0.2s;
+        }
+        .counter.warn { color: var(--warn); border-color: var(--warn); }
+        .counter.err { color: var(--danger); border-color: var(--danger); transform: scale(1.1); }
+
+        /* --- BARRA LATERAL / DRAWER MÓVIL --- */
+        .tools-container {
+            background: var(--surface); border-left: 1px solid var(--border);
+            display: flex; flex-direction: column; overflow-y: auto;
+        }
+        .tool-section { padding: 20px; border-bottom: 1px solid var(--border); }
+
+        /* Ajuste título para incluir botón cerrar */
+        .tool-title {
+            font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-dim); margin-bottom: 15px; font-weight: 800;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .mobile-close-btn {
+            display: none; /* Oculto en escritorio */
+            background: none; border: none;
+            color: var(--text-dim); font-size: 20px; font-weight: bold;
+            padding: 5px; cursor: pointer;
+        }
+        .mobile-close-btn:hover { color: var(--text); }
+
+        /* Elementos UI */
+        .tags-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+        .pill {
+            background: rgba(255,255,255,0.05); color: var(--accent);
+            padding: 6px 12px; border-radius: 15px; font-size: 13px;
+            border: 1px solid transparent; transition: 0.2s;
+        }
+        .pill:hover { border-color: var(--accent); background: rgba(29, 155, 240, 0.1); }
+
+        .emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(32px, 1fr)); gap: 8px; }
+        .emoji-btn { font-size: 22px; padding: 5px; border-radius: 4px; text-align: center; cursor: pointer;}
+        .emoji-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.2); transition: 0.1s;}
+
+        /* Skeleton Loading */
+        @keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 0.6; } 100% { opacity: 0.3; } }
+        .skeleton-box {
+            height: 32px; border-radius: 6px; background: #2f3336;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        /* Enlaces UI Actualizada */
+        .action-row { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: nowrap; }
+        .btn-tool {
+            flex: 1; padding: 10px 5px; border-radius: 8px; font-size: 12px; font-weight: 700;
+            background: var(--accent); color: white; /* Color unificado */
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            min-width: 0; /* Permite shrink */
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .btn-tool svg { width: 16px; height: 16px; stroke-width: 2.5; flex-shrink: 0; }
+        .btn-tool:hover { background: var(--accent-hover); }
+
+        .user-search-container { display: flex; align-items: center; gap: 8px; }
+        .user-search-btn {
+            background: var(--accent); color: white;
+            border-radius: 6px; width: 38px; height: 38px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .user-search-btn svg { width: 20px; height: 20px; stroke-width: 2.5; }
+
+        /* --- ESTILOS EMOJI SEARCH & CATEGORIES --- */
+        .emoji-sticky-header {
+            position: sticky;
+            top: -20px; /* Offset para cubrir el padding superior del contenedor */
+            background-color: var(--surface);
+            z-index: 20;
+            padding-bottom: 10px;
+            margin-top: -10px; /* Compensar padding */
+        }
+
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 10px;
+            flex: 1;
+        }
+        .search-box {
+            width: 100%; background: black; border: 1px solid var(--border);
+            color: white; padding: 8px; padding-right: 30px; /* espacio para la X */
+            border-radius: 6px;
+            height: 38px;
+        }
+        .clear-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #71767b;
+            color: #000;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            visibility: hidden;
+        }
+        .clear-btn.visible { visibility: visible; }
+
+        .category-bar {
+            display: flex;
+            overflow-x: auto;
+            gap: 2px;
+            padding-bottom: 5px;
+            /* Scrollbar oculta pero funcional */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .category-bar::-webkit-scrollbar { display: none; }
+
+        .cat-btn {
+            background: transparent;
+            color: var(--text-dim);
+            padding: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        .cat-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+        .cat-btn.active { background: rgba(29, 155, 240, 0.1); color: var(--accent); }
+
+        .cat-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2px;
+            pointer-events: none;
+        }
+
+        /* Notificaciones */
+        .toast {
+            position: fixed; z-index: 1000;
+            padding: 12px 24px; border-radius: 50px;
+            background: var(--accent); color: white; font-weight: 600; font-size: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            opacity: 0; pointer-events: none; transform: translateY(20px); transition: 0.3s;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        /* Elementos solo móvil */
+        .mobile-tab-bar { display: none; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .tools-container {
+                position: fixed; bottom: 0; left: 0; right: 0;
+                height: 50vh; z-index: 50;
+                transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+                border-top: 1px solid var(--border); border-left: none;
+                box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            }
+            .tools-container.open { transform: translateY(0); }
+            /* En móvil ocultamos secciones y mostramos solo la activa */
+            .tool-section { display: none; border: none; height: 100%; overflow-y: auto;}
+            .tool-section.active { display: block; }
+
+            /* Mostrar botón cerrar en línea con título */
+            .mobile-close-btn { display: block; }
+
+            .mobile-tab-bar {
+                height: var(--mobile-bar-h);
+                background: var(--surface); border-top: 1px solid var(--border);
+                display: flex; justify-content: space-around; align-items: center;
+                flex-shrink: 0; z-index: 40;
+            }
+            .tab-btn { font-size: 20px; padding: 10px; color: var(--text-dim); background: none; border: none; }
+            .tab-btn.active { color: var(--accent); }
+
+            .toast { bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); width: max-content; }
+            .toast.show { transform: translateX(-50%) translateY(0); }
+        }
+
+        /* Ajustes específicos para barra en pantallas pequeñas */
+        @media (max-width: 480px) {
+            .app-title { display: none; } /* Opcional: Ocultar título si falta espacio */
+            .btn-action span { display: none; } /* Ocultar texto botones, solo iconos */
+            .btn-action { padding: 6px; width: 32px; justify-content: center; }
+            .header-left { gap: 0; }
+        }
+
+        @media (min-width: 769px) {
+            .main-layout { grid-template-columns: 1fr 320px; }
+            .toast { top: 80px; right: 30px; transform: translateY(-20px); }
+            .toast.show { transform: translateY(0); }
+            .tool-section { display: block !important; } /* En PC siempre visibles */
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="toast" class="toast">Acción realizada</div>
+
+    <header>
+        <!-- Izquierda: Logo SVG + Título -->
+        <div class="header-left">
+            <svg class="x-logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#1d9bf0;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#1a8cd8;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <rect width="100" height="100" rx="20" ry="20" fill="url(#blueGrad)" />
+                <g transform="matrix(1.0339916,0,0,1.0339916,-2.7408538,-0.89600099)">
+                    <path d="M 75.811254,10.613182 H 88.918593 L 60.139438,43.381523 90.726284,86.258103 67.376968,87.832494 46.718665,60.819982 23.068466,87.832494 H 9.9611315 L 40.449937,52.784614 8.2514771,10.613182 H 35.292483 l 18.663713,24.675986 z m -4.587571,69.525874 h 7.266028 L 31.47426,18.021675 h -7.807414 z" fill="white" />
+                </g>
+            </svg>
+            <span class="app-title">TWITTER X.COM POSTS</span>
+        </div>
+
+        <!-- Centro: Botones de Acción -->
+        <div class="header-center">
+            <button class="btn-action btn-copy" id="copyBtn" title="Copiar texto">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copiar</span>
+            </button>
+            <button class="btn-action btn-txt" id="exportBtn" title="Descargar .txt">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>.txt</span>
+            </button>
+        </div>
+
+        <!-- Derecha: Botón Limpiar -->
+        <div class="header-right">
+            <button class="btn-clear" id="clearBtn" title="Limpiar Todo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="main-layout">
+
+        <div class="editor-container" id="editorContainer">
+            <div id="backdrop" class="backdrop editor-content"></div>
+            <textarea id="tweetText" class="editor-content" placeholder="¿Qué está pasando?" spellcheck="false"></textarea>
+
+            <div class="counter-box">
+                <div id="counter" class="counter">280</div>
+            </div>
+        </div>
+
+        <div class="tools-container" id="toolsPanel">
+
+            <div class="tool-section" id="section-tags">
+                <div class="tool-title">
+                    <span>Etiquetas</span>
+                    <button class="mobile-close-btn" onclick="closeDrawer()">✕</button>
+                </div>
+                <div class="tags-cloud" id="tagsGrid"></div>
+            </div>
+
+            <div class="tool-section" id="section-links">
+                <div class="tool-title">
+                    <span>Enlaces</span>
+                    <button class="mobile-close-btn" onclick="closeDrawer()">✕</button>
+                </div>
+
+                <!-- Botones de Enlaces -->
+                <div class="action-row">
+                    <button class="btn-tool" onclick="window.open('https://x.com/home', '_blank')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        Inicio
+                    </button>
+                    <button class="btn-tool" id="autoShorten">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                        Auto
+                    </button>
+                    <button class="btn-tool" id="manualShorten">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="6" cy="6" r="3"></circle>
+                            <circle cx="6" cy="18" r="3"></circle>
+                            <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
+                            <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
+                            <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
+                        </svg>
+                        Manual
+                    </button>
+                </div>
+
+                <!-- Buscador de Usuarios -->
+                <div class="user-search-container">
+                    <div class="search-wrapper" style="margin-bottom:0;">
+                        <input type="text" id="userSearchInput" class="search-box" placeholder="Buscar usuario...">
+                        <button id="clearUserSearch" class="clear-btn">✕</button>
+                    </div>
+                    <button id="execUserSearch" class="user-search-btn" title="Buscar Usuario">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 10 4 15 9 20"></polyline>
+                            <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="tool-section" id="section-emojis">
+                <div class="tool-title">
+                    <span>Emojis</span>
+                    <button class="mobile-close-btn" onclick="closeDrawer()">✕</button>
+                </div>
+
+                <div class="emoji-sticky-header">
+                    <!-- Buscador con botón de limpiar -->
+                    <div class="search-wrapper">
+                        <input type="text" id="emojiSearch" class="search-box" placeholder="Buscar emoji...">
+                        <button id="clearSearch" class="clear-btn">✕</button>
+                    </div>
+
+                    <!-- Barra de Categorías (Iconos SVG) -->
+                    <div class="category-bar" id="categoryBar"></div>
+                </div>
+
+                <!-- Grid de Resultados -->
+                <div class="emoji-grid" id="emojiGrid">
+                    <div class="skeleton-box"></div><div class="skeleton-box"></div>
+                    <div class="skeleton-box"></div><div class="skeleton-box"></div>
+                    <div class="skeleton-box"></div><div class="skeleton-box"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mobile-tab-bar">
+        <button class="tab-btn" onclick="openMobileTab('tags')">#</button>
+        <button class="tab-btn" onclick="openMobileTab('links')">🔗</button>
+        <button class="tab-btn" onclick="openMobileTab('emojis')">😊</button>
+    </div>
+
+    <div id="overlay" onclick="closeDrawer()" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:45; opacity:0; pointer-events:none; transition:0.3s;"></div>
+
+    <script>
+        // --- 1. CONFIGURACIÓN ---
+        const tags = ['#TiCyL', '#FormacionCyL', '#InnovaCyL', '#InternacionalizaCyL', '#CFIEVaComparte', '@educacyl', '@crfptic'];
+        const textarea = document.getElementById('tweetText');
+        const backdrop = document.getElementById('backdrop');
+        const counter = document.getElementById('counter');
+        const STORAGE_KEY = 'twitter_draft_v3';
+
+        // --- 2. PERSISTENCIA ---
+        const savedText = localStorage.getItem(STORAGE_KEY);
+        if (savedText) {
+            textarea.value = savedText;
+        }
+
+        // --- 3. EDITOR: SCROLL SYNC + HIGHLIGHTING ---
+        textarea.addEventListener('scroll', () => {
+            backdrop.scrollTop = textarea.scrollTop;
+        });
+
+        textarea.addEventListener('input', () => {
+            localStorage.setItem(STORAGE_KEY, textarea.value);
+            updateEditor();
+        });
+
+        // Ejecutar una vez al inicio para pintar lo guardado
+        updateEditor();
+
+        function updateEditor() {
+            const text = textarea.value;
+
+            // A. Lógica "Weighted Length" (URL = 23 chars)
+            const urlRegex = /https?:\/\/[^\s]+/g;
+            let weightedLength = text.length;
+            let matches;
+
+            while ((matches = urlRegex.exec(text)) !== null) {
+                // Restar longitud real y sumar 23
+                weightedLength = weightedLength - matches[0].length + 23;
+            }
+
+            // Actualizar Contador
+            const remaining = 280 - weightedLength;
+            counter.textContent = remaining;
+            counter.className = 'counter';
+            if(remaining < 0) counter.classList.add('err');
+            else if(remaining <= 20) counter.classList.add('warn');
+
+            // B. Renderizado (Colores + Texto Rojo)
+            // Calculamos dónde cortar el texto para pintar de rojo el exceso
+            let splitIndex = findSplitIndex(text, 280);
+
+            let safeText = text.substring(0, splitIndex);
+            let overflowText = text.substring(splitIndex);
+
+            // Escapamos HTML
+            safeText = escapeHtml(safeText);
+            overflowText = escapeHtml(overflowText);
+
+            // Aplicamos colores a tags y urls
+            safeText = highlightSyntax(safeText);
+
+            // Construimos el HTML final
+            let finalHtml = safeText;
+            if(overflowText) {
+                finalHtml += `<span class="hl-overflow">${overflowText}</span>`;
+            }
+            // Fix para salto de línea final
+            if(text.endsWith('\n')) finalHtml += '<br>';
+
+            backdrop.innerHTML = finalHtml;
+        }
+
+        // Encuentra el índice real donde se rompe el límite ponderado
+        function findSplitIndex(text, limit) {
+            const urlRegex = /https?:\/\/[^\s]+/g;
+            let weight = 0;
+            let lastIndex = 0;
+            let match;
+
+            while ((match = urlRegex.exec(text)) !== null) {
+                const preTextLen = match.index - lastIndex;
+
+                // Si nos pasamos antes de llegar a la URL
+                if (weight + preTextLen > limit) {
+                    return lastIndex + (limit - weight);
+                }
+                weight += preTextLen;
+
+                // Si la URL hace saltar el límite, la URL entera es overflow (simplificado)
+                if (weight + 23 > limit) {
+                    return match.index;
+                }
+                weight += 23;
+                lastIndex = urlRegex.lastIndex;
+            }
+
+            // Resto del texto
+            const remaining = text.length - lastIndex;
+            if (weight + remaining > limit) {
+                return lastIndex + (limit - weight);
+            }
+
+            return text.length; // No hay overflow
+        }
+
+        function highlightSyntax(html) {
+            html = html.replace(/(https?:\/\/[^\s]+)/g, '<span class="hl-url">$1</span>');
+            html = html.replace(/([#@][\wñÑáéíóúÁÉÍÓÚ]+)/g, '<span class="hl-tag">$1</span>');
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/\n/g, '<br>');
+        }
+
+        // --- 4. HERRAMIENTAS ---
+        function insert(text) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const val = textarea.value;
+            textarea.value = val.substring(0, start) + text + val.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + text.length;
+            textarea.focus();
+            textarea.dispatchEvent(new Event('input')); // Forzar update
+        }
+
+        // Tags
+        const tagsGrid = document.getElementById('tagsGrid');
+        tags.forEach(tag => {
+            const btn = document.createElement('button');
+            btn.className = 'pill';
+            btn.textContent = tag;
+            btn.onclick = () => insert(tag + ' ');
+            tagsGrid.appendChild(btn);
+        });
+
+        // BUSCADOR DE USUARIOS
+        const userSearchInput = document.getElementById('userSearchInput');
+        const clearUserSearch = document.getElementById('clearUserSearch');
+        const execUserSearch = document.getElementById('execUserSearch');
+
+        userSearchInput.addEventListener('input', (e) => {
+            if (e.target.value.trim().length > 0) clearUserSearch.classList.add('visible');
+            else clearUserSearch.classList.remove('visible');
+        });
+
+        clearUserSearch.addEventListener('click', () => {
+            userSearchInput.value = '';
+            clearUserSearch.classList.remove('visible');
+            userSearchInput.focus();
+        });
+
+        function performUserSearch() {
+            const term = userSearchInput.value.trim();
+            if (term) {
+                const url = `https://x.com/search?q=${encodeURIComponent(term)}&f=user`;
+                window.open(url, '_blank');
+            }
+        }
+
+        execUserSearch.addEventListener('click', performUserSearch);
+        userSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performUserSearch();
+        });
+
+
+        // --- EMOJIS (MODIFICADO CON SVG ICONS Y CATEGORÍAS INCRUSTADAS) ---
+        async function loadEmojis() {
+            try {
+                // Categorías incrustadas directamente para evitar fetch
+                const categoriesData = {"groups":[{"key":"smileys-emotion","message":"emoticonos y emoción","order":0},{"key":"people-body","message":"personas y cuerpo","order":1},{"key":"component","message":"componentes","order":2},{"key":"animals-nature","message":"animales y la naturaleza","order":3},{"key":"food-drink","message":"comida y bebida","order":4},{"key":"travel-places","message":"viajes y lugares","order":5},{"key":"activities","message":"actividades","order":6},{"key":"objects","message":"objetos","order":7},{"key":"symbols","message":"símbolos","order":8},{"key":"flags","message":"banderas","order":9}]};
+
+                // Mapeo de categorías a Iconos SVG en línea (Estilo Gboard)
+                const categoryIcons = {
+                    'smileys-emotion': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
+                    'people-body': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+                    'component': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+                    'animals-nature': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+                    'food-drink': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>',
+                    'travel-places': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 17h2"/><path d="M15 17h2"/></svg>',
+                    'activities': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>',
+                    'objects': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
+                    'symbols': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="10" y2="21"/><line x1="16" y1="3" x2="16" y2="21"/></svg>',
+                    'flags': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>'
+                };
+
+                // Lógica de carga: Primero comprueba si existe window.emojiDataset (Opción local JS)
+                // Si no, intenta fetch (Opción Servidor)
+                let dataset;
+
+                if (window.emojiDataset) {
+                    dataset = window.emojiDataset;
+                } else {
+                    try {
+                        const res = await fetch('./emoji-dataset.json');
+                        dataset = await res.json();
+                    } catch (err) {
+                        console.error("Fetch fallido, intentando fallback o mostrando error", err);
+                    }
+                }
+
+                const container = document.getElementById('emojiGrid');
+
+                if (!dataset) {
+                    container.innerHTML = '<div style="color:var(--text-dim); padding:20px; text-align:center;">' +
+                        '⚠️ <strong>Modo Local detectado:</strong><br><br>' +
+                        'Para usar emojis sin servidor:<br>' +
+                        '1. Renombra <code>emoji-dataset.json</code> a <code>emoji-dataset.js</code><br>' +
+                        '2. Añade <code>window.emojiDataset = </code> al inicio del archivo.<br><br>' +
+                        'O usa <code>python3 -m http.server</code> en la terminal.' +
+                        '</div>';
+                    return;
+                }
+
+                const categoryBar = document.getElementById('categoryBar');
+
+                // Scroll con rueda del ratón para categorías
+                categoryBar.addEventListener('wheel', (e) => {
+                    if (e.deltaY !== 0) {
+                        e.preventDefault();
+                        categoryBar.scrollLeft += e.deltaY;
+                    }
+                });
+
+                const searchInput = document.getElementById('emojiSearch');
+                const clearBtn = document.getElementById('clearSearch');
+
+                // Renderizador ágil
+                const render = (list) => {
+                    const fragment = document.createDocumentFragment();
+                    const displayList = list.slice(0, 80);
+
+                    displayList.forEach(i => {
+                        const b = document.createElement('div');
+                        b.className = 'emoji-btn';
+                        b.textContent = i.unicode;
+                        b.title = i.label;
+                        b.onclick = () => insert(i.unicode);
+                        fragment.appendChild(b);
+                    });
+
+                    container.innerHTML = '';
+                    container.appendChild(fragment);
+                };
+
+                // 1. Generar Barra de Categorías
+                let activeCategoryBtn = null;
+
+                categoriesData.groups.forEach((group, index) => {
+                    if(categoryIcons[group.key]) {
+                        const btn = document.createElement('button');
+                        btn.className = 'cat-btn';
+                        btn.innerHTML = categoryIcons[group.key];
+                        btn.title = group.message;
+
+                        btn.onclick = () => {
+                            if (activeCategoryBtn) activeCategoryBtn.classList.remove('active');
+                            btn.classList.add('active');
+                            activeCategoryBtn = btn;
+
+                            searchInput.value = '';
+                            clearBtn.classList.remove('visible');
+
+                            const filtered = dataset.filter(emoji => emoji.group === index);
+                            render(filtered);
+                        };
+
+                        categoryBar.appendChild(btn);
+
+                        if (index === 0) btn.click();
+                    }
+                });
+
+                // 2. Lógica del Buscador
+                searchInput.addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase().trim();
+
+                    if (term.length > 0) clearBtn.classList.add('visible');
+                    else clearBtn.classList.remove('visible');
+
+                    if (!term) {
+                        if (activeCategoryBtn) activeCategoryBtn.click();
+                        return;
+                    }
+
+                    if (activeCategoryBtn) activeCategoryBtn.classList.remove('active');
+
+                    // Filtrado (Corregido para ignorar mayúsculas en el dataset)
+                    const filtered = dataset.filter(i => {
+                        if (i.label && i.label.toLowerCase().includes(term)) return true;
+                        if (i.tags && i.tags.some(t => t.toLowerCase().includes(term))) return true;
+                        return false;
+                    });
+                    render(filtered);
+                });
+
+                // 3. Botón Limpiar
+                clearBtn.addEventListener('click', () => {
+                    searchInput.value = '';
+                    clearBtn.classList.remove('visible');
+                    searchInput.focus();
+                    if (activeCategoryBtn) {
+                        activeCategoryBtn.classList.add('active');
+                        activeCategoryBtn.click();
+                    }
+                });
+
+            } catch(e) {
+                console.error(e);
+                document.getElementById('emojiGrid').innerHTML = '<div style="color:var(--danger); padding:10px;">Error crítico en emojis.</div>';
+            }
+        }
+        loadEmojis();
+
+        // Acortadores
+        document.getElementById('manualShorten').onclick = () => {
+            navigator.clipboard.writeText(textarea.value);
+            window.open('https://cutt.ly', '_blank', 'noopener,noreferrer,width=500,height=600');
+            showToast("Copiado. Abriendo Cutt.ly...");
+        };
+
+        document.getElementById('autoShorten').onclick = async function() {
+            const btn = this;
+            const originalText = btn.textContent;
+            btn.textContent = "⏳...";
+            const text = textarea.value;
+            const urls = text.match(/https?:\/\/[^\s]+/g);
+
+            if(!urls) {
+                showToast("No hay enlaces");
+                btn.textContent = originalText;
+                return;
+            }
+
+            let changed = false;
+            const proxies = ['https://corsproxy.io/?', 'https://api.allorigins.win/raw?url='];
+
+            for(const url of urls) {
+                if(url.includes('tinyurl') || url.includes('cutt.ly')) continue;
+                for(const p of proxies) {
+                    try {
+                        const apiUrl = `https://tinyurl.com/api-create.php?url=${url}`;
+                        const res = await fetch(p + encodeURIComponent(apiUrl));
+                        if(res.ok) {
+                            const short = await res.text();
+                            if(short.startsWith('http')) {
+                                textarea.value = textarea.value.replace(url, short);
+                                changed = true;
+                                break;
+                            }
+                        }
+                    } catch(e){}
+                }
+            }
+            textarea.dispatchEvent(new Event('input'));
+            btn.textContent = originalText;
+            showToast(changed ? "Enlaces acortados" : "Sin cambios");
+            if(window.innerWidth < 768) closeDrawer();
+        };
+
+        // --- 5. UI HELPERS ---
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.classList.add('show');
+            setTimeout(()=>t.classList.remove('show'), 2500);
+        }
+
+        document.getElementById('copyBtn').onclick = () => {
+            navigator.clipboard.writeText(textarea.value);
+            showToast("Copiado al portapapeles");
+        };
+
+        document.getElementById('clearBtn').onclick = () => {
+            if(confirm('¿Borrar todo?')) {
+                textarea.value = '';
+                localStorage.removeItem(STORAGE_KEY);
+                textarea.dispatchEvent(new Event('input'));
+                showToast("Borrador eliminado");
+            }
+        };
+
+        document.getElementById('exportBtn').onclick = () => {
+            if(!textarea.value.trim()) return showToast("Vacío...");
+            const b = new Blob([textarea.value], {type:'text/plain'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(b);
+            a.download = `tweet_${new Date().toISOString().slice(0,10)}.txt`;
+            a.click();
+        };
+
+        // --- 6. LOGICA MOVIL (CORREGIDA) ---
+        const toolsPanel = document.getElementById('toolsPanel');
+        const overlay = document.getElementById('overlay');
+
+        // Referencias a las secciones
+        const sections = {
+            tags: document.getElementById('section-tags'),
+            links: document.getElementById('section-links'),
+            emojis: document.getElementById('section-emojis')
+        };
+
+        // Función para abrir tabs en móvil
+        window.openMobileTab = function(tabName) {
+            // 1. Limpiar estado activo previo
+            Object.values(sections).forEach(el => {
+                if(el) el.classList.remove('active');
+            });
+
+            // 2. Activar la sección solicitada
+            const target = sections[tabName];
+            if (target) {
+                target.classList.add('active');
+                toolsPanel.classList.add('open');
+                overlay.style.opacity = '1';
+                overlay.style.pointerEvents = 'auto';
+            }
+        };
+
+        window.closeDrawer = function() {
+            toolsPanel.classList.remove('open');
+            overlay.style.opacity = '0';
+            overlay.style.pointerEvents = 'none';
+        };
+
+    </script>
+</body>
+</html>
