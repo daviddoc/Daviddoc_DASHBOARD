@@ -1,6 +1,6 @@
 <html lang="es"><head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>HERRAMIENTAS &amp; IAGENTES</title>
     <link id="dynamicFavicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,
 %3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E
@@ -9,346 +9,331 @@
 %3C/svg%3E">
 
     <style>
+        /* --- VARIABLES & RESET --- */
         :root {
             --bg: #121212;
+            --container-max-width: 1400px;
             --card-bg: #1e1e1e;
+            --card-hover: #252525;
             --text: #e0e0e0;
             --text-muted: #888;
             --accent: #007acc;
             --danger: #ff4444;
             --warn: #ffbb33;
             --border: #333;
+            --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --radius: 8px;
+            
+            /* Heights */
+            --top-bar-height: 60px;
+            --search-bar-height: 50px;
+            --total-header-height: 110px; 
         }
 
         body {
             background-color: var(--bg);
             color: var(--text);
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             margin: 0;
             padding: 15px;
-            height: 100vh;
+            padding-top: calc(var(--total-header-height) + 20px); 
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            align-items: center;
             box-sizing: border-box;
-            overflow: hidden;
             user-select: none;
         }
 
-        /* --- TÍTULO Y CONFIG --- */
-        .title-container {
-            text-align: center;
-            margin-bottom: 10px;
-            min-height: 30px;
+        /* --- FIXED HEADER WRAPPER --- */
+        .header-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--total-header-height);
+            background: rgba(18, 18, 18, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        h1 {
-            font-size: 18px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin: 0;
-            pointer-events: none;
         }
 
-        .config-controls {
-            display: none;
+        .header-inner {
             width: 100%;
-            gap: 10px;
-            justify-content: center;
-            align-items: center;
+            max-width: var(--container-max-width);
+            padding: 0 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
-        .edit-mode .config-controls { display: flex; }
-        .edit-mode h1 { display: none; }
+
+        /* --- TOP ROW: TITLE & ACTIONS --- */
+        .top-row {
+            height: var(--top-bar-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+        }
+
+        /* Área Izquierda: Título */
+        .title-area {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            /* Si se hace muy pequeño, usamos CSS para ocultarlo según regla */
+        }
+
+        .app-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         #titleInput {
+            display: none;
             background: #111;
             border: 1px dashed var(--accent);
             color: var(--accent);
-            font-size: 16px;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 5px;
-            border-radius: 4px;
-            flex-grow: 1;
-        }
-
-        .btn-small {
-            font-size: 12px;
             padding: 5px 10px;
-            background: #333;
-            border: 1px solid #555;
-            color: white;
             border-radius: 4px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .btn-small:hover { background: #444; }
-
-        /* --- HEADER --- */
-        .header { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; flex-shrink: 0; }
-        .search-container { position: relative; flex-grow: 1; }
-
-        input[type="text"], select {
+            font-size: 16px;
             width: 100%;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 8px 30px 8px 10px;
-            border-radius: 6px;
-            outline: none;
-            font-size: 14px;
-            box-sizing: border-box;
+            min-width: 50px; /* Mínimo para que no colapse */
         }
-        input[type="text"]:focus { border-color: var(--accent); }
+        .edit-mode #mainTitle { display: none; }
+        .edit-mode #titleInput { display: block; }
 
-        .clear-search {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 14px;
-            display: none;
-            width: 20px;
-            height: 20px;
-            text-align: center;
-            line-height: 20px;
-            border-radius: 50%;
-        }
-        .clear-search:hover { background: #333; color: #fff; }
-
-        .btn {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            color: var(--text);
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            cursor: pointer;
+        /* --- ÁREA DE BOTONES --- */
+        .actions-area {
             display: flex;
             align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-            padding: 0;
+            gap: 8px;
             flex-shrink: 0;
         }
-        .btn svg { width: 18px; height: 18px; fill: currentColor; }
-        .btn:hover { background: #2a2a2a; }
 
-        #btnSave { color: var(--text-muted); }
-        #btnSave.dirty {
-            background-color: rgba(255, 68, 68, 0.1);
-            color: var(--danger);
-            border-color: var(--danger);
-            animation: pulse 2s infinite;
+        .config-tools {
+            display: none;
+            gap: 8px;
+            padding-right: 8px;
+            border-right: 1px solid #333;
+            margin-right: 0px;
         }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.4); }
-            70% { box-shadow: 0 0 0 6px rgba(255, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
-        }
+        .edit-mode .config-tools { display: flex; }
 
-        #btnConfig.active { background-color: var(--warn); color: #121212; border-color: var(--warn); }
-
-        /* --- LISTA --- */
-        .grid-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding-bottom: 60px;
-            padding-right: 5px;
+        /* --- REGLA CRÍTICA MOBILE: Ocultar Título en Edit Mode si falta espacio --- */
+        @media (max-width: 600px) {
+            .edit-mode .title-area {
+                display: none !important; /* Prioridad total a los botones */
+            }
+            .edit-mode .top-row {
+                justify-content: flex-end; /* Botones alineados a la derecha */
+            }
+            .edit-mode .config-tools {
+                border-right: none; /* Quitar separador visual */
+            }
         }
 
-        .category-section { margin-bottom: 15px; border: 1px solid transparent; border-radius: 6px; transition: 0.2s; }
-        /* DRAG AND DROP STYLES */
-        .edit-mode .category-section.draggable-cat { cursor: grab; }
-        .category-section.drag-over-top { border-top: 2px solid var(--accent); }
-        .category-section.drag-over-bottom { border-bottom: 2px solid var(--accent); }
-        
+        /* --- SEARCH BAR --- */
+        .bottom-row {
+            height: var(--search-bar-height);
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding-bottom: 10px;
+        }
+        .search-container { width: 100%; position: relative; }
+        #searchInput {
+            width: 100%; background: rgba(30, 30, 30, 0.6);
+            border: 1px solid var(--border); color: var(--text);
+            padding: 10px 35px 10px 15px; border-radius: var(--radius);
+            font-size: 16px; outline: none; box-sizing: border-box; transition: all 0.2s;
+        }
+        #searchInput:focus { background: var(--card-bg); border-color: var(--accent); }
+        .clear-search {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted); cursor: pointer; padding: 5px; display: none;
+        }
+
+        /* --- BUTTON STYLES --- */
+        .btn-icon {
+            width: 40px; height: 40px; background: var(--card-bg);
+            border: 1px solid var(--border); color: var(--text);
+            border-radius: var(--radius); display: flex; align-items: center;
+            justify-content: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+        }
+        .btn-icon:hover { background: var(--card-hover); color: #fff; transform: translateY(-1px); border-color: #666; }
+        .btn-icon svg { width: 20px; height: 20px; fill: currentColor; }
+
+        #btnAdd { color: var(--accent); border-color: rgba(0, 122, 204, 0.3); }
+        #btnConfig.active { background: var(--warn); color: #121212; border-color: var(--warn); }
+        #btnSave.dirty { color: var(--danger); animation: pulse 2s infinite; border-color: rgba(255, 68, 68, 0.3); }
+
+        .btn-tool {
+            width: 36px; height: 36px; background: transparent;
+            border: 1px solid transparent; color: #888;
+        }
+        .btn-tool:hover { background: #333; color: var(--accent); border-color: #444; }
+
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; transform: scale(1.05); } 100% { opacity: 0.6; } }
+
+        /* --- MASONRY LAYOUT --- */
+        .masonry-container {
+            width: 100%; max-width: var(--container-max-width);
+            column-count: 1; column-gap: 15px;
+        }
+        .category-section {
+            background: rgba(255, 255, 255, 0.03); border-radius: var(--radius);
+            border: 1px solid transparent; padding: 10px; margin-bottom: 15px; 
+            break-inside: avoid; page-break-inside: avoid;
+            display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s;
+        }
+        @media (min-width: 768px) { .masonry-container { column-count: 2; column-gap: 20px; } }
+        @media (min-width: 1200px) { .masonry-container { column-count: 3; column-gap: 25px; } }
+        @media (min-width: 1600px) { .masonry-container { column-count: 4; } }
+
         .category-header {
-            font-size: 13px; color: var(--accent); text-transform: uppercase; font-weight: bold;
-            padding: 5px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; color: var(--accent); text-transform: uppercase; font-weight: 700;
+            padding: 5px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex; justify-content: space-between; align-items: center;
         }
-
-        .category-list { display: flex; flex-direction: column; gap: 6px; min-height: 10px; }
-        
+        ul.category-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
         .card {
             background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
-            padding: 8px 12px; display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px; display: flex; align-items: center; gap: 12px;
             text-decoration: none; color: var(--text); cursor: pointer; position: relative;
-            outline: none; transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.2s; box-shadow: var(--shadow-card);
         }
-        .card:hover { background: #252525; border-color: #555; }
-        .card:focus { border-color: var(--accent); background: #252525; }
-
-        /* DnD Cards */
-        .edit-mode .card { cursor: grab; }
-        .card.dragging { opacity: 0.5; transform: scale(0.98); }
-        .card.drag-over-top { border-top: 2px solid var(--accent); }
-        .card.drag-over-bottom { border-bottom: 2px solid var(--accent); }
-
-        .card img { width: 20px; height: 20px; border-radius: 3px; object-fit: contain; }
+        .card:hover { background: var(--card-hover); border-color: #666; transform: translateY(-2px); }
+        .card img { width: 22px; height: 22px; border-radius: 3px; object-fit: contain; }
         .card span { font-size: 14px; flex-grow: 1; pointer-events: none; }
 
-        /* ACCIONES */
-        .actions-group { display: none; gap: 4px; }
+        /* Edit Mode Styles */
+        .edit-mode .category-section { border: 1px dashed #444; cursor: grab; }
+        .edit-mode .card { cursor: grab; }
+        .actions-group { display: none; gap: 5px; }
         .edit-mode .actions-group { display: flex; }
-
-        .icon-btn {
-            background: transparent; border: none; cursor: pointer; color: var(--text-muted);
-            padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
-        }
-        .icon-btn:hover { background: #333; color: #fff; }
-        .icon-btn svg { width: 14px; height: 14px; fill: currentColor; }
-        .icon-btn.delete:hover { color: var(--danger); background: rgba(255, 68, 68, 0.1); }
+        .icon-btn { background: transparent; border: none; cursor: pointer; color: #666; padding: 4px; display: flex; }
+        .icon-btn:hover { color: #fff; }
+        .icon-btn svg { width: 16px; height: 16px; fill: currentColor; }
+        .drag-icon { margin-right: 5px; color: #555; display: none; }
+        .edit-mode .drag-icon { display: block; }
         
-        .drag-handle-icon {
-            color: var(--text-muted); margin-right: 5px; cursor: grab; display: none;
-        }
-        .edit-mode .drag-handle-icon { display: block; }
-
-        /* MODALES */
+        /* Modals */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8);
-            display: none; justify-content: center; align-items: center; z-index: 100;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 2000;
         }
         .modal {
-            background: var(--card-bg); padding: 20px; border-radius: 12px;
-            width: 85%; max-width: 320px; border: 1px solid var(--border);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            background: #1e1e1e; padding: 25px; border-radius: 12px;
+            width: 90%; max-width: 400px; border: 1px solid #444;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
         }
-        .modal h3 { margin-top: 0; color: #fff; margin-bottom: 10px; font-size: 16px; }
-        .modal p { color: #ccc; font-size: 14px; margin-bottom: 20px; line-height: 1.4; }
-
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 12px; margin-bottom: 4px; color: var(--text-muted); }
-
+        .modal h3 { margin-top: 0; color: #fff; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; margin-bottom: 5px; color: #888; }
+        input[type="text"], select {
+            width: 100%; background: #252525; border: 1px solid #444; color: #eee;
+            padding: 10px; border-radius: 6px; outline: none; box-sizing: border-box;
+        }
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .btn-text { padding: 8px 15px; background: #333; border: none; color: white; border-radius: 5px; cursor: pointer; }
-        .btn-primary { background: var(--accent); }
+        .btn-text { padding: 8px 16px; border-radius: 6px; cursor: pointer; border: none; font-weight: 500; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-cancel { background: #333; color: #ccc; }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-text:hover { filter: brightness(1.2); }
 
     </style>
 </head>
 <body class="">
 
-    <div class="title-container">
-        <h1 id="mainTitle">herramientas &amp; iagentes</h1>
+    <header class="header-wrapper">
+        <div class="header-inner">
+            <!-- Row 1: Title & Buttons -->
+            <div class="top-row">
+                <div class="title-area">
+                    <h1 id="mainTitle" class="app-title">HERRAMIENTAS &amp; IAGENTES</h1>
+                    <input type="text" id="titleInput" placeholder="Título...">
+                </div>
 
-        <div class="config-controls">
-            <input type="text" id="titleInput" value="Centro de Mando IA" placeholder="Título...">
-            <input type="file" id="faviconFile" accept=".svg, .png, .jpg, .ico" style="display: none;">
-            <button class="btn-small" id="btnChangeFavicon" title="Subir imagen (SVG/PNG)">Cambiar Icono</button>
-        </div>
-    </div>
+                <div class="actions-area">
+                    <!-- Config Tools (Sticky to Right in Desktop, Visible in Edit) -->
+                    <div class="config-tools">
+                        <input type="file" id="faviconFile" accept=".svg, .png, .jpg, .ico" style="display: none;">
+                        <button class="btn-icon btn-tool" id="btnChangeFavicon" title="Cambiar Icono">
+                            <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        </button>
+                        <button class="btn-icon btn-tool" id="btnExportJson" title="Exportar Datos">
+                            <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        </button>
+                        <input type="file" id="importJsonFile" accept=".json" style="display: none;">
+                        <button class="btn-icon btn-tool" id="btnImportJson" title="Importar Datos">
+                            <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                        </button>
+                    </div>
 
-    <div class="header">
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Buscar..." autocomplete="off">
-            <span class="clear-search" id="clearSearch" title="Limpiar">✕</span>
-        </div>
-        <button class="btn" id="btnSave" title="Guardar cambios en archivo">
-            <svg viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"></path></svg>
-        </button>
-        <button class="btn" id="btnConfig" title="Configurar y Organizar">
-            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.04.17 0 .36.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.04-.22 0-.41-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg>
-        </button>
-        <button class="btn" id="btnAdd" title="Añadir">
-            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></svg>
-        </button>
-    </div>
-
-    <div class="grid-container" id="mainContainer"></div>
-
-    <div class="modal-overlay" id="modalConfirm" style="display: none;">
-        <div class="modal">
-            <h3 id="confirmTitle">Eliminar Enlace</h3>
-            <p id="confirmMessage">¿Estás seguro de que quieres eliminar este elemento?</p>
-            <div class="modal-actions">
-                <button class="btn-text" onclick="closeConfirm()">Cancelar</button>
-                <button class="btn-text btn-danger" id="btnConfirmAction">Eliminar</button>
+                    <!-- Main Buttons -->
+                    <button class="btn-icon" id="btnSave" title="Guardar cambios">
+                        <svg viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"></path></svg>
+                    </button>
+                    <button class="btn-icon" id="btnConfig" title="Configurar">
+                        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.04.17 0 .36.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.04-.22 0-.41-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"></path></svg>
+                    </button>
+                    <button class="btn-icon" id="btnAdd" title="Añadir">
+                        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></svg>
+                    </button>
+                </div>
             </div>
-        </div>
-    </div>
 
-    <div class="modal-overlay" id="modalAlert" style="display: none;">
-        <div class="modal">
-            <h3 id="alertTitle" style="color: var(--warn);">Atención</h3>
-            <p id="alertMessage">Mensaje de alerta</p>
-            <div class="modal-actions">
-                <button class="btn-text" onclick="closeAlert()">Entendido</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay" id="modalItem" style="display: none;">
-        <div class="modal">
-            <h3 id="modalTitle">Añadir Enlace</h3>
-            <input type="hidden" id="editIndex" value="">
-            <input type="hidden" id="editCatIndex" value="">
-
-            <div class="form-group">
-                <label>Nombre</label>
-                <input type="text" id="itemName">
-            </div>
-            <div class="form-group">
-                <label>URL</label>
-                <input type="text" id="itemUrl" placeholder="https://...">
-            </div>
-            <!-- NUEVO CAMPO PARA ICONO PERSONALIZADO -->
-            <div class="form-group">
-                <label>URL del Icono (Opcional)</label>
-                <input type="text" id="itemIcon" placeholder="https://... o data:image/svg...">
-                <small style="color: #666; font-size: 10px;">Útil para sobrescribir el icono genérico</small>
-            </div>
-            
-            <div class="form-group">
-                <label>Categoría</label>
-                <select id="itemCategory"></select>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-text" id="btnCancelItem">Cancelar</button>
-                <button class="btn-text btn-primary" id="btnSaveItem">Guardar</button>
+            <!-- Row 2: Search Bar (Permanent) -->
+            <div class="bottom-row">
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Buscar herramienta..." autocomplete="off">
+                    <span class="clear-search" id="clearSearch" title="Limpiar">✕</span>
+                </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <div class="modal-overlay" id="modalCat" style="display: none;">
-        <div class="modal">
-            <h3>Nueva Categoría</h3>
-            <input type="hidden" id="editCatId" value="">
-            <div class="form-group">
-                <label>Nombre de Categoría</label>
-                <input type="text" id="catName">
-            </div>
-            <div class="modal-actions">
-                <button class="btn-text" id="btnCancelCat">Cancelar</button>
-                <button class="btn-text btn-primary" id="btnSaveCat">Guardar</button>
-            </div>
-        </div>
-    </div>
+    <main class="masonry-container" id="mainContainer"></main>
 
-    <div class="modal-overlay" id="modalType" style="display: none;">
-        <div class="modal" style="text-align: center;">
-            <h3>¿Qué deseas añadir?</h3>
-            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-                <button class="btn-text" onclick="openCatModal()">Categoría</button>
-                <button class="btn-text btn-primary" onclick="openItemModal()">Enlace IA</button>
-            </div>
-            <div style="margin-top: 15px;">
-                <button class="btn-text" style="background: transparent; color: #888;" onclick="closeAllModals()">Cancelar</button>
-            </div>
-        </div>
-    </div>
+    <!-- MODALS -->
+    <div class="modal-overlay" id="modalConfirm"><div class="modal"><h3 id="confirmTitle">Confirmar</h3><p id="confirmMessage">¿Seguro?</p><div class="modal-actions"><button class="btn-text btn-cancel" onclick="closeConfirm()">Cancelar</button><button class="btn-text btn-danger" id="btnConfirmAction">Eliminar</button></div></div></div>
+    <div class="modal-overlay" id="modalAlert"><div class="modal"><h3 id="alertTitle" style="color:var(--warn)">Atención</h3><p id="alertMessage">Alerta</p><div class="modal-actions"><button class="btn-text btn-cancel" onclick="closeAlert()">OK</button></div></div></div>
+    
+    <div class="modal-overlay" id="modalItem"><div class="modal">
+        <h3>Enlace</h3><input type="hidden" id="editIndex"><input type="hidden" id="editCatIndex">
+        <div class="form-group"><label>Nombre</label><input type="text" id="itemName"></div>
+        <div class="form-group"><label>URL</label><input type="text" id="itemUrl"></div>
+        <div class="form-group"><label>Icono URL (Opcional)</label><input type="text" id="itemIcon"></div>
+        <div class="form-group"><label>Categoría</label><select id="itemCategory"></select></div>
+        <div class="modal-actions"><button class="btn-text btn-cancel" onclick="closeAllModals()">Cancelar</button><button class="btn-text btn-primary" id="btnSaveItem">Guardar</button></div>
+    </div></div>
+    
+    <div class="modal-overlay" id="modalCat"><div class="modal">
+        <h3>Categoría</h3><input type="hidden" id="editCatId">
+        <div class="form-group"><label>Nombre</label><input type="text" id="catName"></div>
+        <div class="modal-actions"><button class="btn-text btn-cancel" onclick="closeAllModals()">Cancelar</button><button class="btn-text btn-primary" id="btnSaveCat">Guardar</button></div>
+    </div></div>
+
+    <div class="modal-overlay" id="modalType"><div class="modal" style="text-align:center">
+        <h3>¿Qué añadir?</h3><div style="display:flex;gap:15px;justify-content:center;margin:25px 0"><button class="btn-text btn-cancel" onclick="openCatModal()">Categoría</button><button class="btn-text btn-primary" onclick="openItemModal()">Enlace</button></div><button class="btn-text btn-cancel" style="background:none;text-decoration:underline" onclick="closeAllModals()">Cancelar</button>
+    </div></div>
 
     <script>
-        // --- DATOS INICIALES ---
         /*DATA_START*/
         let appData = {
     "title": "HERRAMIENTAS & IAGENTES",
@@ -462,598 +447,192 @@
     ]
 };
         /*DATA_END*/
-
-        // --- SISTEMA DE PERSISTENCIA (LOCALSTORAGE) ---
-        const STORAGE_KEY = 'ia_dashboard_v1';
         
-        // Cargar desde LocalStorage si existe y es diferente
-        try {
-            const localData = localStorage.getItem(STORAGE_KEY);
-            if (localData) {
-                const parsedData = JSON.parse(localData);
-                // Simple comprobación para ver si debemos usar el local
-                if (JSON.stringify(parsedData) !== JSON.stringify(appData)) {
-                    console.log("Restaurando datos desde LocalStorage...");
-                    appData = parsedData;
-                }
-            }
-        } catch(e) { console.warn("Error leyendo LocalStorage", e); }
-
-        let bookmarks = appData.bookmarks;
-        let isConfigMode = false;
-        let isDirty = false;
-
-        // Variables Drag & Drop
-        let draggedItem = null;
-        let draggedCat = null;
-        let dragSource = null; // { type: 'item'|'cat', fromCatIdx, fromIdx }
-
-        const mainContainer = document.getElementById('mainContainer');
-        const searchInput = document.getElementById('searchInput');
-        const clearSearchBtn = document.getElementById('clearSearch');
-        const btnSave = document.getElementById('btnSave');
-        const btnConfig = document.getElementById('btnConfig');
-        const titleLabel = document.getElementById('mainTitle');
-        const titleInput = document.getElementById('titleInput');
-
-        // Favicon Logic
-        const faviconFile = document.getElementById('faviconFile');
-        const btnChangeFavicon = document.getElementById('btnChangeFavicon');
-
-        // --- INICIALIZACIÓN ---
-        window.onload = () => {
-            titleLabel.innerText = appData.title || "Centro de Mando IA";
-            titleInput.value = appData.title || "Centro de Mando IA";
-            // Intentar cargar favicon si está guardado en el HTML (base64)
-            searchInput.focus();
-            render();
-            if(localStorage.getItem(STORAGE_KEY)) {
-                // Pequeña notificación visual si se cargaron datos
-                // showAlert("Sesión Restaurada", "Se han recuperado tus cambios recientes.");
-            }
+        const KEY='ia_dash_v4';
+        try{const l=localStorage.getItem(KEY);if(l)appData=JSON.parse(l);}catch(e){}
+        let bm=appData.bookmarks, mode=false, dirty=false, dSrc=null;
+        
+        const $=(id)=>document.getElementById(id);
+        const GEN_ICON="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23555555'/%3E%3Cpath d='M10 7l5 5-5 5' stroke='%23000000' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
+        
+        const svg={
+            edit:'<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
+            del:'<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
+            drag:'<svg viewBox="0 0 24 24"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>'
         };
 
-        // --- NAVEGACIÓN TAB ---
-        searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Tab' && !e.shiftKey) {
-                e.preventDefault();
-                const firstCard = document.querySelector('.card');
-                if (firstCard) firstCard.focus();
-            }
-        });
-
-        // --- BUSCADOR ---
-        searchInput.addEventListener('input', (e) => {
-            const val = e.target.value;
-            clearSearchBtn.style.display = val ? 'block' : 'none';
-            render(val);
-        });
-
-        clearSearchBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            clearSearchBtn.style.display = 'none';
+        function init(){
+            $('mainTitle').innerText=appData.title; $('titleInput').value=appData.title;
             render();
-            searchInput.focus();
-        });
-
-        // --- RENDERIZADO (SIMPLIFICADO: ICONO GENÉRICO) ---
-        // Icono genérico: Círculo gris con chevron > negro
-        const GENERIC_ICON = "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23555555'/%3E%3Cpath d='M10 7l5 5-5 5' stroke='%23000000' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
-
-        function getFavicon(bm) {
-            // Si el usuario subió uno personalizado manualmente, úsalo. Si no, usa el genérico.
-            if (bm.customIcon) return bm.customIcon;
-            return GENERIC_ICON;
         }
 
-        const icons = {
-            edit: '<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
-            delete: '<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
-            drag: '<svg viewBox="0 0 24 24"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>'
-        };
-
-        function render(filter = "") {
-            mainContainer.innerHTML = "";
-            const filterLower = filter.toLowerCase();
-
-            bookmarks.forEach((cat, catIndex) => {
-                const filteredItems = cat.items.filter(item => item.name.toLowerCase().includes(filterLower));
-                if (filter && filteredItems.length === 0) return;
-
-                const catSection = document.createElement('div');
-                catSection.className = 'category-section';
-                if(isConfigMode) {
-                    catSection.classList.add('draggable-cat');
-                    catSection.draggable = true;
-                    // Eventos Drag Categoría
-                    catSection.addEventListener('dragstart', (e) => handleDragStart(e, 'cat', catIndex));
-                    catSection.addEventListener('dragover', (e) => handleDragOver(e, 'cat'));
-                    catSection.addEventListener('drop', (e) => handleDrop(e, 'cat', catIndex));
-                    // Cleanup visual al salir
-                    catSection.addEventListener('dragleave', (e) => {
-                        e.currentTarget.classList.remove('drag-over-top', 'drag-over-bottom');
-                    });
-                }
-
-                const header = document.createElement('div');
-                header.className = 'category-header';
+        function render(f=""){
+            const c=$('mainContainer'); c.innerHTML='';
+            const fl=f.toLowerCase();
+            
+            bm.forEach((cat,ci)=>{
+                const its=cat.items.filter(i=>i.name.toLowerCase().includes(fl));
+                if(f && !its.length) return;
                 
-                const dragHandle = isConfigMode ? `<span class="drag-handle-icon" title="Arrastrar Categoría">${icons.drag}</span>` : '';
+                const s=document.createElement('div'); s.className='category-section';
+                if(mode) setupDrag(s,ci,'cat');
                 
-                header.innerHTML = `
-                    <div style="display:flex; align-items:center;">
-                        ${dragHandle}
-                        <span>${cat.title}</span>
-                    </div>
+                const dh=mode?`<span class="drag-icon">${svg.drag}</span>`:'';
+                s.innerHTML=`<div class="category-header">
+                    <div style="display:flex;align-items:center">${dh}<span>${cat.title}</span></div>
                     <div class="actions-group">
-                        <button class="icon-btn" title="Editar Categoría" onclick="editCategory(${catIndex})">${icons.edit}</button>
-                        <button class="icon-btn delete" title="Borrar Categoría" onclick="deleteCategory(${catIndex})">${icons.delete}</button>
+                        <button class="icon-btn" onclick="editCat(${ci})">${svg.edit}</button>
+                        <button class="icon-btn" onclick="delCat(${ci})">${svg.del}</button>
                     </div>
-                `;
-                catSection.appendChild(header);
-
-                const list = document.createElement('div');
-                list.className = 'category-list';
-
-                const itemsToShow = filter ? filteredItems : cat.items;
-
-                itemsToShow.forEach((bm, itemIndex) => {
-                    const realIndex = cat.items.indexOf(bm);
-                    const card = document.createElement('a');
-                    card.className = 'card';
-                    card.tabIndex = 0;
-
-                    if (!isConfigMode) {
-                        card.href = bm.url;
-                        card.target = "_self";
-                    } else {
-                        card.removeAttribute('href');
-                        card.draggable = true;
-                        // Eventos Drag Item
-                        card.addEventListener('dragstart', (e) => handleDragStart(e, 'item', catIndex, realIndex));
-                        card.addEventListener('dragover', (e) => {
-                             // Si arrastramos una categoría, los items NO deben interceptar el evento
-                             if (dragSource && dragSource.type === 'cat') return;
-                             handleDragOver(e, 'item');
-                        });
-                        card.addEventListener('drop', (e) => {
-                             // Si arrastramos una categoría, los items NO deben interceptar el drop
-                             if (dragSource && dragSource.type === 'cat') return;
-                             handleDrop(e, 'item', catIndex, realIndex);
-                        });
-                        card.addEventListener('dragenter', (e) => {}); // Opcional style
-                        card.addEventListener('dragleave', (e) => {
-                            e.currentTarget.classList.remove('drag-over-top');
-                            e.currentTarget.classList.remove('drag-over-bottom');
-                        });
-                    }
-
-                    // Ya no usamos onerror porque el SVG es local y siempre carga
-                    card.innerHTML = `
-                        <img src="${getFavicon(bm)}">
-                        <span>${bm.name}</span>
-                        <div class="actions-group">
-                            <button class="icon-btn" title="Editar" onclick="editItem(${catIndex}, ${realIndex}, event)">${icons.edit}</button>
-                            <button class="icon-btn delete" title="Borrar" onclick="deleteItem(${catIndex}, ${realIndex}, event)">${icons.delete}</button>
-                        </div>
-                    `;
-                    list.appendChild(card);
+                </div>`;
+                
+                const ul=document.createElement('ul'); ul.className='category-list';
+                if(mode) setupDrop(ul,ci,cat.items.length);
+                
+                (f?its:cat.items).forEach((it,ii)=>{
+                    const ri=cat.items.indexOf(it);
+                    const li=document.createElement('li');
+                    const a=document.createElement('a'); a.className='card';
+                    if(!mode) { a.href=it.url; a.target="_self"; }
+                    else setupDrag(li,ci,'item',ri);
+                    
+                    a.innerHTML=`<img src="${it.customIcon||GEN_ICON}"><span>${it.name}</span>
+                    <div class="actions-group">
+                        <button class="icon-btn" onclick="editItem(${ci},${ri},event)">${svg.edit}</button>
+                        <button class="icon-btn" onclick="delItem(${ci},${ri},event)">${svg.del}</button>
+                    </div>`;
+                    li.appendChild(a); ul.appendChild(li);
                 });
-
-                // Drop zone vacía para categorías sin items o para soltar al final
-                if(isConfigMode) {
-                    list.addEventListener('dragover', (e) => {
-                        // IMPORTANTE: Si es categoría, dejar pasar el evento al padre
-                        if(dragSource && dragSource.type === 'cat') return;
-                        
-                        e.preventDefault();
-                        if(dragSource && dragSource.type === 'item') {
-                            list.style.background = 'rgba(0,122,204,0.05)';
-                        }
-                    });
-                    list.addEventListener('dragleave', () => list.style.background = 'transparent');
-                    list.addEventListener('drop', (e) => {
-                        // IMPORTANTE: Si es categoría, dejar pasar el evento al padre
-                        if(dragSource && dragSource.type === 'cat') return;
-
-                        e.preventDefault();
-                        e.stopPropagation();
-                        list.style.background = 'transparent';
-                        // Si soltamos en el espacio vacío de la lista, movemos al final
-                        if(dragSource && dragSource.type === 'item') {
-                            moveItem(dragSource.fromCatIdx, dragSource.fromIdx, catIndex, cat.items.length);
-                        }
-                    });
-                }
-
-                catSection.appendChild(list);
-                mainContainer.appendChild(catSection);
+                s.appendChild(ul); c.appendChild(s);
             });
         }
 
-        // --- DRAG & DROP LOGIC ---
-        function handleDragStart(e, type, catIdx, itemIdx = null) {
-            e.stopPropagation();
-            dragSource = { type, fromCatIdx: catIdx, fromIdx: itemIdx };
-            e.dataTransfer.effectAllowed = 'move';
-            e.target.classList.add('dragging');
-            
-            // Hack para Firefox
-            e.dataTransfer.setData('text/plain', JSON.stringify(dragSource));
-        }
-
-        function handleDragOver(e, type) {
-            e.preventDefault();
-            e.stopPropagation();
-            if(!dragSource) return;
-
-            // Visual feedback logic
-            if(type === 'item' && dragSource.type === 'item') {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const mid = (rect.bottom - rect.top) / 2;
-                const clientY = e.clientY - rect.top;
-                
-                e.currentTarget.classList.remove('drag-over-top', 'drag-over-bottom');
-                if(clientY < mid) e.currentTarget.classList.add('drag-over-top');
-                else e.currentTarget.classList.add('drag-over-bottom');
-            }
-            
-            // Visual feedback categories (NUEVO)
-            if(type === 'cat' && dragSource.type === 'cat') {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const mid = (rect.bottom - rect.top) / 2;
-                const clientY = e.clientY - rect.top;
-                
-                e.currentTarget.classList.remove('drag-over-top', 'drag-over-bottom');
-                if(clientY < mid) e.currentTarget.classList.add('drag-over-top');
-                else e.currentTarget.classList.add('drag-over-bottom');
-            }
-        }
-
-        function handleDrop(e, type, toCatIdx, toItemIdx = null) {
-            e.preventDefault();
-            e.stopPropagation();
-            const targetEl = e.currentTarget;
-            targetEl.classList.remove('dragging', 'drag-over', 'drag-over-top', 'drag-over-bottom');
-            
-            if(!dragSource) return;
-
-            // 1. Reordenar Categorías
-            if(type === 'cat' && dragSource.type === 'cat') {
-                let finalCatIndex = toCatIdx;
-                const rect = targetEl.getBoundingClientRect();
-                const mid = (rect.bottom - rect.top) / 2;
-                if((e.clientY - rect.top) > mid) {
-                    finalCatIndex++; // Insertar después
-                }
-                
-                if(dragSource.fromCatIdx === finalCatIndex || dragSource.fromCatIdx === finalCatIndex - 1) return;
-
-                const movedCat = bookmarks.splice(dragSource.fromCatIdx, 1)[0];
-                if(dragSource.fromCatIdx < finalCatIndex) {
-                    finalCatIndex--; // Ajustar índice tras eliminación
-                }
-                
-                bookmarks.splice(finalCatIndex, 0, movedCat);
-                markAsDirty();
-                render(searchInput.value);
-            }
-
-            // 2. Reordenar/Mover Items
-            if(type === 'item' && dragSource.type === 'item') {
-                // Calcular si insertar antes o después
-                let finalIndex = toItemIdx;
-                const rect = targetEl.getBoundingClientRect();
-                const mid = (rect.bottom - rect.top) / 2;
-                if((e.clientY - rect.top) > mid) {
-                    finalIndex++; // Soltar debajo
-                }
-                
-                moveItem(dragSource.fromCatIdx, dragSource.fromIdx, toCatIdx, finalIndex);
-            }
-            
-            // Limpieza
-            document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
-            dragSource = null;
-        }
-
-        function moveItem(fromCat, fromIdx, toCat, toIdx) {
-            // Ajuste de índices si es en la misma categoría
-            if(fromCat === toCat) {
-                if(fromIdx < toIdx) toIdx--; // Al quitar el item, los índices posteriores bajan
-                if(fromIdx === toIdx) return; // Mismo sitio
-            }
-
-            const item = bookmarks[fromCat].items.splice(fromIdx, 1)[0];
-            bookmarks[toCat].items.splice(toIdx, 0, item);
-            markAsDirty();
-            render(searchInput.value);
-        }
-
-
-        // --- CONFIRMATION & ALERT LOGIC ---
-        const modalConfirm = document.getElementById('modalConfirm');
-        const modalAlert = document.getElementById('modalAlert');
-        let confirmCallback = null;
-
-        function showConfirm(title, message, callback) {
-            document.getElementById('confirmTitle').innerText = title;
-            document.getElementById('confirmMessage').innerText = message;
-            confirmCallback = callback;
-            modalConfirm.style.display = 'flex';
-        }
-
-        function closeConfirm() {
-            modalConfirm.style.display = 'none';
-            confirmCallback = null;
-        }
-
-        document.getElementById('btnConfirmAction').onclick = () => {
-            if (confirmCallback) confirmCallback();
-            closeConfirm();
-        };
-
-        function showAlert(title, message) {
-            document.getElementById('alertTitle').innerText = title;
-            document.getElementById('alertMessage').innerText = message;
-            modalAlert.style.display = 'flex';
-        }
-
-        function closeAlert() {
-            modalAlert.style.display = 'none';
-        }
-
-
-        // --- MODO CONFIGURACIÓN Y FAVICON ---
-        btnConfig.addEventListener('click', () => {
-            isConfigMode = !isConfigMode;
-            if (isConfigMode) {
-                btnConfig.classList.add('active');
-                document.body.classList.add('edit-mode');
-            } else {
-                btnConfig.classList.remove('active');
-                document.body.classList.remove('edit-mode');
-                appData.title = titleInput.value;
-                titleLabel.innerText = titleInput.value;
-                markAsDirty();
-            }
-            render(searchInput.value);
-        });
-
-        // Lógica cambio de Favicon
-        btnChangeFavicon.addEventListener('click', () => {
-            faviconFile.click();
-        });
-
-        faviconFile.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const base64 = evt.target.result;
-                const link = document.getElementById('dynamicFavicon');
-                if(link) link.href = base64;
-                markAsDirty();
-                showAlert("Éxito", "Icono actualizado. Pulsa el botón de Guardar para hacerlo permanente.");
+        // DRAG DROP
+        function setupDrag(el,c,t,i=null){
+            el.draggable=true;
+            el.ondragstart=e=>{e.stopPropagation();dSrc={t,c,i};e.dataTransfer.effectAllowed='move';};
+            el.ondragover=e=>{
+                e.preventDefault();e.stopPropagation();
+                if(!dSrc||dSrc.t!==t)return;
             };
-            reader.readAsDataURL(file);
-        });
-
-        // --- CRUD LOGIC ---
-        const modalType = document.getElementById('modalType');
-        const modalItem = document.getElementById('modalItem');
-        const modalCat = document.getElementById('modalCat');
-
-        document.getElementById('btnAdd').onclick = () => modalType.style.display = 'flex';
-        function closeAllModals() {
-            modalType.style.display = 'none';
-            modalItem.style.display = 'none';
-            modalCat.style.display = 'none';
-            closeConfirm();
-            closeAlert();
-        }
-
-        function openItemModal(catIdx = null, itemIdx = null) {
-            closeAllModals();
-            const isEdit = (catIdx !== null && itemIdx !== null);
-            document.getElementById('modalTitle').innerText = isEdit ? 'Editar Enlace' : 'Añadir Enlace';
-            document.getElementById('editCatIndex').value = catIdx !== null ? catIdx : '';
-            document.getElementById('editIndex').value = itemIdx !== null ? itemIdx : '';
-
-            const select = document.getElementById('itemCategory');
-            select.innerHTML = '';
-            bookmarks.forEach((cat, idx) => {
-                const opt = document.createElement('option');
-                opt.value = idx;
-                opt.innerText = cat.title;
-                select.appendChild(opt);
-            });
-
-            if (isEdit) {
-                const item = bookmarks[catIdx].items[itemIdx];
-                document.getElementById('itemName').value = item.name;
-                document.getElementById('itemUrl').value = item.url;
-                // CARGAR ICONO PERSONALIZADO SI EXISTE
-                document.getElementById('itemIcon').value = item.customIcon || '';
-                select.value = catIdx;
-            } else {
-                document.getElementById('itemName').value = '';
-                document.getElementById('itemUrl').value = '';
-                document.getElementById('itemIcon').value = '';
-                select.disabled = false;
-            }
-            modalItem.style.display = 'flex';
-            document.getElementById('itemName').focus();
-        }
-
-        function editItem(catIdx, itemIdx, e) {
-            e.stopPropagation(); e.preventDefault();
-            openItemModal(catIdx, itemIdx);
-        }
-
-        function deleteItem(catIdx, itemIdx, e) {
-            e.stopPropagation(); e.preventDefault();
-            showConfirm(
-                'Eliminar Enlace',
-                `¿Estás seguro de que quieres eliminar "${bookmarks[catIdx].items[itemIdx].name}"?`,
-                () => {
-                    bookmarks[catIdx].items.splice(itemIdx, 1);
-                    markAsDirty();
-                    render(searchInput.value);
+            el.ondrop=e=>{
+                e.preventDefault();e.stopPropagation();
+                if(!dSrc||dSrc.t!==t)return;
+                if(t==='cat'){
+                    const m=bm.splice(dSrc.c,1)[0];
+                    if(c!==dSrc.c){ bm.splice(c,0,m); setDirty(); render($('searchInput').value); }
+                } else if(t==='item'){
+                    const m=bm[dSrc.c].items.splice(dSrc.i,1)[0];
+                    bm[c].items.push(m);
+                    setDirty(); render($('searchInput').value);
                 }
-            );
+            };
+        }
+        function setupDrop(el,c,len){
+            el.ondragover=e=>{if(dSrc&&dSrc.t==='item')e.preventDefault();};
+            el.ondrop=e=>{
+                e.preventDefault();e.stopPropagation();
+                if(dSrc&&dSrc.t==='item'){
+                    const m=bm[dSrc.c].items.splice(dSrc.i,1)[0];
+                    bm[c].items.push(m); setDirty(); render($('searchInput').value);
+                }
+            };
         }
 
-        document.getElementById('btnSaveItem').onclick = () => {
-            const name = document.getElementById('itemName').value;
-            let url = document.getElementById('itemUrl').value;
-            const customIcon = document.getElementById('itemIcon').value; // CAPTURAR VALOR
+        // LOGIC
+        function setDirty(){ dirty=true; $('btnSave').classList.add('dirty'); }
+        const sIn=$('searchInput'); const cl=$('clearSearch');
+        sIn.oninput=e=>{ cl.style.display=e.target.value?'block':'none'; render(e.target.value); };
+        cl.onclick=()=>{ sIn.value=''; cl.style.display='none'; render(); sIn.focus(); };
+        
+        $('btnConfig').onclick=()=>{
+            mode=!mode; 
+            document.body.classList.toggle('edit-mode',mode);
+            $('btnConfig').classList.toggle('active',mode);
+            if(!mode){ appData.title=$('titleInput').value; $('mainTitle').innerText=appData.title; setDirty(); }
+            render($('searchInput').value);
+        }
+        
+        $('btnSave').onclick=()=>{
+            if(mode)$('btnConfig').click();
+            dirty=false; $('btnSave').classList.remove('dirty');
+            $('mainContainer').innerHTML='';
+            const h=document.documentElement.outerHTML;
+            render();
+            const d=JSON.stringify(appData,null,4);
+            const r=/(\/\*DATA_START\*\/)([\s\S]*?)(\/\*DATA_END\*\/)/;
+            if(!r.test(h)) return alert("Error saving");
+            const final=h.replace(r,`$1\n        let appData = ${d};\n        $3`);
             
-            const catIdx = parseInt(document.getElementById('itemCategory').value);
-            const itemIdx = document.getElementById('editIndex').value;
-            const oldCatIdx = document.getElementById('editCatIndex').value;
-
-            if (name && url) {
-                if (!url.startsWith('http')) url = 'https://' + url;
-                
-                const newItem = { name, url, customIcon }; // GUARDAR OBJETO COMPLETO
-
-                if (itemIdx !== '') {
-                    if (oldCatIdx != catIdx) {
-                        bookmarks[oldCatIdx].items.splice(itemIdx, 1);
-                        bookmarks[catIdx].items.push(newItem);
-                    } else {
-                        bookmarks[catIdx].items[itemIdx] = newItem;
-                    }
-                } else {
-                    bookmarks[catIdx].items.push(newItem);
-                }
-                markAsDirty();
-                closeAllModals();
-                render(searchInput.value);
-            }
+            const b=new Blob([final],{type:'text/html'});
+            const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='panel_ia_v4.5.html';
+            document.body.appendChild(a); a.click(); a.remove();
         };
-        document.getElementById('btnCancelItem').onclick = closeAllModals;
 
-        function openCatModal(idx = null) {
-            closeAllModals();
-            const isEdit = idx !== null;
-            document.getElementById('editCatId').value = isEdit ? idx : '';
-            document.getElementById('catName').value = isEdit ? bookmarks[idx].title : '';
-            modalCat.style.display = 'flex';
-            document.getElementById('catName').focus();
-        }
-        function editCategory(idx) { openCatModal(idx); }
-
-        function deleteCategory(idx) {
-            if (bookmarks[idx].items.length > 0) {
-                showAlert("No se puede borrar", "La categoría debe estar vacía para poder eliminarla.");
-                return;
+        // CRUD & MODALS
+        window.editItem=(c,i,e)=>{e.stopPropagation();e.preventDefault(); openModal('modalItem',c,i);}
+        window.delItem=(c,i,e)=>{e.stopPropagation();e.preventDefault(); bm[c].items.splice(i,1); setDirty(); render();}
+        window.editCat=(c)=>{openModal('modalCat',c);}
+        window.delCat=(c)=>{bm.splice(c,1); setDirty(); render();}
+        $('btnAdd').onclick=()=>$('modalType').style.display='flex';
+        
+        function openModal(id,c=null,i=null){
+            $(id).style.display='flex';
+            if(id==='modalItem'){
+               $('editCatIndex').value=c!==null?c:''; $('editIndex').value=i!==null?i:'';
+               $('itemCategory').innerHTML=bm.map((x,idx)=>`<option value="${idx}">${x.title}</option>`).join('');
+               if(c!==null && i!==null){
+                   const it=bm[c].items[i]; $('itemName').value=it.name; $('itemUrl').value=it.url; $('itemCategory').value=c;
+               } else { $('itemName').value=''; $('itemUrl').value=''; }
+            } else if(id==='modalCat'){
+                $('editCatId').value=c!==null?c:'';
+                $('catName').value=c!==null?bm[c].title:'';
             }
-            showConfirm(
-                'Eliminar Categoría',
-                `¿Eliminar permanentemente la categoría "${bookmarks[idx].title}"?`,
-                () => {
-                    bookmarks.splice(idx, 1);
-                    markAsDirty();
-                    render(searchInput.value);
-                }
-            );
         }
-
-        document.getElementById('btnSaveCat').onclick = () => {
-            const name = document.getElementById('catName').value;
-            const idx = document.getElementById('editCatId').value;
-            if (name) {
-                if (idx !== '') {
-                    bookmarks[idx].title = name;
-                } else {
-                    bookmarks.push({ id: "cat" + Date.now(), title: name, items: [] });
-                }
-                markAsDirty();
-                closeAllModals();
-                render(searchInput.value);
+        window.closeAllModals=()=>{document.querySelectorAll('.modal-overlay').forEach(e=>e.style.display='none');}
+        
+        $('btnSaveItem').onclick=()=>{
+            const n=$('itemName').value, u=$('itemUrl').value, c=parseInt($('itemCategory').value);
+            if(n){
+                const it={name:n,url:u};
+                const idx=$('editIndex').value;
+                if(idx!=='') bm[c].items[idx]=it; else bm[c].items.push(it);
+                setDirty(); closeAllModals(); render($('searchInput').value);
             }
+        }
+        $('btnSaveCat').onclick=()=>{
+            const n=$('catName').value;
+            if(n){
+                const idx=$('editCatId').value;
+                if(idx!=='') bm[idx].title=n; else bm.push({title:n,items:[]});
+                setDirty(); closeAllModals(); render($('searchInput').value);
+            }
+        }
+        document.getElementById('btnChangeFavicon').onclick=()=>faviconFile.click();
+        faviconFile.onchange=e=>{
+            const f=e.target.files[0]; if(!f)return;
+            const r=new FileReader();
+            r.onload=ev=>{ document.getElementById('dynamicFavicon').href=ev.target.result; setDirty(); alert("Icono cambiado."); };
+            r.readAsDataURL(f);
         };
-        document.getElementById('btnCancelCat').onclick = closeAllModals;
+        document.getElementById('btnExportJson').onclick=()=>{
+            const d="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(appData,null,2));
+            const a=document.createElement('a'); a.href=d; a.download="backup_"+Date.now()+".json"; document.body.appendChild(a); a.click(); a.remove();
+        };
+        document.getElementById('btnImportJson').onclick=()=>document.getElementById('importJsonFile').click();
+        document.getElementById('importJsonFile').onchange=e=>{
+            const f=e.target.files[0]; if(!f)return;
+            const r=new FileReader();
+            r.onload=ev=>{
+                try{
+                    const d=JSON.parse(ev.target.result);
+                    if(d.bookmarks){ appData=d; bm=appData.bookmarks; if(d.title){$('titleInput').value=d.title; $('mainTitle').innerText=d.title;} setDirty(); render(); alert("Datos importados."); }
+                }catch(x){alert("JSON inválido");}
+                e.target.value='';
+            };
+            r.readAsText(f);
+        };
 
-        // --- SISTEMA DE GUARDADO OPTIMIZADO ---
-        function markAsDirty() {
-            if (!isDirty) {
-                isDirty = true;
-                btnSave.classList.add('dirty');
-                document.title = "⚠️ Cambios sin guardar";
-            }
-            appData.bookmarks = bookmarks;
-            appData.title = titleInput.value; // Asegurar título actualizado
-            
-            // GUARDADO AUTOMÁTICO EN LOCALSTORAGE
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-        }
-
-        btnSave.addEventListener('click', () => {
-            // 0. Si está en modo edición, salir primero para guardar la vista limpia
-            if (isConfigMode) {
-                appData.title = titleInput.value;
-                titleLabel.innerText = titleInput.value;
-                isConfigMode = false;
-                btnConfig.classList.remove('active');
-                document.body.classList.remove('edit-mode');
-            }
-
-            // 1. Limpieza de estado visual
-            isDirty = false;
-            btnSave.classList.remove('dirty');
-            document.title = appData.title;
-
-            // 2. Actualizar datos en memoria
-            appData.title = titleInput.value;
-            appData.bookmarks = bookmarks;
-
-            // 3. LIMPIEZA CRÍTICA DEL DOM PARA REDUCIR PESO
-            mainContainer.innerHTML = "";
-
-            // 4. Capturar HTML limpio
-            const htmlContent = document.documentElement.outerHTML;
-
-            // 5. Restaurar vista inmediatamente
-            render(searchInput.value);
-
-            // 6. Inyectar datos JSON actualizados
-            const newDataString = JSON.stringify(appData, null, 4);
-            const regex = /(\/\*DATA_START\*\/)([\s\S]*?)(\/\*DATA_END\*\/)/;
-            const newScriptContent = `$1\n        let appData = ${newDataString};\n        $3`;
-
-            const newHtml = htmlContent.replace(regex, newScriptContent);
-
-            // 7. COPIAR AL PORTAPAPELES
-            try {
-                const dummy = document.createElement("textarea");
-                document.body.appendChild(dummy);
-                dummy.value = newHtml;
-                dummy.select();
-                document.execCommand("copy");
-                document.body.removeChild(dummy);
-                console.log("Código copiado al portapapeles");
-            } catch (err) {
-                console.error("Error al copiar al portapapeles", err);
-            }
-
-            // 8. Generar descarga
-            const blob = new Blob([newHtml], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'panel_ia_final.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            // 9. Notificación final
-            showAlert("Guardado y Copiado", "El código se ha copiado al portapapeles y el archivo se ha descargado.");
-        });
+        init();
     </script>
 </body></html>
