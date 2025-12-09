@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Scraper Mobile Optimized</title>
+    
+    <!-- Librerías Externas -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    <script src="https://unpkg.com/turndown/dist/turndown.js"></script>
+    <script src="https://unpkg.com/turndown-plugin-gfm/dist/turndown-plugin-gfm.js"></script>
+    <script src="https://unpkg.com/@mozilla/readability@0.5.0/Readability.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- JSZip para comprimir imágenes -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <!-- Configuración Tailwind -->
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: { slate: { 850: '#151f32' } },
+            fontFamily: { mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'] },
+            typography: (theme) => ({
+              DEFAULT: {
+                css: {
+                  color: theme('colors.gray.300'),
+                  a: { color: theme('colors.blue.400'), '&:hover': { color: theme('colors.blue.300') } },
+                  h1: { color: '#60a5fa', borderBottom: '2px solid #1e3a8a', paddingBottom: '0.3em' },
+                  strong: { color: theme('colors.white') },
+                  blockquote: { borderLeftColor: theme('colors.blue.500'), backgroundColor: 'rgba(59, 130, 246, 0.1)', color: theme('colors.gray.300') },
+                  pre: { backgroundColor: '#1e293b', color: '#e2e8f0' }
+                }
+              }
+            })
+          }
+        }
+      }
+    </script>
+    
+    <style>
+        /* Ajustes Mobile-First */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        body { background-color: #0f172a; color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
+        
+        .loader {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 2px solid #3b82f6;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading .loader { display: inline-block; }
+        .loading .btn-text { display: none; }
+        
+        /* Modal Transitions */
+        .modal-backdrop { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-backdrop.open { opacity: 1; pointer-events: auto; }
+        .modal-content { transform: scale(0.95); opacity: 0; transition: all 0.3s ease; }
+        .modal-backdrop.open .modal-content { transform: scale(1); opacity: 1; }
+
+        .force-hidden { display: none !important; }
+        .force-flex { display: flex !important; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-slate-900">
+
+    <!-- Navbar Sticky -->
+    <nav class="bg-slate-900 border-b border-slate-800 p-3 flex justify-between items-center shrink-0 z-50">
+        <div class="flex items-center gap-3" onclick="resetApp()" style="cursor: pointer;">
+            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center shadow">
+                <i class="fas fa-file-code text-white text-sm"></i>
+            </div>
+            <h1 class="font-bold text-base md:text-lg text-gray-100 leading-tight">Markdown <br class="md:hidden"><span class="text-xs text-slate-500 font-normal">Scraper v2.2</span></h1>
+        </div>
+        
+        <!-- Botón Reset -->
+        <button id="reset-btn" onclick="resetApp()" class="px-3 py-1.5 bg-slate-800 text-blue-400 rounded border border-slate-700 text-sm hover:bg-slate-700 transition hidden">
+            <i class="fas fa-search mr-1"></i> Nueva
+        </button>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative w-full">
+        
+        <!-- PANEL IZQUIERDO (INPUT) -->
+        <div id="input-side" class="w-full md:w-1/3 bg-slate-900 p-4 md:p-6 flex flex-col gap-4 border-r border-slate-800 overflow-y-auto z-20">
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-lg mt-4 md:mt-0">
+                <label class="block text-xs uppercase text-slate-400 font-bold mb-2">URL del Artículo</label>
+                <input type="url" id="url-input" placeholder="Pegar enlace aquí..." 
+                    class="w-full p-3 bg-slate-900 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none transition mb-4 text-base" />
+                
+                <button id="extract-btn" class="w-full py-3 bg-blue-600 active:bg-blue-700 text-white rounded-lg font-bold shadow-lg shadow-blue-900/20 transition flex items-center justify-center gap-2">
+                    <span class="loader"></span>
+                    <span class="btn-text"><i class="fas fa-bolt mr-2"></i> Extraer Ahora</span>
+                </button>
+            </div>
+
+            <div id="intro-text" class="text-slate-400 text-sm space-y-3 p-2">
+                <p class="text-slate-500 text-center text-xs uppercase tracking-widest border-b border-slate-800 pb-2">Instrucciones</p>
+                <div class="flex gap-3 items-start">
+                    <i class="fas fa-magic text-blue-500 mt-1"></i>
+                    <p>Convierte cualquier web, hilo de Reddit o Tweet en Markdown limpio.</p>
+                </div>
+            </div>
+
+            <div id="meta-panel" class="hidden bg-slate-800 p-4 rounded-xl border border-slate-700 animate-fade-in">
+                <h3 class="text-xs uppercase text-slate-400 font-bold mb-3 border-b border-slate-700 pb-2">Info</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between"><span class="text-slate-500">Título:</span> <span id="meta-title" class="text-white truncate w-32 text-right">...</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Fecha:</span> <span id="meta-date" class="text-blue-300">...</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL DERECHO (OUTPUT) -->
+        <div id="output-side" class="flex-1 bg-slate-850 flex flex-col min-h-0 absolute inset-0 md:static transform translate-x-full md:translate-x-0 transition-transform duration-300 z-30">
+            
+            <!-- TOOLBAR PRINCIPAL -->
+            <div class="bg-slate-800 border-b border-slate-700 p-2 flex flex-col sm:flex-row justify-between gap-2 shrink-0 shadow-md z-40">
+                <div class="flex bg-slate-900 rounded p-1 border border-slate-700 w-full sm:w-auto justify-center">
+                    <button class="view-btn flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded transition text-gray-500 hover:text-gray-300 uppercase" data-view="EDIT">Edit</button>
+                    <!-- CAMBIO: hidden sm:block para ocultar SPLIT en móviles -->
+                    <button class="view-btn hidden sm:block flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded transition bg-slate-700 text-white shadow uppercase" data-view="SPLIT">Split</button>
+                    <button class="view-btn flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded transition text-gray-500 hover:text-gray-300 uppercase" data-view="PREVIEW">View</button>
+                </div>
+
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button id="copy-btn" class="flex-1 sm:flex-none px-3 py-1.5 bg-slate-700 active:bg-slate-600 text-gray-300 rounded text-xs font-bold border border-slate-600">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button id="trigger-dl-modal-btn" class="flex-1 sm:flex-none px-4 py-1.5 bg-green-700 active:bg-green-600 text-white rounded text-xs font-bold shadow border border-green-600">
+                        <i class="fas fa-download mr-1"></i> Descargar
+                    </button>
+                </div>
+            </div>
+
+            <!-- ÁREA DE CONTENIDO -->
+            <div class="flex-1 flex overflow-hidden relative bg-slate-900">
+                <div id="editor-pane" class="flex-1 h-full flex flex-col">
+                    <textarea id="markdown-output" 
+                        class="flex-1 w-full h-full bg-[#0d1117] text-gray-300 p-4 outline-none resize-none font-mono text-sm leading-relaxed border-none focus:ring-0"
+                        placeholder="Generando markdown..." spellcheck="false"></textarea>
+                </div>
+                <div id="preview-pane" class="flex-1 h-full bg-slate-850 overflow-y-auto p-4 md:p-8 border-l border-slate-800">
+                    <div id="preview-content" class="prose prose-invert prose-sm max-w-none pb-20"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DE DESCARGA -->
+    <div id="download-modal" class="modal-backdrop fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="modal-content bg-slate-800 w-full max-w-md rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
+                <h3 class="font-bold text-white text-lg"><i class="fas fa-cloud-download-alt text-blue-400 mr-2"></i> Opciones de Descarga</h3>
+                <button id="close-modal-btn" class="w-8 h-8 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-gray-300 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <button id="dl-md-action" class="w-full group bg-slate-700/30 hover:bg-slate-700 border border-slate-600 hover:border-blue-500/50 rounded-xl p-4 flex items-center gap-4 transition-all text-left">
+                    <div class="w-10 h-10 rounded-lg bg-blue-900/50 text-blue-400 flex items-center justify-center shrink-0 border border-blue-800 group-hover:bg-blue-600 group-hover:text-white transition">
+                        <i class="fab fa-markdown text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-gray-100">Documento Markdown</h4>
+                        <p class="text-xs text-gray-400">Texto plano con formato (.md)</p>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-600 group-hover:text-white"></i>
+                </button>
+
+                <button id="dl-zip-action" class="w-full group bg-slate-700/30 hover:bg-slate-700 border border-slate-600 hover:border-purple-500/50 rounded-xl p-4 flex items-center gap-4 transition-all text-left relative overflow-hidden">
+                    <div class="w-10 h-10 rounded-lg bg-purple-900/50 text-purple-400 flex items-center justify-center shrink-0 border border-purple-800 group-hover:bg-purple-600 group-hover:text-white transition z-10">
+                        <i class="fas fa-images text-lg"></i>
+                    </div>
+                    <div class="flex-1 z-10">
+                        <h4 class="font-bold text-gray-100 flex items-center gap-2">Imágenes en ZIP <span id="img-count-badge" class="bg-purple-900 text-purple-200 text-[10px] px-1.5 py-0.5 rounded border border-purple-700">0 imgs</span></h4>
+                        <p id="zip-status-text" class="text-xs text-gray-400">Descargar todas las imágenes del post</p>
+                    </div>
+                    <div id="zip-loading" class="absolute inset-0 bg-slate-800/90 flex items-center justify-center z-20 hidden">
+                         <div class="flex items-center gap-3">
+                             <span class="loader border-purple-500 border-t-transparent"></span>
+                             <span class="text-sm font-bold text-purple-300">Comprimiendo...</span>
+                         </div>
+                    </div>
+                </button>
+            </div>
+            
+            <div class="p-4 bg-slate-900/50 text-center border-t border-slate-700">
+                <p class="text-xs text-gray-500">Los archivos se guardan en tu carpeta de descargas.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = "https://research-scraper-mu.vercel.app";
+        const PROXY_ENDPOINT = `${BASE_URL}/api/proxy`;
+
+        const els = {
+            inputSide: document.getElementById('input-side'),
+            outputSide: document.getElementById('output-side'),
+            urlInput: document.getElementById('url-input'),
+            extractBtn: document.getElementById('extract-btn'),
+            output: document.getElementById('markdown-output'),
+            previewContent: document.getElementById('preview-content'),
+            editorPane: document.getElementById('editor-pane'),
+            previewPane: document.getElementById('preview-pane'),
+            viewBtns: document.querySelectorAll('.view-btn'),
+            copyBtn: document.getElementById('copy-btn'),
+            triggerDlModalBtn: document.getElementById('trigger-dl-modal-btn'),
+            resetBtn: document.getElementById('reset-btn'),
+            metaPanel: document.getElementById('meta-panel'),
+            metaTitle: document.getElementById('meta-title'),
+            metaDate: document.getElementById('meta-date'),
+            modal: document.getElementById('download-modal'),
+            closeModalBtn: document.getElementById('close-modal-btn'),
+            dlMdAction: document.getElementById('dl-md-action'),
+            dlZipAction: document.getElementById('dl-zip-action'),
+            imgCountBadge: document.getElementById('img-count-badge'),
+            zipStatusText: document.getElementById('zip-status-text'),
+            zipLoading: document.getElementById('zip-loading')
+        };
+
+        let currentResult = null;
+
+        marked.setOptions({ gfm: true, breaks: true });
+        
+        // --- LOGICA VISTA ---
+        function setView(viewMode) {
+            els.viewBtns.forEach(btn => {
+                const isActive = btn.dataset.view === viewMode;
+                // CAMBIO: Inyectamos lógica para mantener oculto SPLIT en móviles
+                const isSplit = btn.dataset.view === 'SPLIT';
+                const visibilityClass = isSplit ? 'hidden sm:block' : '';
+                
+                btn.className = `view-btn flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded transition uppercase ${visibilityClass} ${isActive ? 'bg-slate-700 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`;
+            });
+
+            const editor = els.editorPane;
+            const preview = els.previewPane;
+
+            if (viewMode === 'EDIT') {
+                editor.classList.remove('hidden'); preview.classList.add('hidden');
+            } else if (viewMode === 'PREVIEW') {
+                editor.classList.add('hidden'); preview.classList.remove('hidden'); renderPreview();
+            } else { // SPLIT
+                if (window.innerWidth < 768) {
+                    editor.classList.add('hidden'); preview.classList.remove('hidden'); renderPreview();
+                } else {
+                    editor.classList.remove('hidden'); preview.classList.remove('hidden'); renderPreview();
+                }
+            }
+        }
+
+        function renderPreview() {
+            if (!els.output.value) return;
+            // @ts-ignore
+            els.previewContent.innerHTML = DOMPurify.sanitize(marked.parse(els.output.value));
+        }
+
+        function showResults() {
+            els.outputSide.classList.remove('translate-x-full'); els.outputSide.classList.add('translate-x-0');
+            els.resetBtn.classList.remove('hidden');
+            if (window.innerWidth < 768) { setView('PREVIEW'); } else { setView('SPLIT'); els.metaPanel.classList.remove('hidden'); }
+        }
+
+        window.resetApp = function() {
+            els.outputSide.classList.add('translate-x-full'); els.outputSide.classList.remove('translate-x-0');
+            els.resetBtn.classList.add('hidden');
+            setTimeout(() => { els.output.value = ''; els.previewContent.innerHTML = ''; els.urlInput.value = ''; els.urlInput.focus(); }, 300);
+        };
+
+        // --- FETCH & PROCESS ---
+        const fetchWithCorsRotation = async (targetUrl, isJson = false) => {
+            const proxyUrl = `${PROXY_ENDPOINT}?url=${encodeURIComponent(targetUrl)}`;
+            try {
+                const res = await fetch(proxyUrl);
+                if (!res.ok) throw new Error("Error Proxy");
+                if (isJson) { const txt = await res.text(); try { return JSON.parse(txt); } catch { return txt; } }
+                return await res.text();
+            } catch (e) { throw new Error("Conexión fallida"); }
+        };
+
+        const fetchImageBlob = async (url) => {
+            const proxyUrl = `${PROXY_ENDPOINT}?url=${encodeURIComponent(url)}`;
+            const res = await fetch(proxyUrl);
+            if (!res.ok) throw new Error("Image Error");
+            return await res.blob();
+        };
+
+        const processGenericUrl = async (url) => {
+            if (url.includes('twitter.com') || url.includes('x.com')) return processFxTwitter(url);
+            if (url.includes('reddit.com')) return processReddit(url);
+
+            const html = await fetchWithCorsRotation(url);
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const base = doc.createElement('base'); base.href = url; doc.head.appendChild(base);
+
+            const reader = new Readability(doc);
+            const article = reader.parse();
+            if (!article) throw new Error("No se pudo leer el contenido");
+
+            // @ts-ignore
+            const turndownService = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced', hr: '---' });
+            turndownService.use(turndownPluginGfm.gfm);
+            turndownService.addRule('imgs', { filter: 'img', replacement: (_, n) => {
+                const s = n.getAttribute('src'); if(!s)return'';
+                try{return `![${n.getAttribute('alt')||'img'}](${new URL(s,url).href})`;}catch{return'';}
+            }});
+
+            const md = `# ${article.title}\n\n${turndownService.turndown(article.content)}`;
+            
+            let date = new Date().toISOString().split('T')[0];
+            const t = doc.querySelector('time'); if(t) { const d=new Date(t.getAttribute('datetime')); if(!isNaN(d)) date=d.toISOString().split('T')[0]; }
+
+            return { markdown: md, title: article.title, author: article.byline || 'Web', date };
+        };
+
+        const processFxTwitter = async (u) => {
+            const m = u.match(/(?:twitter|x)\.com\/(?:#!\/)?(\w+)\/status(?:es)?\/(\d+)/);
+            if(!m) throw new Error("URL Twitter mala");
+            const d = await fetchWithCorsRotation(`https://api.fxtwitter.com/i/status/${m[2]}`, true);
+            const t = d.tweet;
+            let md = `# Tweet @${t.author.screen_name}\n\n> ${t.text}\n\n`;
+            if(t.media?.photos) t.media.photos.forEach(p=>md+=`![img](${p.url})\n`);
+            return { markdown: md, title: `Tweet ${t.author.name}`, author: t.author.name, date: '' };
+        };
+        
+        const processReddit = async (u) => {
+             const j = await fetchWithCorsRotation(u.split('?')[0].replace(/\/$/, '')+'.json', true);
+             const p = j[0].data.children[0].data;
+             return { markdown: `# ${p.title}\n\n${p.selftext}`, title: p.title, author: p.author, date: '' };
+        };
+
+        // --- DOWNLOADS ---
+        const getImagesFromMarkdown = () => {
+            const md = els.output.value;
+            const regex = /!\[.*?\]\((.*?)\)/g;
+            const matches = [...md.matchAll(regex)];
+            return [...new Set(matches.map(m => m[1]))];
+        };
+
+        const downloadMarkdown = () => {
+            if (!els.output.value) return;
+            const b = new Blob([els.output.value], {type:'text/markdown'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(b);
+            a.download = `${(currentResult?.title||'doc').substring(0,30).replace(/[^a-z0-9]/gi, '_')}.md`;
+            a.click();
+            closeModal();
+        };
+
+        const downloadImagesZip = async () => {
+            const images = getImagesFromMarkdown();
+            if (images.length === 0) return;
+
+            els.zipLoading.classList.remove('hidden');
+            els.zipLoading.classList.add('flex');
+            
+            try {
+                // @ts-ignore
+                const zip = new JSZip();
+                const imgFolder = zip.folder("images");
+                const safeTitle = (currentResult?.title || 'doc').substring(0,30).replace(/[^a-z0-9]/gi, '_');
+
+                const promises = images.map(async (url, i) => {
+                    try {
+                        const blob = await fetchImageBlob(url);
+                        let ext = 'jpg';
+                        const urlExt = url.split('.').pop().split('?')[0];
+                        if (['png','gif','webp','jpeg','svg'].includes(urlExt.toLowerCase())) ext = urlExt;
+                        else if (blob.type === 'image/png') ext = 'png';
+                        imgFolder.file(`image_${i+1}.${ext}`, blob);
+                    } catch (err) { console.warn(`Falló imagen: ${url}`, err); }
+                });
+
+                await Promise.all(promises);
+
+                const content = await zip.generateAsync({type:"blob"});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(content);
+                a.download = `${safeTitle}_images.zip`;
+                a.click();
+            } catch (e) { alert("Error creando ZIP: " + e.message); } 
+            finally { els.zipLoading.classList.add('hidden'); closeModal(); }
+        };
+
+        // --- LISTENERS ---
+        const openModal = () => {
+            const imgs = getImagesFromMarkdown();
+            const count = imgs.length;
+            els.imgCountBadge.textContent = `${count} imgs`;
+            if (count === 0) {
+                els.dlZipAction.classList.add('opacity-50', 'pointer-events-none');
+                els.zipStatusText.textContent = "No se detectaron imágenes.";
+            } else {
+                els.dlZipAction.classList.remove('opacity-50', 'pointer-events-none');
+                els.zipStatusText.textContent = "Descargar todas las imágenes del post.";
+            }
+            els.modal.classList.add('open');
+        };
+
+        const closeModal = () => { els.modal.classList.remove('open'); };
+
+        els.extractBtn.addEventListener('click', async () => {
+            const url = els.urlInput.value.trim();
+            if (!url) return alert("Pega una URL primero");
+            els.extractBtn.classList.add('loading'); els.extractBtn.disabled = true;
+            try {
+                const res = await processGenericUrl(url);
+                currentResult = res;
+                els.output.value = res.markdown;
+                els.metaTitle.textContent = res.title;
+                els.metaDate.textContent = res.date;
+                showResults();
+            } catch (e) { alert("Error: " + e.message); } 
+            finally { els.extractBtn.classList.remove('loading'); els.extractBtn.disabled = false; }
+        });
+
+        els.viewBtns.forEach(btn => btn.addEventListener('click', () => setView(btn.dataset.view)));
+        els.output.addEventListener('input', () => { if (window.innerWidth >= 768 && !els.previewPane.classList.contains('hidden')) renderPreview(); });
+        els.copyBtn.addEventListener('click', () => {
+            els.output.select(); document.execCommand('copy');
+            const icon = els.copyBtn.querySelector('i');
+            icon.className = 'fas fa-check text-green-400';
+            setTimeout(() => icon.className = 'fas fa-copy', 1500);
+        });
+        els.triggerDlModalBtn.addEventListener('click', openModal);
+        els.closeModalBtn.addEventListener('click', closeModal);
+        els.dlMdAction.addEventListener('click', downloadMarkdown);
+        els.dlZipAction.addEventListener('click', downloadImagesZip);
+        els.modal.addEventListener('click', (e) => { if (e.target === els.modal) closeModal(); });
+
+        setView('SPLIT');
+    </script>
+</body>
+</html>
+
+
