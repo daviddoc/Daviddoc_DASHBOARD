@@ -1,7 +1,7 @@
 # ASESORÍA
 ## ACTAS
 <img src="https://cdn.simpleicons.org/notebooklm/fff?size=20" alt="Web App" align="top"> [ACTAS Y CARGOS](https://notebooklm.google.com/notebook/ca0bfb9a-7cff-4585-af29-4cc0065abcb4)  
- <img src="https://api.iconify.design/simple-icons:html5.svg?color=white&height="40" alt="HTML">  [ACTA MARKDOWN A PDF](https://daviddoc.github.io/TIC1_CFIEva/ACTAS-MARKDOWN_A_WORD.html)  
+ <img src="https://api.iconify.design/simple-icons:html5.svg?color=white&height=40" alt="HTML">  [ACTA MARKDOWN A PDF](https://daviddoc.github.io/TIC1_CFIEva/ACTAS-MARKDOWN_A_WORD.html)  
 
 <img src="https://api.iconify.design/mdi/html5.svg?color=white&height=50" alt="Código">
 
