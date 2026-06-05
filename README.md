@@ -16,3 +16,6 @@
 
 
 <img src="https://www.google.com/s2/favicons?domain=notebooklm.google&sz=32" alt="NotebookLM" width="32" height="32"> [Google NotebookLM](https://notebooklm.google)
+
+
+<img src="https://www.google.com/s2/favicons?domain=notebooklm.google&sz=32" alt="NotebookLM" width="32" height="32" align="middle"> [Google NotebookLM](https://notebooklm.google)
