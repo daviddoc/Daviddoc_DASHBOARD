@@ -6,7 +6,7 @@
 <img src="https://cdn.simpleicons.org/googlechrome/fff" alt="Web App" width="24" height="24" align="middle"> [Mi Aplicación Web](TU_ENLACE_AQUÍ)
 <img src="https://cdn.simpleicons.org/internetarchive/fff" alt="Sitio Web" width="24" height="24" align="middle"> [Acceder a la Web](TU_ENLACE_AQUÍ)
 
-<img src="https://cdn.simpleicons.org/pdf/fff" alt="PDF" width="24" height="24" align="middle"> [Descargar documento PDF](TU_ENLACE_AQUÍ)
+<img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/file-earmark-pdf-fill.svg" alt="PDF" width="24" height="24" align="middle" style="mix-blend-mode: difference; filter: brightness(0) invert(1);"> [Descargar PDF](TU_ENLACE_AQUÍ)
 
 ## CONSULTA 
 [![Google NotebookLM](https://www.google.com/s2/favicons?domain=notebooklm.google)](https://notebooklm.google) [CATALOGADOR DE ACTIVIDADES FORMATIVAS](https://notebooklm.google.com/notebook/dede0051-2039-491c-bde4-9838acd37032)  
