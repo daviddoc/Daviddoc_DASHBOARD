@@ -15,7 +15,6 @@
 <img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top"> <img src="https://api.iconify.design/simple-icons:openai.svg?color=white&height=20" width="20" height="20" alt="ChatGPT" align="top">&nbsp;&nbsp;&nbsp;[X.COM - CHATGPT Creador de posts](https://chatgpt.com/g/g-68041bd0c49c8191bc9aaa20e216ac62-x-com-cfie)  
 <img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top"> <img src="https://cdn.simpleicons.org/googlegemini/fff?viewbox32&size=20" alt="Gemini" align="top">&nbsp;&nbsp;&nbsp;[X.COM - GEMINI Creador de posts](https://gemini.google.com/gem/de574ba07bec?usp=sharing)  
 <img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top"> <img src="https://cdn.simpleicons.org/notebooklm/fff?size=20" alt="Web App" align="top">&nbsp;&nbsp;&nbsp;[X.COM - NOTEBOOKLM Creador de posts](https://notebooklm.google.com/notebook/b19b9a2f-9d0f-4474-aa2e-5d934f81c547?authuser=1)  
-<img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top">
 
 ## DOCUMENTOS
 <img src="https://api.iconify.design/mdi/book-open-page-variant-outline.svg?color=white" width="20" height="20" alt="EPUB" align="top"> <img src="https://api.iconify.design/mdi/arrow-right.svg?color=white" width="20" height="20" alt="Flecha derecha" align="top"> <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top">&nbsp;&nbsp;&nbsp;[EPUB A MARKDOWN](https://daviddoc.github.io/TIC1_CFIEva/EPUB_A_MARKDOWN.html)  
@@ -26,4 +25,3 @@
 <img src="https://api.iconify.design/mdi/calculator-variant-outline.svg?color=white" width="20" height="20" alt="Calculadora" align="top">&nbsp;&nbsp;&nbsp;[CALCULADORA](https://daviddoc.github.io/TIC1_CFIEva/CALCULADORA.html)  
 <img src="https://api.iconify.design/mdi/file-delimited-outline.svg?color=white" width="20" height="20" alt="CSV" align="top">&nbsp;&nbsp;&nbsp;[CSV EDITOR](https://daviddoc.github.io/TIC1_CFIEva/CSV_EDITOR.html)  
 <img src="https://cdn.simpleicons.org/obsidian/fff?viewbox32&size=20" alt="Obsidian" align="top"> <img src="https://api.iconify.design/mdi/tag-outline.svg?color=white" width="20" height="20" alt="Tag" align="top">&nbsp;&nbsp;&nbsp;[OBSIDIAN - TAGS A ARCHIVOS](https://daviddoc.github.io/TIC1_CFIEva/OBSIDIAN_TAGS_A_ARCHIVOS.html)  
-<img src="https://www.google.com/s2/favicons?domain=notebooklm.google&sz=32" alt="NotebookLM" width="32" height="32" align="top"> [Google NotebookLM](https://notebooklm.google)
