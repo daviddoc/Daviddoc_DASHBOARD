@@ -18,7 +18,7 @@
 
 <img src="https://cdn.simpleicons.org/obsidian/fff?viewbox32&size=20" alt="Obsidian" align="top"> Obsidian  
 
-- [NOTAS - ACTIVIDADES.md](https://daviddoc.github.io/TIC1_CFIEva/NOTAS.html)
+<img src="https://api.iconify.design/mdi/note-outline.svg?color=white" width="20" height="20" alt="Nota" align="top"> [NOTAS - ACTIVIDADES.md](https://daviddoc.github.io/TIC1_CFIEva/NOTAS.html)
 - [REFORACEN - CARGA MASIVA csv](https://daviddoc.github.io/TIC1_CFIEva/REFO-CARGA_MASIVA_CSV.html)
 - [REFORACEN - COMPROBADOR +75 HORAS EN PF](https://daviddoc.github.io/TIC1_CFIEva/REFO-COMPROBADOR_+75_HORAS_PF.html)
 ## DIFUSIÓN
