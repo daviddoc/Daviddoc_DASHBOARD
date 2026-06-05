@@ -12,6 +12,8 @@
 
 <img src="https://api.iconify.design/mdi/markdown.svg?color=white" width="20" height="20" alt="Markdown" align="top"> Markdown  
 <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top"> Markdown
+<img src="https://api.iconify.design/mdi/file-code-outline.svg?color=white" width="20" height="20" alt="Markdown" align="top"> Markdown  
+<img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top"> Markdown
 
 
 ## DIFUSIÓN
