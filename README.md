@@ -20,12 +20,12 @@
 ## DOCUMENTOS
 <img src="https://api.iconify.design/mdi/book-open-page-variant-outline.svg?color=white" width="20" height="20" alt="EPUB" align="top"> <img src="https://api.iconify.design/mdi/arrow-right.svg?color=white" width="20" height="20" alt="Flecha derecha" align="top"> <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top">&nbsp;&nbsp;&nbsp;[EPUB A MARKDOWN](https://daviddoc.github.io/TIC1_CFIEva/EPUB_A_MARKDOWN.html)  
 <img src="https://cdn.simpleicons.org/html5/fff?viewbox32&size=20" alt="HTML" align="top"> <img src="https://api.iconify.design/mdi:file-pdf-box.svg?color=white&height=20" alt="HTML" align="top"> <img src="https://api.iconify.design/mdi/microsoft-word.svg?color=white" width="20" height="20" alt="Word" align="top"> <img src="https://api.iconify.design/mdi/arrow-right.svg?color=white" width="20" height="20" alt="Flecha derecha" align="top"> <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top">&nbsp;&nbsp;&nbsp;[HTML, PDF Y WORD A MARKDOWN](https://daviddoc.github.io/TIC1_CFIEva/PDF-DOCX-HTML_A_MARKDOWN.html)  
-<img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top"> Markdown  
+<img src="https://api.iconify.design/mdi/scanner.svg?color=white" width="20" height="20" alt="Escaneo" align="top"> <img src="https://api.iconify.design/mdi:file-pdf-box.svg?color=white&height=20" alt="HTML" align="top">&nbsp;&nbsp;&nbsp;[PDF - LOOK SCANNED](https://daviddoc.github.io/TIC1_CFIEva/PDF-LOOK_SCANNED.html) 
 
 ## HERRAMIENTAS
 <img src="https://api.iconify.design/mdi/calculator-variant-outline.svg?color=white" width="20" height="20" alt="Calculadora" align="top">&nbsp;&nbsp;&nbsp;[CALCULADORA](https://daviddoc.github.io/TIC1_CFIEva/CALCULADORA.html)  
 <img src="https://api.iconify.design/mdi/file-delimited-outline.svg?color=white" width="20" height="20" alt="CSV" align="top">&nbsp;&nbsp;&nbsp;[CSV EDITOR](https://daviddoc.github.io/TIC1_CFIEva/CSV_EDITOR.html)  
-<img src="https://api.iconify.design/mdi/scanner.svg?color=white" width="20" height="20" alt="Escaneo" align="top"> <img src="https://api.iconify.design/mdi:file-pdf-box.svg?color=white&height=20" alt="HTML" align="top">&nbsp;&nbsp;&nbsp;[PDF - LOOK SCANNED](https://daviddoc.github.io/TIC1_CFIEva/PDF-LOOK_SCANNED.html)  
+
 
 <img src="https://cdn.simpleicons.org/notebooklm/fff?viewbox32&size=20" alt="NotebookLM" align="top"> NotebookLM
 
