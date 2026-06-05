@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2392278F' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'><line x1='4' y1='9' x2='20' y2='9'/><line x1='4' y1='15' x2='20' y2='15'/><line x1='10' y1='3' x2='8' y2='21'/><line x1='16' y1='3' x2='14' y2='21'/></svg>">
+    <title>Symbol Search & Copy</title>
+    <style>
+        /* --- CSS --- */
+        :root {
+            --bg-body: #111827;
+            --bg-card: #1f2937;
+            --bg-hover: #374151;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #60a5fa;
+            --accent-dark: #2563eb;
+            --accent-glow: rgba(96, 165, 250, 0.3);
+            --success: #10b981;
+            --danger: #ef4444;
+            /* Color para limpiar */
+            --border: #374151;
+            --font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        header {
+            background: rgba(17, 24, 39, 0.95);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(8px);
+            flex-shrink: 0;
+            z-index: 50;
+            position: relative;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+            color: white;
+            font-weight: 800;
+            font-size: 1.5rem;
+            user-select: none;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: var(--accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        /* CONTENEDOR DE ACCIONES MÚLTIPLES (NUEVO) */
+        .multi-actions {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            /* Espacio entre botones */
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 60;
+        }
+
+        .multi-actions.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* Estilo base para botones de acción */
+        .action-btn {
+            border: none;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+            white-space: nowrap;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Botón Copiar */
+        .copy-btn {
+            background: var(--accent);
+        }
+
+        .copy-btn:hover {
+            background: var(--accent-dark);
+            transform: scale(1.05);
+        }
+
+        /* Botón Limpiar (Escoba) */
+        .clear-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .clear-btn:hover {
+            background: var(--bg-hover);
+            color: var(--danger);
+            /* Rojo al pasar el ratón */
+            border-color: var(--danger);
+            transform: scale(1.05);
+        }
+
+        .multi-copy-badge {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* MENÚ BTN */
+        .menu-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .menu-btn:hover,
+        .menu-btn:focus-visible {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .menu-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* MENÚ LATERAL */
+        .cat-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .cat-menu-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .cat-menu {
+            width: 320px;
+            height: 100%;
+            background: var(--bg-body);
+            border-left: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+
+        .cat-menu-overlay.open .cat-menu {
+            transform: translateX(0);
+        }
+
+        .cat-menu h2 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: var(--accent);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .shortcut-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            float: right;
+            margin-top: 4px;
+            background: var(--bg-card);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .cat-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .cat-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .cat-chip span:first-child {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .cat-chip:hover {
+            background: var(--bg-hover);
+            color: var(--text-main);
+            border-color: var(--text-muted);
+        }
+
+        .cat-chip:focus-visible {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+            background: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .cat-chip.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        /* BUSCADOR */
+        .search-section {
+            padding: 1.5rem;
+            background: var(--bg-body);
+            flex-shrink: 0;
+        }
+
+        .search-container {
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            color: white;
+            padding: 14px 45px 14px 20px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+        }
+
+        /* Botón X de limpieza en el buscador */
+        .clear-search-btn {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--bg-hover);
+            border: none;
+            color: var(--text-muted);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .clear-search-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .clear-search-btn:hover {
+            background: var(--text-muted);
+            color: var(--bg-card);
+        }
+
+        .clear-search-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* GRID */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 1.5rem 2rem 1.5rem;
+            outline: none;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 10px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            line-height: 1;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.1s;
+            color: var(--text-main);
+
+            /* PROPIEDADES ANTI-SELECCIÓN Y MENU NATIVO */
+            -webkit-touch-callout: none;
+            /* Desactiva menú iOS */
+            -webkit-user-select: none;
+            /* Safari */
+            -moz-user-select: none;
+            /* Firefox */
+            -ms-user-select: none;
+            /* IE10+ */
+            user-select: none;
+            /* Standard */
+
+            appearance: none;
+            margin: 0;
+            padding: 0;
+            font-family: inherit;
+            position: relative;
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            background: var(--bg-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+
+        .card:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+            transform: scale(1.05);
+            z-index: 5;
+            background: var(--bg-hover);
+        }
+
+        .card:active {
+            transform: scale(0.95);
+        }
+
+        .card.selected {
+            background: rgba(96, 165, 250, 0.15);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent), inset 0 0 10px var(--accent-glow);
+        }
+
+        .card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            font-size: 0.8rem;
+            background: var(--accent);
+            color: white;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* POPUP */
+        .copy-popup {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--success);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copy-popup.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-body);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* RESPONSIVE */
+        @media(max-width: 600px) {
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+                gap: 8px;
+            }
+
+            .card {
+                font-size: 1.5rem;
+                border-radius: 8px;
+            }
+
+            /* Ajustes de barra superior móvil */
+            .multi-actions {
+                top: auto;
+                bottom: -20px;
+                transform: translate(-50%, 0) scale(0.8);
+                gap: 4px;
+                /* Menos espacio entre botones */
+            }
+
+            .multi-actions.active {
+                transform: translate(-50%, 50%) scale(1);
+            }
+
+            /* Ocultar texto de los botones en móvil */
+            .action-btn .btn-text {
+                display: none;
+            }
+
+            .action-btn {
+                padding: 10px;
+                /* Botón circular/cuadrado al quitar texto */
+                border-radius: 50%;
+            }
+
+            /* Badge ajuste */
+            .multi-copy-badge {
+                position: absolute;
+                top: -5px;
+                right: -5px;
+                background: var(--accent-dark);
+                color: white;
+                font-size: 0.75rem;
+                padding: 2px 6px;
+                border-radius: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="brand">
+            <div class="brand-icon">#</div>
+            <h1>Symbol Master</h1>
+        </div>
+
+        <!-- Botones Flotantes de Acción Múltiple -->
+        <div class="multi-actions" id="multiActions">
+            <button class="action-btn copy-btn" onclick="copySelected()" title="Copiar Selección">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="btn-text">Copiar</span>
+                <span class="multi-copy-badge" id="multiCount">0</span>
+            </button>
+
+            <button class="action-btn clear-btn" onclick="clearSelection()" title="Limpiar Selección">
+                <!-- Icono Escoba (Brush simple) -->
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2c1.1 0 2.2.4 3 1.3L20.7 7c.9.8 1.3 1.9 1.3 3c0 2.8-3 5-6 5l-5-5c3-3 5-6 5-6Z"></path>
+                    <path d="M11 9 4 16l4 4 7-7"></path>
+                    <path d="M2 22h2"></path>
+                </svg>
+                <span class="btn-text">Limpiar</span>
+            </button>
+        </div>
+
+        <button class="menu-btn" id="menuBtn" title="Abrir Categorías (Ctrl+Shift+F)" aria-label="Categorías">
+            Categorías
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+    </header>
+
+    <!-- Menú Lateral -->
+    <div class="cat-menu-overlay" id="menuOverlay">
+        <div class="cat-menu" id="catMenu">
+            <h2>
+                Categorías
+                <span class="shortcut-hint">Ctrl+Shift+F</span>
+            </h2>
+            <div id="catList" class="cat-list-container">
+                <!-- JS genera chips aquí -->
+            </div>
+        </div>
+    </div>
+
+    <div class="search-section">
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Buscar símbolo (ej. flecha, math)..." autocomplete="off">
+            <!-- Botón de limpieza nuevo -->
+            <button id="clearSearchBtn" class="clear-search-btn" title="Borrar búsqueda" aria-label="Borrar búsqueda">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <main id="mainContainer">
+        <div class="grid" id="grid">
+            <!-- JS genera símbolos aquí -->
+        </div>
+    </main>
+
+    <!-- Popup Central -->
+    <div class="copy-popup" id="copyPopup">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span id="copyPopupText">Copiado</span>
+    </div>
+
+    <script>
+        // --- BASE DE DATOS REDUCIDA (10 items por categoría) ---
+        const rawData = {
+            stars: [
+                { c: "★", t: "Estrella Negra" }, { c: "☆", t: "Estrella Blanca" }, { c: "✡", t: "Estrella de David" },
+                { c: "✦", t: "Estrella Negra de Cuatro Puntas" }, { c: "✧", t: "Estrella Blanca de Cuatro Puntas" }, { c: "✩", t: "Estrella Blanca Contorneada con Énfasis" },
+                { c: "✪", t: "Estrella Blanca en Círculo" }, { c: "✫", t: "Estrella Negra con Centro Abierto" }, { c: "✬", t: "Estrella Blanca con Centro Negro" },
+                { c: "✭", t: "Estrella Negra Contorneada" }, { c: "✮", t: "Estrella Negra con Contorno Grueso" }, { c: "✯", t: "Estrella Molinillo" },
+                { c: "✰", t: "Estrella Blanca Sombreada" }, { c: "⁂", t: "Asterismo" }, { c: "⁎", t: "Asterisco Bajo" },
+                { c: "⁑", t: "Dos Asteriscos Alineados Verticalmente" }, { c: "✢", t: "Asterisco con Cuatro Radios en Forma de Gota" }, { c: "✣", t: "Asterisco con Cuatro Radios en Forma de Globo" },
+                { c: "✤", t: "Asterisco Grueso con Cuatro Radios en Forma de Globo" }, { c: "✥", t: "Asterisco con Cuatro Radios en Forma de Trébol" }, { c: "✱", t: "Asterisco Grueso" },
+                { c: "✲", t: "Asterisco con Centro Abierto" }, { c: "✳", t: "Asterisco de Ocho Radios" }, { c: "✴", t: "Estrella Negra de Ocho Puntas" },
+                { c: "✵", t: "Estrella Molinillo de Ocho Puntas" }, { c: "✶", t: "Estrella Negra de Seis Puntas" }, { c: "✷", t: "Estrella Negra Rectilínea de Ocho Puntas" },
+                { c: "✸", t: "Estrella Negra Rectilínea Gruesa de Ocho Puntas" }, { c: "✹", t: "Estrella Negra de Doce Puntas" }, { c: "✺", t: "Asterisco de Dieciséis Puntas" },
+                { c: "✻", t: "Asterisco con Radios en Forma de Gota" }, { c: "✼", t: "Asterisco con Centro Abierto y Radios en Forma de Gota" }, { c: "✽", t: "Asterisco Grueso con Radios en Forma de Gota" },
+                { c: "✾", t: "Florete Blanco y Negro de Seis Pétalos" }, { c: "✿", t: "Florete Negro" }, { c: "❀", t: "Florete Blanco" },
+                { c: "❁", t: "Florete Negro Contorneado de Ocho Pétalos" }, { c: "❂", t: "Estrella de Ocho Puntas con Centro Abierto en Círculo" }, { c: "❃", t: "Asterisco Molinillo Grueso con Radios en Forma de Gota" },
+                { c: "❇", t: "Chispa" }, { c: "❈", t: "Chispa Gruesa" }, { c: "❉", t: "Asterisco con Radios en Forma de Globo" },
+                { c: "❊", t: "Asterisco Hélice con Ocho Radios en Forma de Gota" }, { c: "❋", t: "Asterisco Hélice Grueso con Ocho Radios en Forma de Gota" }, { c: "❄", t: "Copo de Nieve" },
+                { c: "❆", t: "Copo de Nieve con Cheurones Gruesos" }, { c: "❅", t: "Copo de Nieve Trifoliado Apretado" }, { c: "⋆", t: "Operador Estrella" },
+                { c: "≛", t: "Estrella Igual" }, { c: "ᕯ", t: "Silábico Canadiense Tth" }, { c: "࿏", t: "Signo Tibetano Rdel Nag Gsum" },
+                { c: "꙰", t: "Signo Cirílico Combinatorio de Diez Millones" }, { c: "۞", t: "Inicio Árabe de Rub El Hizb" }, { c: "⭒", t: "Estrella Blanca Pequeña" },
+                { c: "⍟", t: "Símbolo Funcional APL Círculo Estrella" }, { c: "⭐", t: "Emoji de Estrella Mediana" }, { c: "🌠", t: "Emoji de Estrella Fugaz" },
+                { c: "🌟", t: "Emoji de Estrella Brillante" }, { c: "💫", t: "Emoji de Símbolo de Mareo" }, { c: "✨", t: "Emoji de Destellos" },
+                { c: "🌃", t: "Emoji de Noche Estrellada" }, { c: "🔯", t: "Emoji de Estrella de Seis Puntas con Punto Medio" }
+            ],
+            office: [
+                { c: "©", t: "Signo de Copyright" }, { c: "®", t: "Signo de Registrado" }, { c: "™", t: "Signo de Marca Comercial" },
+                { c: "℠", t: "Marca de Servicio" }, { c: "℡", t: "Signo de Teléfono" }, { c: "℗", t: "Copyright de Grabación de Sonido" },
+                { c: "ℱ", t: "Signo de Por Diez Mil" }, { c: "№", t: "Signo de Número" }, { c: "℀", t: "Cuenta De" },
+                { c: "℁", t: "Dirigido Al Asunto" }, { c: "℅", t: "Al Cuidado De" }, { c: "℆", t: "Cada Una" },
+                { c: "⅍", t: "Sociedad Anónima (Aktieselskab)" }, { c: "☊", t: "Nodo Ascendente" }, { c: "☎", t: "Teléfono Negro" },
+                { c: "☏", t: "Teléfono Blanco" }, { c: "⌨", t: "Teclado" }, { c: "✁", t: "Tijeras de Hoja Superior" },
+                { c: "✂", t: "Tijeras Negras" }, { c: "✃", t: "Tijeras de Hoja Inferior" }, { c: "✄", t: "Tijeras Blancas" },
+                { c: "✆", t: "Signo de Ubicación de Teléfono" }, { c: "✇", t: "Unidad de Cinta" }, { c: "✈", t: "Emoji de Avión" },
+                { c: "✉", t: "Sobre" }, { c: "✎", t: "Lápiz Abajo a la Derecha" }, { c: "✏", t: "Lápiz" },
+                { c: "✐", t: "Lápiz Arriba a la Derecha" }, { c: "✑", t: "Plumilla Blanca" }, { c: "✒", t: "Plumilla Negra" },
+                { c: "‰", t: "Signo de Por Mil" }, { c: "§", t: "Signo de Sección" }, { c: "¶", t: "Signo de Calderón" },
+                { c: "✌️", t: "Emoji de Mano de Victoria" }, { c: "☝️", t: "Emoji de Índice Apuntando Hacia Arriba" }, { c: "☞", t: "Índice Blanco Apuntando a la Derecha" },
+                { c: "☛", t: "Índice Negro Apuntando a la Derecha" }, { c: "☟", t: "Índice Blanco Apuntando Hacia Abajo" }, { c: "☜", t: "Índice Blanco Apuntando a la Izquierda" },
+                { c: "☚", t: "Índice Negro Apuntando a la Izquierda" }, { c: "✍️", t: "Emoji de Mano Escribiendo" }
+            ],
+            currency: [
+                { c: "¢", t: "Signo de Centavo" }, { c: "$", t: "Signo de Dólar" }, { c: "€", t: "Signo de Euro" },
+                { c: "£", t: "Signo de Libra" }, { c: "¥", t: "Signo de Yen" }, { c: "₮", t: "Signo de Tugrik" },
+                { c: "৲", t: "Marca de Rupia Bengalí" }, { c: "৳", t: "Signo de Rupia Bengalí" }, { c: "௹", t: "Signo de Rupia Tamil" },
+                { c: "฿", t: "Símbolo de Moneda Tailandesa Baht" }, { c: "៛", t: "Símbolo de Moneda Jemer Riel" }, { c: "₠", t: "Signo de Euro-Divisa" },
+                { c: "₡", t: "Signo de Colón" }, { c: "₢", t: "Signo de Cruzeiro" }, { c: "₣", t: "Signo de Franco Francés" },
+                { c: "₤", t: "Signo de Lira" }, { c: "₥", t: "Signo de Mill" }, { c: "₦", t: "Signo de Naira" },
+                { c: "₧", t: "Signo de Peseta" }, { c: "₨", t: "Signo de Rupia" }, { c: "₩", t: "Signo de Won" },
+                { c: "₪", t: "Signo de Nuevo Sheqel" }, { c: "₫", t: "Signo de Dong" }, { c: "₭", t: "Signo de Kip" },
+                { c: "₯", t: "Signo de Dracma" }, { c: "₰", t: "Signo de Penique Alemán" }, { c: "₱", t: "Signo de Peso" },
+                { c: "₲", t: "Signo de Guaraní" }, { c: "₳", t: "Signo de Austral" }, { c: "₴", t: "Signo de Grivna" },
+                { c: "₵", t: "Signo de Cedi" }, { c: "￥", t: "Signo de Yen de Ancho Completo" }, { c: "﷼", t: "Signo de Rial" },
+                { c: "¤", t: "Signo de Moneda" }, { c: "ƒ", t: "Letra Latina Minúscula F con Gancho" }
+            ],
+            brackets: [
+                { c: "〈", t: "Corchete Angular Izquierdo" }, { c: "〉", t: "Corchete Angular Derecho" }, { c: "《", t: "Corchete Angular Doble Izquierdo" },
+                { c: "》", t: "Corchete Angular Doble Derecho" }, { c: "「", t: "Corchete de Esquina Izquierdo" }, { c: "」", t: "Corchete de Esquina Derecho" },
+                { c: "『", t: "Corchete de Esquina Blanco Izquierdo" }, { c: "』", t: "Corchete de Esquina Blanco Derecho" }, { c: "【", t: "Corchete Lenticular Negro Izquierdo" },
+                { c: "】", t: "Corchete Lenticular Negro Derecho" }, { c: "〔", t: "Corchete de Caparazón de Tortuga Izquierdo" }, { c: "〕", t: "Corchete de Caparazón de Tortuga Derecho" },
+                { c: "︵", t: "Forma de Presentación para Paréntesis Vertical Izquierdo" }, { c: "︶", t: "Forma de Presentación para Paréntesis Vertical Derecho" }, { c: "︷", t: "Forma de Presentación para Corchete Vertical Izquierdo" },
+                { c: "︸", t: "Forma de Presentación para Corchete Vertical Derecho" }, { c: "︹", t: "Forma de Presentación para Corchete de Caparazón de Tortuga Vertical Izquierdo" }, { c: "︺", t: "Forma de Presentación para Caparazón de Tortuga Vertical Derecho" },
+                { c: "︻", t: "Forma de Presentación para Corchete Lenticular Negro Vertical Izquierdo" }, { c: "︼", t: "Forma de Presentación para Corchete Lenticular Negro Vertical Derecho" }, { c: "︽", t: "Forma de Presentación para Corchete Angular Doble Vertical Izquierdo" },
+                { c: "︾", t: "Forma de Presentación para Corchete Angular Doble Vertical Derecho" }, { c: "︿", t: "Forma de Presentación para Corchete Angular Vertical Izquierdo" }, { c: "﹀", t: "Forma de Presentación para Corchete Angular Vertical Derecho" },
+                { c: "﹁", t: "Forma de Presentación para Corchete de Esquina Vertical Izquierdo" }, { c: "﹂", t: "Forma de Presentación para Corchete de Esquina Vertical Derecho" }, { c: "﹃", t: "Forma de Presentación para Corchete de Esquina Blanco Vertical Izquierdo" },
+                { c: "﹄", t: "Forma de Presentación para Corchete de Esquina Blanco Vertical Derecho" }, { c: "﹙", t: "Paréntesis Izquierdo Pequeño" }, { c: "﹚", t: "Paréntesis Derecho Pequeño" },
+                { c: "﹛", t: "Llave Izquierda Pequeña" }, { c: "﹜", t: "Llave Derecha Pequeña" }, { c: "﹝", t: "Corchete de Caparazón de Tortuga Izquierdo Pequeño" },
+                { c: "﹞", t: "Corchete de Caparazón de Tortuga Derecho Pequeño" }, { c: "﹤", t: "Signo Menor Que Pequeño" }, { c: "﹥", t: "Signo Mayor Que Pequeño" },
+                { c: "（", t: "Paréntesis Izquierdo de Ancho Completo" }, { c: "）", t: "Paréntesis Derecho de Ancho Completo" }, { c: "＜", t: "Signo Menor Que de Ancho Completo" },
+                { c: "＞", t: "Signo Mayor Que de Ancho Completo" }, { c: "｛", t: "Llave Izquierda de Ancho Completo" }, { c: "｝", t: "Llave Derecha de Ancho Completo" },
+                { c: "〖", t: "Corchete Lenticular Blanco Izquierdo" }, { c: "〗", t: "Corchete Lenticular Blanco Derecho" }, { c: "〘", t: "Corchete de Caparazón de Tortuga Blanco Izquierdo" },
+                { c: "〙", t: "Corchete de Caparazón de Tortuga Blanco Derecho" }, { c: "〚", t: "Corchete Cuadrado Blanco Izquierdo" }, { c: "〛", t: "Corchete Cuadrado Blanco Derecho" },
+                { c: "«", t: "Comillas Angulares Dobles Apuntando a la Izquierda" }, { c: "»", t: "Comillas Angulares Dobles Apuntando a la Derecha" }, { c: "‹", t: "Comilla Angular Simple Apuntando a la Izquierda" },
+                { c: "›", t: "Comilla Angular Simple Apuntando a la Derecha" }, { c: "〈", t: "Corchete Angular Apuntando a la Izquierda" }, { c: "〉", t: "Corchete Angular Apuntando a la Derecha" },
+                { c: "〱", t: "Marca de Repetición Kana Vertical" }
+            ],
+            chess: [
+                { c: "♔", t: "Rey de Ajedrez Blanco" }, { c: "♕", t: "Reina de Ajedrez Blanca" }, { c: "♖", t: "Torre de Ajedrez Blanca" },
+                { c: "♗", t: "Alfil de Ajedrez Blanco" }, { c: "♘", t: "Caballo de Ajedrez Blanco" }, { c: "♙", t: "Peón de Ajedrez Blanco" },
+                { c: "♚", t: "Rey de Ajedrez Negro" }, { c: "♛", t: "Reina de Ajedrez Negra" }, { c: "♜", t: "Torre de Ajedrez Negra" },
+                { c: "♝", t: "Alfil de Ajedrez Negro" }, { c: "♞", t: "Caballo de Ajedrez Negro" }, { c: "♟", t: "Peón de Ajedrez Negro" },
+                { c: "♤", t: "Palo de Picas Blanco" }, { c: "♠", t: "Palo de Picas Negro" }, { c: "♧", t: "Palo de Tréboles Blanco" },
+                { c: "♣", t: "Palo de Tréboles Negro" }, { c: "♡", t: "Palo de Corazones Blanco" }, { c: "♥", t: "Palo de Corazones Negro" },
+                { c: "♢", t: "Palo de Diamantes Blanco" }, { c: "♦", t: "Palo de Diamantes Negro" }
+            ],
+            music: [
+                { c: "♩", t: "Negra" }, { c: "♪", t: "Corchea" }, { c: "♫", t: "Corcheas Unidas" },
+                { c: "♬", t: "Semicorcheas Unidas" }, { c: "♭", t: "Bemol" }, { c: "♮", t: "Becuadro" },
+                { c: "♯", t: "Sostenido" }, { c: "°", t: "Signo de Grado" }, { c: "ø", t: "Letra Latina Minúscula O con Barra" },
+                { c: "؂", t: "Marcador de Nota al Pie Árabe" }, { c: "≠", t: "No Es Igual A" }, { c: "≭", t: "No Es Equivalente A" }
+            ],
+            weather: [
+                { c: "°", t: "Signo de Grado" }, { c: "℃", t: "Grado Celsius" }, { c: "℉", t: "Grado Fahrenheit" },
+                { c: "ϟ", t: "Letra Griega Minúscula Koppa" }, { c: "☀", t: "Sol Negro con Rayos" }, { c: "☁", t: "Nube" },
+                { c: "☂", t: "Paraguas" }, { c: "☃", t: "Muñeco de Nieve" }, { c: "☉", t: "Sol" },
+                { c: "☼", t: "Sol Blanco con Rayos" }, { c: "☽", t: "Luna en Cuarto Creciente" }, { c: "☾", t: "Luna en Cuarto Menguante" },
+                { c: "♁", t: "Tierra" }, { c: "♨", t: "Aguas Termales" }, { c: "❄", t: "Copo de Nieve" },
+                { c: "❅", t: "Copo de Nieve Trifoliado Apretado" }, { c: "❆", t: "Copo de Nieve con Cheurones Gruesos" }, { c: "☇", t: "Relámpago" },
+                { c: "☈", t: "Tormenta" }, { c: "☄", t: "Cometa" }, { c: "㎎", t: "Miligramo" },
+                { c: "㎏", t: "Kilogramo" }, { c: "㎜", t: "Milímetro" }, { c: "㎝", t: "Centímetro" },
+                { c: "㎞", t: "Kilómetro" }, { c: "㎡", t: "Metro Cuadrado" }, { c: "㏄", t: "Centímetro Cúbico" },
+                { c: "㏎", t: "Kilómetro Mayúscula" }, { c: "㏑", t: "Logaritmo Natural" }, { c: "㏒", t: "Logaritmo" },
+                { c: "㏕", t: "Mil Cuadrado" }
+            ],
+            arrows: [
+                { c: "↕", t: "Flecha Arriba Abajo" }, { c: "↖", t: "Flecha Noroeste" }, { c: "↗", t: "Flecha Noreste" },
+                { c: "↘", t: "Flecha Sureste" }, { c: "↙", t: "Flecha Suroeste" }, { c: "↚", t: "Flecha Hacia la Izquierda con Trazo" },
+                { c: "↛", t: "Flecha Hacia la Derecha con Trazo" }, { c: "↜", t: "Flecha Ondulada Hacia la Izquierda" }, { c: "↝", t: "Flecha Ondulada Hacia la Derecha" },
+                { c: "↞", t: "Flecha de Dos Puntas Hacia la Izquierda" }, { c: "↟", t: "Flecha de Dos Puntas Hacia Arriba" }, { c: "↠", t: "Flecha de Dos Puntas Hacia la Derecha" },
+                { c: "↡", t: "Flecha de Dos Puntas Hacia Abajo" }, { c: "↢", t: "Flecha Hacia la Izquierda con Cola" }, { c: "↣", t: "Flecha Hacia la Derecha con Cola" },
+                { c: "↤", t: "Flecha Hacia la Izquierda desde Barra" }, { c: "↥", t: "Flecha Hacia Arriba desde Barra" }, { c: "↦", t: "Flecha Hacia la Derecha desde Barra" },
+                { c: "↧", t: "Flecha Hacia Abajo desde Barra" }, { c: "↨", t: "Flecha Arriba Abajo con Base" }, { c: "↩", t: "Flecha Hacia la Izquierda con Gancho" },
+                { c: "↪", t: "Flecha Hacia la Derecha con Gancho" }, { c: "↫", t: "Flecha Hacia la Izquierda con Bucle" }, { c: "↬", t: "Flecha Hacia la Derecha con Bucle" },
+                { c: "↭", t: "Flecha Ondulada Izquierda Derecha" }, { c: "↮", t: "Flecha Izquierda Derecha con Trazo" }, { c: "↯", t: "Flecha Zigzag Hacia Abajo" },
+                { c: "↰", t: "Flecha Hacia Arriba con Punta a la Izquierda" }, { c: "↱", t: "Flecha Hacia Arriba con Punta a la Derecha" }, { c: "↲", t: "Flecha Hacia Abajo con Punta a la Izquierda" },
+                { c: "↳", t: "Flecha Hacia Abajo con Punta a la Derecha" }, { c: "↴", t: "Flecha Hacia la Derecha con Esquina Hacia Abajo" }, { c: "↶", t: "Flecha Semicircular Superior en Sentido Antihorario" },
+                { c: "↷", t: "Flecha Semicircular Superior en Sentido Horario" }, { c: "↸", t: "Flecha Noroeste Hacia Barra Larga" }, { c: "↹", t: "Flecha Hacia la Izquierda Hacia Barra Sobre Flecha Hacia la Derecha Hacia Barra" },
+                { c: "↺", t: "Flecha de Círculo Abierto en Sentido Antihorario" }, { c: "↻", t: "Flecha de Círculo Abierto en Sentido Horario" }, { c: "↼", t: "Arpón Hacia la Izquierda con Púa Hacia Arriba" },
+                { c: "↽", t: "Arpón Hacia la Izquierda con Púa Hacia Abajo" }, { c: "↾", t: "Arpón Hacia Arriba con Púa Hacia la Derecha" }, { c: "↿", t: "Arpón Hacia Arriba con Púa Hacia la Izquierda" },
+                { c: "⇀", t: "Arpón Hacia la Derecha con Púa Hacia Arriba" }, { c: "⇁", t: "Arpón Hacia la Derecha con Púa Hacia Abajo" }, { c: "⇂", t: "Arpón Hacia Abajo con Púa Hacia la Derecha" },
+                { c: "⇃", t: "Arpón Hacia Abajo con Púa Hacia la Izquierda" }, { c: "⇄", t: "Flecha Hacia la Derecha Sobre Flecha Hacia la Izquierda" }, { c: "⇅", t: "Flecha Hacia Arriba a la Izquierda de Flecha Hacia Abajo" },
+                { c: "⇆", t: "Flecha Hacia la Izquierda Sobre Flecha Hacia la Derecha" }, { c: "⇇", t: "Flechas Emparejadas Hacia la Izquierda" }, { c: "⇈", t: "Flechas Emparejadas Hacia Arriba" },
+                { c: "⇉", t: "Flechas Emparejadas Hacia la Derecha" }, { c: "⇊", t: "Flechas Emparejadas Hacia Abajo" }, { c: "⇋", t: "Arpón Hacia la Izquierda Sobre Arpón Hacia la Derecha" },
+                { c: "⇌", t: "Arpón Hacia la Derecha Sobre Arpón Hacia la Izquierda" }, { c: "⇍", t: "Doble Flecha Hacia la Izquierda con Trazo" }, { c: "⇎", t: "Doble Flecha Izquierda Derecha con Trazo" },
+                { c: "⇏", t: "Doble Flecha Hacia la Derecha con Trazo" }, { c: "⇕", t: "Doble Flecha Arriba Abajo" }, { c: "⇖", t: "Doble Flecha Noroeste" },
+                { c: "⇗", t: "Doble Flecha Noreste" }, { c: "⇘", t: "Doble Flecha Sureste" }, { c: "⇙", t: "Doble Flecha Suroeste" },
+                { c: "⇚", t: "Triple Flecha Hacia la Izquierda" }, { c: "⇛", t: "Triple Flecha Hacia la Derecha" }, { c: "⇜", t: "Flecha Garabato Hacia la Izquierda" },
+                { c: "⇝", t: "Flecha Garabato Hacia la Derecha" }, { c: "⇞", t: "Flecha Hacia Arriba con Doble Trazo" }, { c: "⇟", t: "Flecha Hacia Abajo con Doble Trazo" },
+                { c: "⇠", t: "Flecha Discontinua Hacia la Izquierda" }, { c: "⇡", t: "Flecha Discontinua Hacia Arriba" }, { c: "⇢", t: "Flecha Discontinua Hacia la Derecha" },
+                { c: "⇣", t: "Flecha Discontinua Hacia Abajo" }, { c: "⇤", t: "Flecha Hacia la Izquierda Hacia Barra" }, { c: "⇥", t: "Flecha Hacia la Derecha Hacia Barra" },
+                { c: "⇦", t: "Flecha Blanca Hacia la Izquierda" }, { c: "⇧", t: "Flecha Blanca Hacia Arriba" }, { c: "⇨", t: "Flecha Blanca Hacia la Derecha" },
+                { c: "⇩", t: "Flecha Blanca Hacia Abajo" }, { c: "⇪", t: "Flecha Blanca Hacia Arriba desde Barra" }, { c: "⌅", t: "Proyectivo" },
+                { c: "⌆", t: "Perspectiva" }, { c: "⌤", t: "Punta de Flecha Hacia Arriba Entre Dos Barras Horizontales" }, { c: "⏎", t: "Símbolo de Retorno" },
+                { c: "▶", t: "Triángulo Negro Apuntando a la Derecha" }, { c: "☇", t: "Relámpago" }, { c: "☈", t: "Tormenta" },
+                { c: "☊", t: "Nodo Ascendente" }, { c: "☋", t: "Nodo Descendente" }, { c: "☌", t: "Conjunción" },
+                { c: "☍", t: "Oposición" }, { c: "➔", t: "Flecha Hacia la Derecha con Cabeza Ancha Gruesa" }, { c: "➘", t: "Flecha Sureste Gruesa" },
+                { c: "➙", t: "Flecha Hacia la Derecha Gruesa" }, { c: "➚", t: "Flecha Noreste Gruesa" }, { c: "➛", t: "Flecha Hacia la Derecha de Punto de Dibujo" },
+                { c: "➜", t: "Flecha Hacia la Derecha con Punta Redonda Gruesa" }, { c: "➝", t: "Flecha Hacia la Derecha con Cabeza Triangular" }, { c: "➞", t: "Flecha Hacia la Derecha con Cabeza Triangular Gruesa" },
+                { c: "➟", t: "Flecha Hacia la Derecha con Cabeza Triangular Discontinua" }, { c: "➠", t: "Flecha Hacia la Derecha con Cabeza Triangular Discontinua Gruesa" }, { c: "➡", t: "Flecha Negra Hacia la Derecha" },
+                { c: "➢", t: "Punta de Flecha Hacia la Derecha Iluminada desde Arriba en 3D" }, { c: "➣", t: "Punta de Flecha Hacia la Derecha Iluminada desde Abajo en 3D" }, { c: "➤", t: "Punta de Flecha Negra Hacia la Derecha" },
+                { c: "➥", t: "Flecha Negra Gruesa Curvada Hacia Abajo y a la Derecha" }, { c: "➦", t: "Flecha Negra Gruesa Curvada Hacia Arriba y a la Derecha" }, { c: "➧", t: "Flecha Negra Achatada Hacia la Derecha" },
+                { c: "➨", t: "Flecha Negra Hacia la Derecha con Punta Cóncava Gruesa" }, { c: "➩", t: "Flecha Blanca Hacia la Derecha Sombreada a la Derecha" }, { c: "➪", t: "Flecha Blanca Hacia la Derecha Sombreada a la Izquierda" },
+                { c: "➫", t: "Flecha Blanca Hacia la Derecha Sombreada e Inclinada Hacia Atrás" }, { c: "➬", t: "Flecha Blanca Hacia la Derecha Sombreada e Inclinada Hacia Adelante" }, { c: "➭", t: "Flecha Blanca Hacia la Derecha Sombreada Abajo a la Derecha Gruesa" },
+                { c: "➮", t: "Flecha Blanca Hacia la Derecha Sombreada Arriba a la Derecha Gruesa" }, { c: "➯", t: "Flecha Blanca Hacia la Derecha Sombreada Abajo a la Derecha con Muesca" }, { c: "➱", t: "Flecha Blanca Hacia la Derecha Sombreada Arriba a la Derecha con Muesca" },
+                { c: "➲", t: "Flecha Blanca Hacia la Derecha Gruesa en Círculo" }, { c: "➳", t: "Flecha Hacia la Derecha con Plumas Blancas" }, { c: "➴", t: "Flecha Sureste con Plumas Negras" },
+                { c: "➵", t: "Flecha Hacia la Derecha con Plumas Negras" }, { c: "➶", t: "Flecha Noreste con Plumas Negras" }, { c: "➷", t: "Flecha Sureste con Plumas Negras Gruesa" },
+                { c: "➸", t: "Flecha Hacia la Derecha con Plumas Negras Gruesa" }, { c: "➹", t: "Flecha Noreste con Plumas Negras Gruesa" }, { c: "➺", t: "Flecha Hacia la Derecha con Púas en Forma de Gota" },
+                { c: "➻", t: "Flecha Hacia la Derecha con Tallo en Forma de Gota Gruesa" }, { c: "➼", t: "Flecha Hacia la Derecha con Cola de Cuña" }, { c: "➽", t: "Flecha Hacia la Derecha con Cola de Cuña Gruesa" },
+                { c: "➾", t: "Flecha Hacia la Derecha con Contorno Abierto" }, { c: "⤴", t: "Flecha Apuntando a la Derecha y Luego Curvándose Hacia Arriba" }, { c: "⤵", t: "Flecha Apuntando a la Derecha y Luego Curvándose Hacia Abajo" },
+                { c: "↵", t: "Flecha Hacia Abajo con Esquina Hacia la Izquierda" }, { c: "↓", t: "Flecha Hacia Abajo" }, { c: "↔", t: "Flecha Izquierda Derecha" },
+                { c: "←", t: "Flecha Hacia la Izquierda" }, { c: "→", t: "Flecha Hacia la Derecha" }, { c: "↑", t: "Flecha Hacia Arriba" },
+                { c: "⌦", t: "Borrar Hacia la Derecha" }, { c: "⌫", t: "Borrar Hacia la Izquierda" }, { c: "⌧", t: "X en un Cuadro Rectangular" },
+                { c: "⇰", t: "Flecha Blanca Hacia la Derecha desde Pared" }, { c: "⇫", t: "Flecha Blanca Hacia Arriba en Pedestal" }, { c: "⇬", t: "Flecha Blanca Hacia Arriba en Pedestal con Barra Horizontal" },
+                { c: "⇭", t: "Flecha Blanca Hacia Arriba en Pedestal con Barra Vertical" }, { c: "⇳", t: "Flecha Blanca Arriba Abajo" }, { c: "⇮", t: "Doble Flecha Blanca Hacia Arriba" },
+                { c: "⇯", t: "Doble Flecha Blanca Hacia Arriba en Pedestal" }, { c: "⇱", t: "Flecha Noroeste Hacia Esquina" }, { c: "⇲", t: "Flecha Sureste Hacia Esquina" },
+                { c: "⇴", t: "Flecha Hacia la Derecha con Círculo Pequeño" }, { c: "⇵", t: "Flecha Hacia Abajo a la Izquierda de Flecha Hacia Arriba" }, { c: "⇷", t: "Flecha Hacia la Izquierda con Trazo Vertical" },
+                { c: "⇸", t: "Flecha Hacia la Derecha con Trazo Vertical" }, { c: "⇹", t: "Flecha Izquierda Derecha con Trazo Vertical" }, { c: "⇺", t: "Flecha Hacia la Izquierda con Doble Trazo Vertical" },
+                { c: "⇑", t: "Doble Flecha Hacia Arriba" }, { c: "⇓", t: "Doble Flecha Hacia Abajo" }, { c: "⇽", t: "Flecha de Cabeza Abierta Hacia la Izquierda" },
+                { c: "⇾", t: "Flecha de Cabeza Abierta Hacia la Derecha" }, { c: "⇿", t: "Flecha de Cabeza Abierta Izquierda Derecha" }, { c: "⬳", t: "Flecha Garabato Larga Hacia la Izquierda" },
+                { c: "⟿", t: "Flecha Garabato Larga Hacia la Derecha" }, { c: "⤉", t: "Flecha Hacia Arriba con Trazo Horizontal" }, { c: "⤈", t: "Flecha Hacia Abajo con Trazo Horizontal" },
+                { c: "⇻", t: "Flecha Hacia la Derecha con Doble Trazo Vertical" }, { c: "⇼", t: "Flecha Izquierda Derecha con Doble Trazo Vertical" }, { c: "⬴", t: "Flecha de Dos Puntas Hacia la Izquierda con Trazo Vertical" },
+                { c: "⤀", t: "Flecha de Dos Puntas Hacia la Derecha con Trazo Vertical" }, { c: "⬵", t: "Flecha de Dos Puntas Hacia la Izquierda con Doble Trazo Vertical" }, { c: "⤁", t: "Flecha de Dos Puntas Hacia la Derecha con Doble Trazo Vertical" },
+                { c: "⬹", t: "Flecha Hacia la Izquierda con Cola y Trazo Vertical" }, { c: "⤔", t: "Flecha Hacia la Derecha con Cola y Trazo Vertical" }, { c: "⬺", t: "Flecha Hacia la Izquierda con Cola y Doble Trazo Vertical" },
+                { c: "⤕", t: "Flecha Hacia la Derecha con Cola y Doble Trazo Vertical" }, { c: "⬶", t: "Flecha de Dos Puntas Hacia la Izquierda desde Barra" }, { c: "⤅", t: "Flecha de Dos Puntas Hacia la Derecha desde Barra" },
+                { c: "⬻", t: "Flecha de Dos Puntas Hacia la Izquierda con Cola" }, { c: "⤖", t: "Flecha de Dos Puntas Hacia la Derecha con Cola" }, { c: "⬷", t: "Flecha de Dos Puntas y Triple Guion Hacia la Izquierda" },
+                { c: "⤐", t: "Flecha de Dos Puntas y Triple Guion Hacia la Derecha" }, { c: "⬼", t: "Flecha de Dos Puntas Hacia la Izquierda con Cola y Trazo Vertical" }, { c: "⤗", t: "Flecha de Dos Puntas Hacia la Derecha con Cola y Trazo Vertical" },
+                { c: "⬽", t: "Flecha de Dos Puntas Hacia la Izquierda con Cola y Doble Trazo Vertical" }, { c: "⤘", t: "Flecha de Dos Puntas Hacia la Derecha con Cola y Doble Trazo Vertical" }, { c: "⤝", t: "Flecha Hacia la Izquierda Hacia Diamante Negro" },
+                { c: "⤞", t: "Flecha Hacia la Derecha Hacia Diamante Negro" }, { c: "⤟", t: "Flecha Hacia la Izquierda desde Barra Hacia Diamante Negro" }, { c: "⤠", t: "Flecha Hacia la Derecha desde Barra Hacia Diamante Negro" },
+                { c: "⤡", t: "Flecha Noroeste y Sureste" }, { c: "⤢", t: "Flecha Noreste y Suroeste" }, { c: "⤣", t: "Flecha Noroeste con Gancho" },
+                { c: "⤤", t: "Flecha Noreste con Gancho" }, { c: "⤥", t: "Flecha Sureste con Gancho" }, { c: "⤦", t: "Flecha Suroeste con Gancho" },
+                { c: "⤪", t: "Flecha Suroeste y Noroeste" }, { c: "⤨", t: "Flecha Noreste y Sureste" }, { c: "⤧", t: "Flecha Noroeste y Noreste" },
+                { c: "⤩", t: "Flecha Sureste y Suroeste" }, { c: "⤭", t: "Flecha Sureste Cruzando Flecha Noreste" }, { c: "⤮", t: "Flecha Noreste Cruzando Flecha Sureste" },
+                { c: "⤯", t: "Diagonal Descendente Cruzando Flecha Noreste" }, { c: "⤰", t: "Diagonal Ascendente Cruzando Flecha Sureste" }, { c: "⤱", t: "Flecha Noreste Cruzando Flecha Noroeste" },
+                { c: "⤲", t: "Flecha Noroeste Cruzando Flecha Noreste" }, { c: "⤫", t: "Diagonal Ascendente Cruzando Diagonal Descendente" }, { c: "⤬", t: "Diagonal Descendente Cruzando Diagonal Ascendente" },
+                { c: "⬐", t: "Flecha Hacia la Izquierda con Punta Hacia Abajo" }, { c: "⬎", t: "Flecha Hacia la Derecha con Punta Hacia Abajo" }, { c: "⬑", t: "Flecha Hacia la Izquierda con Punta Hacia Arriba" },
+                { c: "⬏", t: "Flecha Hacia la Derecha con Punta Hacia Arriba" }, { c: "⤶", t: "Flecha Apuntando Hacia Abajo y Luego Curvándose Hacia la Izquierda" }, { c: "⤷", t: "Flecha Apuntando Hacia Abajo y Luego Curvándose Hacia la Derecha" },
+                { c: "⥂", t: "Flecha Hacia la Derecha Sobre Flecha Corta Hacia la Izquierda" }, { c: "⥃", t: "Flecha Hacia la Izquierda Sobre Flecha Corta Hacia la Derecha" }, { c: "⥄", t: "Flecha Corta Hacia la Derecha Sobre Flecha Hacia la Izquierda" },
+                { c: "⭀", t: "Signo Igual Sobre Flecha Hacia la Izquierda" }, { c: "⥱", t: "Signo Igual Sobre Flecha Hacia la Derecha" }, { c: "⥶", t: "Menor Que Sobre Flecha Hacia la Izquierda" },
+                { c: "⥸", t: "Mayor Que Sobre Flecha Hacia la Derecha" }, { c: "⭂", t: "Flecha Hacia la Izquierda Sobre Casi Igual Inverso A" }, { c: "⭈", t: "Flecha Hacia la Derecha Sobre Casi Igual Inverso A" },
+                { c: "⭊", t: "Flecha Hacia la Izquierda Sobre Casi Igual A" }, { c: "⥵", t: "Flecha Hacia la Derecha Sobre Casi Igual A" }, { c: "⭁", t: "Operador Tilde Inverso Sobre Flecha Hacia la Izquierda" },
+                { c: "⭇", t: "Operador Tilde Inverso Sobre Flecha Hacia la Derecha" }, { c: "⭉", t: "Operador Tilde Sobre Flecha Hacia la Izquierda" }, { c: "⥲", t: "Operador Tilde Sobre Flecha Hacia la Derecha" },
+                { c: "⭋", t: "Flecha Hacia la Izquierda Sobre Operador Tilde Inverso" }, { c: "⭌", t: "Flecha Hacia la Derecha Sobre Operador Tilde Inverso" }, { c: "⥳", t: "Flecha Hacia la Izquierda Sobre Operador Tilde" },
+                { c: "⥴", t: "Flecha Hacia la Derecha Sobre Operador Tilde" }, { c: "⥆", t: "Flecha Hacia la Izquierda con Más Debajo" }, { c: "⥅", t: "Flecha Hacia la Derecha con Más Debajo" },
+                { c: "⥹", t: "Subconjunto Sobre Flecha Hacia la Derecha" }, { c: "⥻", t: "Superconjunto Sobre Flecha Hacia la Izquierda" }, { c: "⬰", t: "Flecha Hacia la Izquierda con Círculo Pequeño" },
+                { c: "⥈", t: "Flecha Izquierda Derecha A Través de Círculo Pequeño" }, { c: "⬾", t: "Flecha Hacia la Izquierda A Través de X" }, { c: "⥇", t: "Flecha Hacia la Derecha A Través de X" },
+                { c: "⬲", t: "Flecha Hacia la Izquierda con Más en Círculo" }, { c: "⟴", t: "Flecha Hacia la Derecha con Más en Círculo" }, { c: "⥷", t: "Flecha Hacia la Izquierda A Través de Menor Que" },
+                { c: "⭃", t: "Flecha Hacia la Derecha A Través de Mayor Que" }, { c: "⥺", t: "Flecha Hacia la Izquierda A Través de Subconjunto" }, { c: "⭄", t: "Flecha Hacia la Derecha A Través de Superconjunto" },
+                { c: "⥉", t: "Flecha de Dos Puntas Hacia Arriba desde Círculo Pequeño" }, { c: "⥰", t: "Doble Flecha Hacia la Derecha con Cabeza Redondeada" }, { c: "⬿", t: "Flecha Ondulada Apuntando Directamente a la Izquierda" },
+                { c: "⤳", t: "Flecha Ondulada Apuntando Directamente a la Derecha" }, { c: "⥊", t: "Arpón Púa Izquierda Arriba Púa Derecha Abajo" }, { c: "⥋", t: "Arpón Púa Izquierda Abajo Púa Derecha Arriba" },
+                { c: "⥌", t: "Arpón Púa Arriba Derecha Púa Abajo Izquierda" }, { c: "⥍", t: "Arpón Púa Arriba Izquierda Púa Abajo Derecha" }, { c: "⥎", t: "Arpón Púa Izquierda Arriba Púa Derecha Arriba" },
+                { c: "⥏", t: "Arpón Púa Arriba Derecha Púa Abajo Derecha" }, { c: "⥐", t: "Arpón Púa Izquierda Abajo Púa Derecha Abajo" }, { c: "⥑", t: "Arpón Púa Arriba Izquierda Púa Abajo Izquierda" },
+                { c: "⥒", t: "Arpón Hacia la Izquierda con Púa Arriba Hacia Barra" }, { c: "⥓", t: "Arpón Hacia la Derecha con Púa Arriba Hacia Barra" }, { c: "⥔", t: "Arpón Hacia Arriba con Púa Derecha Hacia Barra" },
+                { c: "⥕", t: "Arpón Hacia Abajo con Púa Derecha Hacia Barra" }, { c: "⥖", t: "Arpón Hacia la Izquierda con Púa Abajo Hacia Barra" }, { c: "⥗", t: "Arpón Hacia la Derecha con Púa Abajo Hacia Barra" },
+                { c: "⥘", t: "Arpón Hacia Arriba con Púa Izquierda Hacia Barra" }, { c: "⥙", t: "Arpón Hacia Abajo con Púa Izquierda Hacia Barra" }, { c: "⥚", t: "Arpón Hacia la Izquierda con Púa Arriba desde Barra" },
+                { c: "⥛", t: "Arpón Hacia la Derecha con Púa Arriba desde Barra" }, { c: "⥜", t: "Arpón Hacia Arriba con Púa Derecha desde Barra" }, { c: "⥝", t: "Arpón Hacia Abajo con Púa Derecha desde Barra" },
+                { c: "⥞", t: "Arpón Hacia la Izquierda con Púa Abajo desde Barra" }, { c: "⥟", t: "Arpón Hacia la Derecha con Púa Abajo desde Barra" }, { c: "⥠", t: "Arpón Hacia Arriba con Púa Izquierda desde Barra" },
+                { c: "⥡", t: "Arpón Hacia Abajo con Púa Izquierda desde Barra" }, { c: "⥢", t: "Arpón Hacia la Izquierda con Púa Arriba Sobre Arpón Hacia la Izquierda con Púa Abajo" }, { c: "⥤", t: "Arpón Hacia la Derecha con Púa Arriba Sobre Arpón Hacia la Derecha con Púa Abajo" },
+                { c: "⥣", t: "Arpón Hacia Arriba con Púa Izquierda Junto a Arpón Hacia Arriba con Púa Derecha" }, { c: "⥥", t: "Arpón Hacia Abajo con Púa Izquierda Junto a Arpón Hacia Abajo con Púa Derecha" }, { c: "⥦", t: "Arpón Hacia la Izquierda con Púa Arriba Sobre Arpón Hacia la Derecha con Púa Arriba" },
+                { c: "⥨", t: "Arpón Hacia la Derecha con Púa Arriba Sobre Arpón Hacia la Izquierda con Púa Arriba" }, { c: "⥧", t: "Arpón Hacia la Izquierda con Púa Abajo Sobre Arpón Hacia la Derecha con Púa Abajo" }, { c: "⥩", t: "Arpón Hacia la Derecha con Púa Abajo Sobre Arpón Hacia la Izquierda con Púa Abajo" },
+                { c: "⥮", t: "Arpón Hacia Arriba con Púa Izquierda Junto a Arpón Hacia Abajo con Púa Derecha" }, { c: "⥯", t: "Arpón Hacia Abajo con Púa Izquierda Junto a Arpón Hacia Arriba con Púa Derecha" }, { c: "⥪", t: "Arpón Hacia la Izquierda con Púa Arriba Sobre Guion Largo" },
+                { c: "⥬", t: "Arpón Hacia la Derecha con Púa Arriba Sobre Guion Largo" }, { c: "⥫", t: "Arpón Hacia la Izquierda con Púa Abajo Debajo de Guion Largo" }, { c: "⥭", t: "Arpón Hacia la Derecha con Púa Abajo Debajo de Guion Largo" },
+                { c: "⤌", t: "Flecha de Doble Guion Hacia la Izquierda" }, { c: "⤍", t: "Flecha de Doble Guion Hacia la Derecha" }, { c: "⤎", t: "Flecha de Triple Guion Hacia la Izquierda" },
+                { c: "⤏", t: "Flecha de Triple Guion Hacia la Derecha" }, { c: "⬸", t: "Flecha Hacia la Izquierda con Tallo Punteado" }, { c: "⤑", t: "Flecha Hacia la Derecha con Tallo Punteado" },
+                { c: "⬱", t: "Tres Flechas Hacia la Izquierda" }, { c: "⟸", t: "Doble Flecha Larga Hacia la Izquierda" }, { c: "⟹", t: "Doble Flecha Larga Hacia la Derecha" },
+                { c: "⟺", t: "Doble Flecha Larga Izquierda Derecha" }, { c: "⤂", t: "Doble Flecha Hacia la Izquierda con Trazo Vertical" }, { c: "⤃", t: "Doble Flecha Hacia la Derecha con Trazo Vertical" },
+                { c: "⤄", t: "Doble Flecha Izquierda Derecha con Trazo Vertical" }, { c: "⤆", t: "Doble Flecha Hacia la Izquierda desde Barra" }, { c: "⤇", t: "Doble Flecha Hacia la Derecha desde Barra" },
+                { c: "⤊", t: "Triple Flecha Hacia Arriba" }, { c: "⤋", t: "Triple Flecha Hacia Abajo" }, { c: "⭅", t: "Cuádruple Flecha Hacia la Izquierda" },
+                { c: "⭆", t: "Cuádruple Flecha Hacia la Derecha" }, { c: "⟰", t: "Cuádruple Flecha Hacia Arriba" }, { c: "⟱", t: "Cuádruple Flecha Hacia Abajo" },
+                { c: "⇐", t: "Doble Flecha Hacia la Izquierda" }, { c: "⇒", t: "Doble Flecha Hacia la Derecha" }, { c: "⇔", t: "Doble Flecha Izquierda Derecha" },
+                { c: "⇶", t: "Tres Flechas Hacia la Derecha" }, { c: "⟵", t: "Flecha Larga Hacia la Izquierda" }, { c: "⟶", t: "Flecha Larga Hacia la Derecha" },
+                { c: "⟷", t: "Flecha Larga Izquierda Derecha" }, { c: "⬄", t: "Flecha Blanca Izquierda Derecha" }, { c: "⬀", t: "Flecha Blanca Noreste" },
+                { c: "⬁", t: "Flecha Blanca Noroeste" }, { c: "⬂", t: "Flecha Blanca Sureste" }, { c: "⬃", t: "Flecha Blanca Suroeste" },
+                { c: "⬅", t: "Flecha Negra Hacia la Izquierda" }, { c: "⬆", t: "Flecha Negra Hacia Arriba" }, { c: "⬇", t: "Flecha Negra Hacia Abajo" },
+                { c: "⬈", t: "Flecha Negra Noreste" }, { c: "⬉", t: "Flecha Negra Noroeste" }, { c: "⬊", t: "Flecha Negra Sureste" },
+                { c: "⬋", t: "Flecha Negra Suroeste" }, { c: "⬌", t: "Flecha Negra Izquierda Derecha" }, { c: "⬍", t: "Flecha Negra Arriba Abajo" },
+                { c: "⟻", t: "Flecha Larga Hacia la Izquierda desde Barra" }, { c: "⟼", t: "Flecha Larga Hacia la Derecha desde Barra" }, { c: "⤒", t: "Flecha Hacia Arriba Hacia Barra" },
+                { c: "⤓", t: "Flecha Hacia Abajo Hacia Barra" }, { c: "⤙", t: "Cola de Flecha Hacia la Izquierda" }, { c: "⤚", t: "Cola de Flecha Hacia la Derecha" },
+                { c: "⤛", t: "Cola de Doble Flecha Hacia la Izquierda" }, { c: "⤜", t: "Cola de Doble Flecha Hacia la Derecha" }, { c: "⥼", t: "Cola de Pez Izquierda" },
+                { c: "⥽", t: "Cola de Pez Derecha" }, { c: "⥾", t: "Cola de Pez Arriba" }, { c: "⥿", t: "Cola de Pez Abajo" },
+                { c: "⤼", t: "Arco Superior Flecha en Sentido Horario con Menos" }, { c: "⤽", t: "Arco Superior Flecha en Sentido Antihorario con Más" }, { c: "⤾", t: "Flecha Semicircular Inferior Derecha en Sentido Horario" },
+                { c: "⤿", t: "Flecha Semicircular Inferior Izquierda en Sentido Antihorario" }, { c: "⤸", t: "Flecha Arco Lado Derecho en Sentido Horario" }, { c: "⤺", t: "Flecha Arco Superior en Sentido Antihorario" },
+                { c: "⤹", t: "Flecha Arco Lado Izquierdo en Sentido Antihorario" }, { c: "⤻", t: "Flecha Arco Inferior en Sentido Antihorario" }, { c: "⥀", t: "Flecha de Círculo Cerrado en Sentido Antihorario" },
+                { c: "⥁", t: "Flecha de Círculo Cerrado en Sentido Horario" }, { c: "⟲", t: "Flecha de Círculo con Hueco en Sentido Antihorario" }, { c: "⟳", t: "Flecha de Círculo con Hueco en Sentido Horario" }
+            ],
+            zodiac: [
+                { c: "☮", t: "Símbolo de la Paz" }, { c: "☸", t: "Rueda del Dharma" }, { c: "♈", t: "Aries" },
+                { c: "♉", t: "Tauro" }, { c: "☪", t: "Estrella y Luna Creciente" }, { c: "♊", t: "Géminis" },
+                { c: "♋", t: "Cáncer" }, { c: "♌", t: "Leo" }, { c: "♍", t: "Virgo" },
+                { c: "♎", t: "Libra" }, { c: "♏", t: "Escorpio" }, { c: "♐", t: "Sagitario" },
+                { c: "♑", t: "Capricornio" }, { c: "♒", t: "Acuario" }, { c: "♓", t: "Piscis" },
+                { c: "☤", t: "Caduceo" }, { c: "☥", t: "Ankh" }, { c: "☧", t: "Crismón" },
+                { c: "☨", t: "Cruz de Lorena" }, { c: "☩", t: "Cruz de Jerusalén" }, { c: "☫", t: "Símbolo Farsi" },
+                { c: "☬", t: "Adi Shakti" }, { c: "☭", t: "Hoz y Martillo" }, { c: "☯", t: "Yin Yang" },
+                { c: "☽", t: "Luna en Cuarto Creciente" }, { c: "☾", t: "Luna en Cuarto Menguante" }, { c: "✙", t: "Cruz Griega Contorneada" },
+                { c: "✚", t: "Cruz Griega Gruesa" }, { c: "✛", t: "Cruz con Centro Abierto" }, { c: "✜", t: "Cruz Gruesa con Centro Abierto" },
+                { c: "✝", t: "Cruz Latina" }, { c: "✞", t: "Cruz Latina Blanca Sombreada" }, { c: "✟", t: "Cruz Latina Contorneada" },
+                { c: "†", t: "Daga" }, { c: "⊹", t: "Matriz Conjugada Hermitiana" }, { c: "‡", t: "Doble Daga" },
+                { c: "♁", t: "Tierra" }, { c: "♆", t: "Neptuno" }, { c: "❖", t: "Diamante Negro Menos X Blanca" },
+                { c: "♅", t: "Urano" }, { c: "✠", t: "Cruz de Malta" }, { c: "✡", t: "Estrella de David" },
+                { c: "✢", t: "Asterisco con Cuatro Radios en Forma de Gota" }, { c: "卍", t: "Ideograma Esvástica" }, { c: "卐", t: "Ideograma Esvástica" },
+                { c: "〷", t: "Símbolo Ideográfico de Separador de Avance de Línea de Telégrafo" }, { c: "☠", t: "Calavera y Huesos Cruzados" }, { c: "☢", t: "Signo Radioactivo" },
+                { c: "☣", t: "Signo de Riesgo Biológico" }, { c: "☦", t: "Cruz Ortodoxa" }
+            ],
+            heart: [
+                { c: "♥", t: "Palo de Corazones Negro" }, { c: "♡", t: "Palo de Corazones Blanco" }, { c: "❥", t: "Viñeta de Corazón Negro Grueso Rotado" },
+                { c: "❣", t: "Ornamento de Signo de Exclamación de Corazón Grueso" }, { c: "❦", t: "Corazón Floral" }, { c: "❧", t: "Viñeta de Corazón Floral Rotado" },
+                { c: "დ", t: "Letra Georgiana Don" }, { c: "ღ", t: "Letra Georgiana Ghan" }, { c: "۵", t: "Dígito Arábigo-Índico Extendido Cinco" },
+                { c: "ლ", t: "Letra Georgiana Las" }, { c: "ও", t: "Letra Bengalí O" }
+            ],
+            check: [
+                { c: "✓", t: "Marca de Verificación" }, { c: "✔", t: "Marca de Verificación Gruesa" }, { c: "✗", t: "X de Votación" },
+                { c: "✘", t: "X de Votación Gruesa" }, { c: "☓", t: "Cruz de San Andrés" }, { c: "∨", t: "O Lógico" },
+                { c: "√", t: "Raíz Cuadrada" }, { c: "✇", t: "Unidad de Cinta" }, { c: "☐", t: "Casilla de Votación" },
+                { c: "☑", t: "Casilla de Votación con Verificación" }, { c: "☒", t: "Casilla de Votación con X" }, { c: "〤", t: "Numeral de Hangzhou Cuatro" },
+                { c: "〥", t: "Numeral de Hangzhou Cinco" }
+            ],
+            people: [
+                { c: "♀", t: "Signo Femenino" }, { c: "♂", t: "Signo Masculino" }, { c: "☹", t: "Cara Fruncida Blanca" },
+                { c: "☺", t: "Cara Sonriente Blanca" }, { c: "☻", t: "Cara Sonriente Negra" }, { c: "☿", t: "Mercurio" },
+                { c: "〠", t: "Cara de Marca Postal" }, { c: "ヅ", t: "Letra Katakana Du" }, { c: "ツ", t: "Letra Katakana Tu" },
+                { c: "㋡", t: "Katakana Tu en Círculo" }, { c: "웃", t: "Sílaba Hangul Us" }, { c: "유", t: "Sílaba Hangul Yu" },
+                { c: "ü", t: "U con Dos Puntos" }, { c: "Ü", t: "Letra Latina Mayúscula U con Diéresis" }, { c: "ت", t: "Letra Árabe Teh" },
+                { c: "シ", t: "Letra Katakana Si" }, { c: "ッ", t: "Letra Katakana Pequeña Tu" }, { c: "㋛", t: "Katakana Si en Círculo" },
+                { c: "ꑇ", t: "Sílaba Yi Njyp" }, { c: "ꐦ", t: "Sílaba Yi Jjop" }, { c: "ꐠ", t: "Sílaba Yi Jjuox" },
+                { c: "ꐡ", t: "Sílaba Yi Jjuo" }, { c: "ꐕ", t: "Sílaba Yi Qyp" }, { c: "ꌇ", t: "Sílaba Yi Nzyrx" },
+                { c: "ꌈ", t: "Sílaba Yi Nzyr" }, { c: "ꉕ", t: "Sílaba Yi Hxuop" }, { c: "ꈋ", t: "Sílaba Yi Kex" },
+                { c: "ꈌ", t: "Sílaba Yi Ke" }, { c: "ꆛ", t: "Sílaba Yi Hliex" }, { c: "ꆜ", t: "Sílaba Yi Hlie" },
+                { c: "ꃼ", t: "Sílaba Yi Vy" }, { c: "☠", t: "Calavera y Huesos Cruzados" }, { c: "☃", t: "Muñeco de Nieve" },
+                { c: "〲", t: "Marca de Repetición Kana Vertical con Sonorización" }, { c: "〴", t: "Mitad Superior de Repetición Kana Vertical con Sonorización" }, { c: "ϡ", t: "Letra Griega Pequeña Sampi" },
+                { c: "ﭢ", t: "Letra Árabe Teheh Forma Aislada" }, { c: "⍢", t: "Símbolo Funcional APL Del Diéresis" }, { c: "⍣", t: "Símbolo Funcional APL Estrella Diéresis" },
+                { c: "⍤", t: "Símbolo Funcional APL Yota Diéresis" }, { c: "⍥", t: "Símbolo Funcional APL Círculo Diéresis" }, { c: "⍨", t: "Símbolo Funcional APL Tilde Diéresis" },
+                { c: "⍩", t: "Símbolo Funcional APL Mayor Que Diéresis" }, { c: "ὃ", t: "Letra Griega Pequeña Ómicron con Espíritu Áspero y Acento Grave" }, { c: "ὕ", t: "Letra Griega Pequeña Ípsilon con Espíritu Áspero y Acento Agudo" },
+                { c: "ὣ", t: "Letra Griega Pequeña Omega con Espíritu Áspero y Acento Grave" }, { c: "Ѷ", t: "Letra Cirílica Mayúscula Izhitsa con Doble Acento Grave" }, { c: "Ӫ", t: "Letra Cirílica Mayúscula O Barrada con Diéresis" },
+                { c: "ӫ", t: "Letra Cirílica Pequeña O Barrada con Diéresis" }, { c: "⚣", t: "Signo Masculino Doble" }, { c: "⚤", t: "Signos Femenino y Masculino Entrelazados" },
+                { c: "⚥", t: "Signo Masculino y Femenino" }, { c: "⚦", t: "Signo Masculino con Trazo" }, { c: "⚧", t: "Signo Masculino con Trazo y Signo Masculino y Femenino" },
+                { c: "⚨", t: "Signo Masculino Vertical con Trazo" }, { c: "⚢", t: "Signo Femenino Doble" }
+            ],
+            punctuation: [
+                { c: "·", t: "Punto Medio" }, { c: "‑", t: "Guion de No Separación" }, { c: "‒", t: "Guion de Cifras" },
+                { c: "–", t: "Semirraya" }, { c: "—", t: "Raya" }, { c: "―", t: "Barra Horizontal" },
+                { c: "‗", t: "Línea Baja Doble" }, { c: "‘", t: "Comilla Simple Izquierda" }, { c: "’", t: "Comilla Simple Derecha" },
+                { c: "‚", t: "Comilla Simple Baja-9" }, { c: "‛", t: "Comilla Simple Alta Invertida-9" }, { c: "“", t: "Comilla Doble Izquierda" },
+                { c: "”", t: "Comilla Doble Derecha" }, { c: "„", t: "Comilla Doble Baja-9" }, { c: "‟", t: "Comilla Doble Alta Invertida-9" },
+                { c: "•", t: "Viñeta" }, { c: "‣", t: "Viñeta Triangular" }, { c: "․", t: "Línea de Puntos (Uno)" },
+                { c: "‥", t: "Línea de Puntos (Dos)" }, { c: "…", t: "Puntos Suspensivos Horizontales" }, { c: "‧", t: "Punto de Separación Silábica" },
+                { c: "′", t: "Prima" }, { c: "″", t: "Doble Prima" }, { c: "‴", t: "Triple Prima" },
+                { c: "‵", t: "Prima Invertida" }, { c: "‶", t: "Doble Prima Invertida" }, { c: "‷", t: "Triple Prima Invertida" },
+                { c: "❛", t: "Adorno de Comilla Simple Invertida Gruesa" }, { c: "❜", t: "Adorno de Comilla Simple Gruesa" }, { c: "❝", t: "Adorno de Comilla Doble Invertida Gruesa" },
+                { c: "❞", t: "Adorno de Comilla Doble Gruesa" }, { c: "ʹ", t: "Letra Modificadora Prima" }, { c: "ʺ", t: "Letra Modificadora Doble Prima" },
+                { c: "ʻ", t: "Letra Modificadora Coma Invertida" }, { c: "ʼ", t: "Letra Modificadora Apóstrofo" }, { c: "ʽ", t: "Letra Modificadora Coma Invertida" },
+                { c: "ʾ", t: "Letra Modificadora Medio Anillo Derecho" }, { c: "ʿ", t: "Letra Modificadora Medio Anillo Izquierdo" }, { c: "ˀ", t: "Letra Modificadora Oclusión Glotal" },
+                { c: "ˁ", t: "Letra Modificadora Oclusión Glotal Invertida" }, { c: "˂", t: "Letra Modificadora Punta de Flecha Izquierda" }, { c: "˃", t: "Letra Modificadora Punta de Flecha Derecha" },
+                { c: "˄", t: "Letra Modificadora Punta de Flecha Arriba" }, { c: "˅", t: "Letra Modificadora Punta de Flecha Abajo" }, { c: "ˆ", t: "Letra Modificadora Acento Circunflejo" },
+                { c: "ˇ", t: "Carón" }, { c: "ˈ", t: "Letra Modificadora Línea Vertical" }, { c: "ˉ", t: "Letra Modificadora Macrón" },
+                { c: "ˊ", t: "Letra Modificadora Acento Agudo" }, { c: "ˋ", t: "Letra Modificadora Acento Grave" }, { c: "ˌ", t: "Letra Modificadora Línea Vertical Baja" },
+                { c: "ˍ", t: "Letra Modificadora Macrón Bajo" }, { c: "ˎ", t: "Letra Modificadora Acento Grave Bajo" }, { c: "ˏ", t: "Letra Modificadora Acento Agudo Bajo" },
+                { c: "ː", t: "Letra Modificadora Dos Puntos Triangulares" }, { c: "ˑ", t: "Letra Modificadora Medio Dos Puntos Triangulares" }, { c: "˒", t: "Letra Modificadora Medio Anillo Derecho Centrado" },
+                { c: "˓", t: "Letra Modificadora Medio Anillo Izquierdo Centrado" }, { c: "˔", t: "Letra Modificadora Tachuela Arriba" }, { c: "˕", t: "Letra Modificadora Tachuela Abajo" },
+                { c: "˖", t: "Letra Modificadora Signo Más" }, { c: "˗", t: "Letra Modificadora Signo Menos" }, { c: "˘", t: "Breve" },
+                { c: "˙", t: "Punto Superior" }, { c: "˚", t: "Anillo Superior" }, { c: "˛", t: "Ogonek" },
+                { c: "˜", t: "Tilde Pequeña" }, { c: "˝", t: "Doble Acento Agudo" }, { c: "ˠ", t: "Letra Modificadora Gamma Pequeña" },
+                { c: "ˡ", t: "Letra Modificadora L Pequeña" }, { c: "～", t: "Tilde de Ancho Completo" }, { c: "¿", t: "Signo de Interrogación Invertido" },
+                { c: "﹐", t: "Coma Pequeña" }, { c: "﹒", t: "Punto Pequeño" }, { c: "﹔", t: "Punto y Coma Pequeño" },
+                { c: "﹕", t: "Dos Puntos Pequeños" }, { c: "！", t: "Signo de Exclamación de Ancho Completo" }, { c: "＃", t: "Signo de Número de Ancho Completo" },
+                { c: "＄", t: "Signo de Dólar de Ancho Completo" }, { c: "％", t: "Signo de Porcentaje de Ancho Completo" }, { c: "＆", t: "Ampersand de Ancho Completo" },
+                { c: "＊", t: "Asterisco de Ancho Completo" }, { c: "，", t: "Coma de Ancho Completo" }, { c: "．", t: "Punto de Ancho Completo" },
+                { c: "：", t: "Dos Puntos de Ancho Completo" }, { c: "；", t: "Punto y Coma de Ancho Completo" }, { c: "？", t: "Signo de Interrogación de Ancho Completo" },
+                { c: "＠", t: "Arroba Comercial de Ancho Completo" }, { c: "、", t: "Coma Ideográfica" }, { c: "。", t: "Punto Ideográfico" },
+                { c: "〃", t: "Comillas de Repetición" }, { c: "〝", t: "Comilla de Doble Prima Invertida" }, { c: "〞", t: "Comilla de Doble Prima" },
+                { c: "︰", t: "Forma de Presentación para Línea de Dos Puntos Vertical" }
+            ],
+            math: [
+                { c: "π", t: "Letra Griega Pequeña Pi" }, { c: "∞", t: "Infinito" }, { c: "Σ", t: "Letra Griega Mayúscula Sigma" },
+                { c: "√", t: "Raíz Cuadrada" }, { c: "∛", t: "Raíz Cúbica" }, { c: "∜", t: "Raíz Cuarta" },
+                { c: "∫", t: "Integral" }, { c: "∬", t: "Integral Doble" }, { c: "∭", t: "Integral Triple" },
+                { c: "∮", t: "Integral de Contorno" }, { c: "∯", t: "Integral de Superficie" }, { c: "∰", t: "Integral de Volumen" },
+                { c: "∱", t: "Integral en Sentido Horario" }, { c: "∲", t: "Integral de Contorno en Sentido Horario" }, { c: "∳", t: "Integral de Contorno en Sentido Antihorario" },
+                { c: "∀", t: "Para Todo" }, { c: "∁", t: "Complemento" }, { c: "∂", t: "Diferencial Parcial" },
+                { c: "∃", t: "Existe" }, { c: "∄", t: "No Existe" }, { c: "∅", t: "Conjunto Vacío" },
+                { c: "∆", t: "Incremento" }, { c: "∇", t: "Nabla" }, { c: "∈", t: "Elemento De" },
+                { c: "∉", t: "No es Elemento De" }, { c: "∊", t: "Elemento De Pequeño" }, { c: "∋", t: "Contiene Como Miembro" },
+                { c: "∌", t: "No Contiene Como Miembro" }, { c: "∍", t: "Contiene Como Miembro Pequeño" }, { c: "∎", t: "Fin de la Demostración" },
+                { c: "∏", t: "Productorio N-ario" }, { c: "∐", t: "Coproductorio N-ario" }, { c: "∑", t: "Sumatorio N-ario" },
+                { c: "−", t: "Signo Menos" }, { c: "∓", t: "Signo Menos o Más" }, { c: "∔", t: "Punto Más" },
+                { c: "∕", t: "Barra de División" }, { c: "∖", t: "Diferencia de Conjuntos" }, { c: "∗", t: "Operador Asterisco" },
+                { c: "∘", t: "Operador Anillo" }, { c: "∙", t: "Operador Viñeta" }, { c: "∝", t: "Proporcional A" },
+                { c: "∟", t: "Ángulo Recto" }, { c: "∠", t: "Ángulo" }, { c: "∡", t: "Ángulo Medido" },
+                { c: "∢", t: "Ángulo Esférico" }, { c: "∣", t: "Divide" }, { c: "∤", t: "No Divide" },
+                { c: "∥", t: "Paralelo A" }, { c: "∦", t: "No Paralelo A" }, { c: "∧", t: "Y Lógico" },
+                { c: "∨", t: "O Lógico" }, { c: "∩", t: "Intersección" }, { c: "∪", t: "Unión" },
+                { c: "∴", t: "Por Lo Tanto" }, { c: "∵", t: "Porque" }, { c: "∶", t: "Razón" },
+                { c: "∷", t: "Proporción" }, { c: "∸", t: "Punto Menos" }, { c: "∹", t: "Exceso" },
+                { c: "∺", t: "Proporción Geométrica" }, { c: "∻", t: "Homotético" }, { c: "∼", t: "Operador Tilde" },
+                { c: "∽", t: "Tilde Invertida" }, { c: "∾", t: "S Perezosa Invertida" }, { c: "∿", t: "Onda Sinusoidal" },
+                { c: "≀", t: "Producto Orla" }, { c: "≁", t: "No Tilde" }, { c: "≂", t: "Menos Tilde" },
+                { c: "≃", t: "Asintóticamente Igual A" }, { c: "≄", t: "No Asintóticamente Igual A" }, { c: "≅", t: "Aproximadamente Igual A" },
+                { c: "≆", t: "Aproximadamente Pero No Realmente Igual A" }, { c: "≇", t: "Ni Aproximadamente Ni Realmente Igual A" }, { c: "≈", t: "Casi Igual A" },
+                { c: "≉", t: "No Casi Igual A" }, { c: "≊", t: "Casi Igual o Igual A" }, { c: "≋", t: "Triple Tilde" },
+                { c: "≌", t: "Todo Igual A" }, { c: "≍", t: "Equivalente A" }, { c: "≎", t: "Geométricamente Equivalente A" },
+                { c: "≏", t: "Diferencia Entre" }, { c: "≐", t: "Se Aproxima al Límite" }, { c: "≑", t: "Geométricamente Igual A" },
+                { c: "≒", t: "Aproximadamente Igual A o la Imagen De" }, { c: "≓", t: "Imagen De o Aproximadamente Igual A" }, { c: "≔", t: "Dos Puntos Igual" },
+                { c: "≕", t: "Igual Dos Puntos" }, { c: "≖", t: "Anillo En Igual A" }, { c: "≗", t: "Anillo Igual A" },
+                { c: "≘", t: "Corresponde A" }, { c: "≙", t: "Estima" }, { c: "≚", t: "Equiangular A" },
+                { c: "≛", t: "Estrella Igual" }, { c: "≜", t: "Delta Igual A" }, { c: "≝", t: "Igual A Por Definición" },
+                { c: "≞", t: "Medido Por" }, { c: "≟", t: "Igualdad Cuestionada" }, { c: "≠", t: "No Es Igual A" },
+                { c: "≡", t: "Idéntico A" }, { c: "≢", t: "No Idéntico A" }, { c: "≣", t: "Estrictamente Equivalente A" },
+                { c: "≤", t: "Menor o Igual Que" }, { c: "≥", t: "Mayor o Igual Que" }, { c: "≦", t: "Menor Que Sobre Igual A" },
+                { c: "≧", t: "Mayor Que Sobre Igual A" }, { c: "≨", t: "Menor Que Pero No Igual A" }, { c: "≩", t: "Mayor Que Pero No Igual A" },
+                { c: "≪", t: "Mucho Menor Que" }, { c: "≫", t: "Mucho Mayor Que" }, { c: "≬", t: "Entre" },
+                { c: "≭", t: "No Equivalente A" }, { c: "≮", t: "No Menor Que" }, { c: "≯", t: "No Mayor Que" },
+                { c: "≰", t: "Ni Menor Que Ni Igual A" }, { c: "≱", t: "Ni Mayor Que Ni Igual A" }, { c: "≲", t: "Menor Que o Equivalente A" },
+                { c: "≳", t: "Mayor Que o Equivalente A" }, { c: "≴", t: "Ni Menor Que Ni Equivalente A" }, { c: "≵", t: "Ni Mayor Que Ni Equivalente A" },
+                { c: "≶", t: "Menor Que o Mayor Que" }, { c: "≷", t: "Mayor Que o Menor Que" }, { c: "≸", t: "Ni Menor Que Ni Mayor Que" },
+                { c: "≹", t: "Ni Mayor Que Ni Menor Que" }, { c: "≺", t: "Precede" }, { c: "≻", t: "Sucede" },
+                { c: "≼", t: "Precede o Igual A" }, { c: "≽", t: "Sucede o Igual A" }, { c: "≾", t: "Precede o Equivalente A" },
+                { c: "≿", t: "Sucede o Equivalente A" }, { c: "⊀", t: "No Precede" }, { c: "⊁", t: "No Sucede" },
+                { c: "⊂", t: "Subconjunto De" }, { c: "⊃", t: "Superconjunto De" }, { c: "⊄", t: "No es Subconjunto De" },
+                { c: "⊅", t: "No es Superconjunto De" }, { c: "⊆", t: "Subconjunto De o Igual A" }, { c: "⊇", t: "Superconjunto De o Igual A" },
+                { c: "⊈", t: "Ni Subconjunto De Ni Igual A" }, { c: "⊉", t: "Ni Superconjunto De Ni Igual A" }, { c: "⊊", t: "Subconjunto De con No Igual A" },
+                { c: "⊋", t: "Superconjunto De con No Igual A" }, { c: "⊌", t: "Multiconjunto" }, { c: "⊍", t: "Multiplicación de Multiconjunto" },
+                { c: "⊎", t: "Unión de Multiconjunto" }, { c: "⊏", t: "Imagen Cuadrada De" }, { c: "⊐", t: "Original Cuadrado De" },
+                { c: "⊑", t: "Imagen Cuadrada De o Igual A" }, { c: "⊒", t: "Original Cuadrado De o Igual A" }, { c: "⊓", t: "Intersección Cuadrada" },
+                { c: "⊔", t: "Unión Cuadrada" }, { c: "⊕", t: "Más en Círculo" }, { c: "⊖", t: "Menos en Círculo" },
+                { c: "⊗", t: "Por en Círculo" }, { c: "⊘", t: "Barra de División en Círculo" }, { c: "⊙", t: "Operador Punto en Círculo" },
+                { c: "⊚", t: "Operador Anillo en Círculo" }, { c: "⊛", t: "Operador Asterisco en Círculo" }, { c: "⊜", t: "Igual en Círculo" },
+                { c: "⊝", t: "Guion en Círculo" }, { c: "⊞", t: "Más en Cuadrado" }, { c: "⊟", t: "Menos en Cuadrado" },
+                { c: "⊠", t: "Por en Cuadrado" }, { c: "⊡", t: "Operador Punto en Cuadrado" }, { c: "⊢", t: "Tachuela Derecha" },
+                { c: "⊣", t: "Tachuela Izquierda" }, { c: "⊤", t: "Tachuela Abajo" }, { c: "⊥", t: "Tachuela Arriba" },
+                { c: "⊦", t: "Aserción" }, { c: "⊧", t: "Modelos" }, { c: "⊨", t: "Verdadero" },
+                { c: "⊩", t: "Fuerza" }, { c: "⊪", t: "Torniquete Derecho de Triple Barra Vertical" }, { c: "⊫", t: "Torniquete Doble Derecho de Doble Barra Vertical" },
+                { c: "⊬", t: "No Prueba" }, { c: "⊭", t: "No Verdadero" }, { c: "⊮", t: "No Fuerza" },
+                { c: "⊯", t: "Torniquete Doble Derecho de Doble Barra Vertical Negado" }, { c: "⊰", t: "Precede Bajo Relación" }, { c: "⊱", t: "Sucede Bajo Relación" },
+                { c: "⊲", t: "Subgrupo Normal De" }, { c: "⊳", t: "Contiene Como Subgrupo Normal" }, { c: "⊴", t: "Subgrupo Normal De o Igual A" },
+                { c: "⊵", t: "Contiene Como Subgrupo Normal o Igual A" }, { c: "⊶", t: "Original De" }, { c: "⊷", t: "Imagen De" },
+                { c: "⊸", t: "Multimapa" }, { c: "⊹", t: "Matriz Conjugada Hermitiana" }, { c: "⊺", t: "Intercalar" },
+                { c: "⊻", t: "Xor" }, { c: "⊼", t: "Nand" }, { c: "⊽", t: "Nor" },
+                { c: "⊾", t: "Ángulo Recto con Arco" }, { c: "⊿", t: "Triángulo Rectángulo" }, { c: "⋀", t: "Y Lógico N-ario" },
+                { c: "⋁", t: "O Lógico N-ario" }, { c: "⋂", t: "Intersección N-aria" }, { c: "⋃", t: "Unión N-aria" },
+                { c: "⋄", t: "Operador Diamante" }, { c: "⋅", t: "Operador Punto" }, { c: "⋆", t: "Operador Estrella" },
+                { c: "⋇", t: "Tiempos de División" }, { c: "⋈", t: "Pajarita" }, { c: "⋉", t: "Producto Semidirecto de Factor Normal Izquierdo" },
+                { c: "⋊", t: "Producto Semidirecto de Factor Normal Derecho" }, { c: "⋋", t: "Producto Semidirecto Izquierdo" }, { c: "⋌", t: "Producto Semidirecto Derecho" },
+                { c: "⋍", t: "Tilde Invertida Igual" }, { c: "⋎", t: "O Lógico Rizado" }, { c: "⋏", t: "Y Lógico Rizado" },
+                { c: "⋐", t: "Doble Subconjunto" }, { c: "⋑", t: "Doble Superconjunto" }, { c: "⋒", t: "Doble Intersección" },
+                { c: "⋓", t: "Doble Unión" }, { c: "⋔", t: "Horca" }, { c: "⋕", t: "Igual y Paralelo A" },
+                { c: "⋖", t: "Menor Que con Punto" }, { c: "⋗", t: "Mayor Que con Punto" }, { c: "⋘", t: "Mucho Menor Que (Muy)" },
+                { c: "⋙", t: "Mucho Mayor Que (Muy)" }, { c: "⋚", t: "Menor Que Igual A o Mayor Que" }, { c: "⋛", t: "Mayor Que Igual A o Menor Que" },
+                { c: "⋜", t: "Igual A o Menor Que" }, { c: "⋝", t: "Igual A o Mayor Que" }, { c: "⋞", t: "Igual A o Precede" },
+                { c: "⋟", t: "Igual A o Sucede" }, { c: "⋠", t: "No Precede o Igual" }, { c: "⋡", t: "No Sucede o Igual" },
+                { c: "⋢", t: "No Imagen Cuadrada De o Igual A" }, { c: "⋣", t: "No Original Cuadrado De o Igual A" }, { c: "⋤", t: "Imagen Cuadrada De o No Igual A" },
+                { c: "⋥", t: "Original Cuadrado De o No Igual A" }, { c: "⋦", t: "Menor Que Pero No Equivalente A" }, { c: "⋧", t: "Mayor Que Pero No Equivalente A" },
+                { c: "⋨", t: "Precede Pero No Equivalente A" }, { c: "⋩", t: "Sucede Pero No Equivalente A" }, { c: "⋪", t: "No Subgrupo Normal De" },
+                { c: "⋫", t: "No Contiene Como Subgrupo Normal" }, { c: "⋬", t: "No Subgrupo Normal De o Igual A" }, { c: "⋭", t: "No Contiene Como Subgrupo Normal o Igual" },
+                { c: "⋮", t: "Puntos Suspensivos Verticales" }, { c: "⋯", t: "Puntos Suspensivos Horizontales en Línea Media" }, { c: "⋰", t: "Puntos Suspensivos Diagonales Arriba Derecha" },
+                { c: "⋱", t: "Puntos Suspensivos Diagonales Abajo Derecha" }, { c: "⁺", t: "Signo Más Superíndice" }, { c: "⁻", t: "Menos Superíndice" },
+                { c: "⁼", t: "Signo Igual Superíndice" }, { c: "⁽", t: "Paréntesis Izquierdo Superíndice" }, { c: "⁾", t: "Paréntesis Derecho Superíndice" },
+                { c: "ⁿ", t: "Letra Latina Minúscula N Superíndice" }, { c: "₊", t: "Signo Más Subíndice" }, { c: "₋", t: "Menos Subíndice" },
+                { c: "₌", t: "Signo Igual Subíndice" }, { c: "₍", t: "Paréntesis Izquierdo Subíndice" }, { c: "₎", t: "Paréntesis Derecho Subíndice" },
+                { c: "✖", t: "X de Multiplicación Gruesa" }, { c: "﹢", t: "Signo Más Pequeño" }, { c: "﹣", t: "Guion-Menos Pequeño" },
+                { c: "＋", t: "Signo Más de Ancho Completo" }, { c: "－", t: "Guion-Menos de Ancho Completo" }, { c: "／", t: "Barra de Ancho Completo" },
+                { c: "＝", t: "Signo Igual de Ancho Completo" }, { c: "÷", t: "Signo de División" }, { c: "±", t: "Símbolo Más Menos" },
+                { c: "×", t: "Signo de Multiplicación" }
+            ],
+            number: [
+                { c: "Ⅰ", t: "Numeral Romano Uno" }, { c: "Ⅱ", t: "Numeral Romano Dos" }, { c: "Ⅲ", t: "Numeral Romano Tres" },
+                { c: "Ⅳ", t: "Numeral Romano Cuatro" }, { c: "Ⅴ", t: "Numeral Romano Cinco" }, { c: "Ⅵ", t: "Numeral Romano Seis" },
+                { c: "Ⅶ", t: "Numeral Romano Siete" }, { c: "Ⅷ", t: "Numeral Romano Ocho" }, { c: "Ⅸ", t: "Numeral Romano Nueve" },
+                { c: "Ⅹ", t: "Numeral Romano Diez" }, { c: "Ⅺ", t: "Numeral Romano Once" }, { c: "Ⅻ", t: "Numeral Romano Doce" },
+                { c: "Ⅼ", t: "Numeral Romano Cincuenta" }, { c: "Ⅽ", t: "Numeral Romano Cien" }, { c: "Ⅾ", t: "Numeral Romano Quinientos" },
+                { c: "Ⅿ", t: "Numeral Romano Mil" }, { c: "ⅰ", t: "Numeral Romano Pequeño Uno" }, { c: "ⅱ", t: "Numeral Romano Pequeño Dos" },
+                { c: "ⅲ", t: "Numeral Romano Pequeño Tres" }, { c: "ⅳ", t: "Numeral Romano Pequeño Cuatro" }, { c: "ⅴ", t: "Numeral Romano Pequeño Cinco" },
+                { c: "ⅵ", t: "Numeral Romano Pequeño Seis" }, { c: "ⅶ", t: "Numeral Romano Pequeño Siete" }, { c: "ⅷ", t: "Numeral Romano Pequeño Ocho" },
+                { c: "ⅸ", t: "Numeral Romano Pequeño Nueve" }, { c: "ⅹ", t: "Numeral Romano Pequeño Diez" }, { c: "ⅺ", t: "Numeral Romano Pequeño Once" },
+                { c: "ⅻ", t: "Numeral Romano Pequeño Doce" }, { c: "ⅼ", t: "Numeral Romano Pequeño Cincuenta" }, { c: "ⅽ", t: "Numeral Romano Pequeño Cien" },
+                { c: "ⅾ", t: "Numeral Romano Pequeño Quinientos" }, { c: "ⅿ", t: "Numeral Romano Pequeño Mil" }, { c: "ↀ", t: "Numeral Romano Mil CD" },
+                { c: "ↁ", t: "Numeral Romano Cinco Mil" }, { c: "ↂ", t: "Numeral Romano Diez Mil" }, { c: "➀", t: "Dígito Sans-Serif en Círculo Dingbat Uno" },
+                { c: "➁", t: "Dígito Sans-Serif en Círculo Dingbat Dos" }, { c: "➂", t: "Dígito Sans-Serif en Círculo Dingbat Tres" }, { c: "➃", t: "Dígito Sans-Serif en Círculo Dingbat Cuatro" },
+                { c: "➄", t: "Dígito Sans-Serif en Círculo Dingbat Cinco" }, { c: "➅", t: "Dígito Sans-Serif en Círculo Dingbat Seis" }, { c: "➆", t: "Dígito Sans-Serif en Círculo Dingbat Siete" },
+                { c: "➇", t: "Dígito Sans-Serif en Círculo Dingbat Ocho" }, { c: "➈", t: "Dígito Sans-Serif en Círculo Dingbat Nueve" }, { c: "➉", t: "Número Sans-Serif en Círculo Dingbat Diez" },
+                { c: "➊", t: "Dígito Sans-Serif Negativo en Círculo Dingbat Uno" }, { c: "➋", t: "Dígito Sans-Serif Negativo en Círculo Dingbat Dos" }, { c: "➌", t: "Dígito Sans-Serif Negativo en Círculo Dingbat Tres" },
+                { c: "➍", t: "Dígito Sans-Serif Negativo en Círculo Dingbat Cuatro" }, { c: "➎", t: "Dígito Sans-Serif Negativo en Círculo Dingbat Cinco" }, { c: "➏", t: "Dígito Sans-Serif Negativo en Círculo Dingbat Seis" },
+                { c: "➐", t: "Dígito Sans-Serif Negativo en Círculo Dingbat Siete" }, { c: "➑", t: "Dígito Sans-Serif Negativo en Círculo Dingbat Ocho" }, { c: "➒", t: "Dígito Sans-Serif Negativo en Círculo Dingbat Nueve" },
+                { c: "➓", t: "Número Sans-Serif Negativo en Círculo Dingbat Diez" }, { c: "⓵", t: "Dígito en Doble Círculo Uno" }, { c: "⓶", t: "Dígito en Doble Círculo Dos" },
+                { c: "⓷", t: "Dígito en Doble Círculo Tres" }, { c: "⓸", t: "Dígito en Doble Círculo Cuatro" }, { c: "⓹", t: "Dígito en Doble Círculo Cinco" },
+                { c: "⓺", t: "Dígito en Doble Círculo Seis" }, { c: "⓻", t: "Dígito en Doble Círculo Siete" }, { c: "⓼", t: "Dígito en Doble Círculo Ocho" },
+                { c: "⓽", t: "Dígito en Doble Círculo Nueve" }, { c: "⓾", t: "Número en Doble Círculo Diez" }, { c: "⓿", t: "Dígito Negativo en Círculo Cero" },
+                { c: "❶", t: "Dígito Negativo en Círculo Dingbat Uno" }, { c: "❷", t: "Dígito Negativo en Círculo Dingbat Dos" }, { c: "❸", t: "Dígito Negativo en Círculo Dingbat Tres" },
+                { c: "❹", t: "Dígito Negativo en Círculo Dingbat Cuatro" }, { c: "❺", t: "Dígito Negativo en Círculo Dingbat Cinco" }, { c: "❻", t: "Dígito Negativo en Círculo Dingbat Seis" },
+                { c: "❼", t: "Dígito Negativo en Círculo Dingbat Siete" }, { c: "❽", t: "Dígito Negativo en Círculo Dingbat Ocho" }, { c: "❾", t: "Dígito Negativo en Círculo Dingbat Nueve" },
+                { c: "❿", t: "Número Negativo en Círculo Dingbat Diez" }, { c: "⁰", t: "Superíndice Cero" }, { c: "¹", t: "Superíndice Uno" },
+                { c: "²", t: "Superíndice Dos" }, { c: "³", t: "Superíndice Tres" }, { c: "⁴", t: "Superíndice Cuatro" },
+                { c: "⁵", t: "Superíndice Cinco" }, { c: "⁶", t: "Superíndice Seis" }, { c: "⁷", t: "Superíndice Siete" },
+                { c: "⁸", t: "Superíndice Ocho" }, { c: "⁹", t: "Superíndice Nueve" }, { c: "₀", t: "Subíndice Cero" },
+                { c: "₁", t: "Subíndice Uno" }, { c: "₂", t: "Subíndice Dos" }, { c: "₃", t: "Subíndice Tres" },
+                { c: "₄", t: "Subíndice Cuatro" }, { c: "₅", t: "Subíndice Cinco" }, { c: "₆", t: "Subíndice Seis" },
+                { c: "₇", t: "Subíndice Siete" }, { c: "₈", t: "Subíndice Ocho" }, { c: "₉", t: "Subíndice Nueve" },
+                { c: "⓪", t: "Dígito en Círculo Cero" }, { c: "①", t: "Dígito en Círculo Uno" }, { c: "②", t: "Dígito en Círculo Dos" },
+                { c: "③", t: "Dígito en Círculo Tres" }, { c: "④", t: "Dígito en Círculo Cuatro" }, { c: "⑤", t: "Dígito en Círculo Cinco" },
+                { c: "⑥", t: "Dígito en Círculo Seis" }, { c: "⑦", t: "Dígito en Círculo Siete" }, { c: "⑧", t: "Dígito en Círculo Ocho" },
+                { c: "⑨", t: "Dígito en Círculo Nueve" }, { c: "⑩", t: "Número en Círculo Diez" }, { c: "⑪", t: "Número en Círculo Once" },
+                { c: "⑫", t: "Número en Círculo Doce" }, { c: "⑬", t: "Número en Círculo Trece" }, { c: "⑭", t: "Número en Círculo Catorce" },
+                { c: "⑮", t: "Número en Círculo Quince" }, { c: "⑯", t: "Número en Círculo Dieciséis" }, { c: "⑰", t: "Número en Círculo Diecisiete" },
+                { c: "⑱", t: "Número en Círculo Dieciocho" }, { c: "⑲", t: "Número en Círculo Diecinueve" }, { c: "⑳", t: "Número en Círculo Veinte" },
+                { c: "⑴", t: "Dígito entre Paréntesis Uno" }, { c: "⑵", t: "Dígito entre Paréntesis Dos" }, { c: "⑶", t: "Dígito entre Paréntesis Tres" },
+                { c: "⑷", t: "Dígito entre Paréntesis Cuatro" }, { c: "⑸", t: "Dígito entre Paréntesis Cinco" }, { c: "⑹", t: "Dígito entre Paréntesis Seis" },
+                { c: "⑺", t: "Dígito entre Paréntesis Siete" }, { c: "⑻", t: "Dígito entre Paréntesis Ocho" }, { c: "⑑", t: "Dígito entre Paréntesis Nueve" },
+                { c: "⑽", t: "Número entre Paréntesis Diez" }, { c: "⑾", t: "Número entre Paréntesis Once" }, { c: "⑿", t: "Número entre Paréntesis Doce" },
+                { c: "⒀", t: "Número entre Paréntesis Trece" }, { c: "⒁", t: "Número entre Paréntesis Catorce" }, { c: "⒂", t: "Número entre Paréntesis Quince" },
+                { c: "⒃", t: "Número entre Paréntesis Dieciséis" }, { c: "⒄", t: "Número entre Paréntesis Diecisiete" }, { c: "⒅", t: "Número entre Paréntesis Dieciocho" },
+                { c: "⒆", t: "Número entre Paréntesis Diecinueve" }, { c: "⒇", t: "Número entre Paréntesis Veinte" }, { c: "⒈", t: "Dígito Uno Punto" },
+                { c: "⒉", t: "Dígito Dos Punto" }, { c: "⒊", t: "Dígito Tres Punto" }, { c: "⒋", t: "Dígito Cuatro Punto" },
+                { c: "⒌", t: "Dígito Cinco Punto" }, { c: "⒍", t: "Dígito Seis Punto" }, { c: "⒎", t: "Dígito Siete Punto" },
+                { c: "⒏", t: "Dígito Ocho Punto" }, { c: "⒐", t: "Dígito Nueve Punto" }, { c: "⒑", t: "Número Diez Punto" },
+                { c: "⒒", t: "Número Once Punto" }, { c: "⒓", t: "Número Doce Punto" }, { c: "⒔", t: "Número Trece Punto" },
+                { c: "⒕", t: "Número Catorce Punto" }, { c: "⒒", t: "Número Quince Punto" }, { c: "⒗", t: "Número Dieciséis Punto" },
+                { c: "⒘", t: "Número Diecisiete Punto" }, { c: "⒙", t: "Número Dieciocho Punto" }, { c: "⒚", t: "Número Diecinueve Punto" },
+                { c: "⒛", t: "Número Veinte Punto" }, { c: "㈠", t: "Ideograma entre Paréntesis Uno" }, { c: "㈡", t: "Ideograma entre Paréntesis Dos" },
+                { c: "㈢", t: "Ideograma entre Paréntesis Tres" }, { c: "㈣", t: "Ideograma entre Paréntesis Cuatro" }, { c: "㈤", t: "Ideograma entre Paréntesis Cinco" },
+                { c: "㈥", t: "Ideograma entre Paréntesis Seis" }, { c: "㈦", t: "Ideograma entre Paréntesis Siete" }, { c: "㈧", t: "Ideograma entre Paréntesis Ocho" },
+                { c: "㈨", t: "Ideograma entre Paréntesis Nueve" }, { c: "㈩", t: "Ideograma entre Paréntesis Diez" }, { c: "㊀", t: "Ideograma en Círculo Uno" },
+                { c: "㊁", t: "Ideograma en Círculo Dos" }, { c: "㊂", t: "Ideograma en Círculo Tres" }, { c: "㊃", t: "Ideograma en Círculo Cuatro" },
+                { c: "㊄", t: "Ideograma en Círculo Cinco" }, { c: "㊅", t: "Ideograma en Círculo Seis" }, { c: "㊆", t: "Ideograma en Círculo Siete" },
+                { c: "㊇", t: "Ideograma en Círculo Ocho" }, { c: "㊈", t: "Ideograma en Círculo Nueve" }, { c: "㊉", t: "Ideograma en Círculo Diez" },
+                { c: "０", t: "Dígito de Ancho Completo Cero" }, { c: "１", t: "Dígito de Ancho Completo Uno" }, { c: "２", t: "Dígito de Ancho Completo Dos" },
+                { c: "３", t: "Dígito de Ancho Completo Tres" }, { c: "４", t: "Dígito de Ancho Completo Cuatro" }, { c: "５", t: "Dígito de Ancho Completo Cinco" },
+                { c: "６", t: "Dígito de Ancho Completo Seis" }, { c: "７", t: "Dígito de Ancho Completo Siete" }, { c: "８", t: "Dígito de Ancho Completo Ocho" },
+                { c: "９", t: "Dígito de Ancho Completo Nueve" }, { c: "ⁱ", t: "Letra Latina Pequeña I Superíndice" }, { c: "ₐ", t: "Subíndice Latino Letra Pequeña A" },
+                { c: "ₑ", t: "Subíndice Latino Letra Pequeña E" }, { c: "ₒ", t: "Subíndice Latino Letra Pequeña O" }, { c: "ₓ", t: "Subíndice Latino Letra Pequeña X" },
+                { c: "ₔ", t: "Subíndice Latino Letra Pequeña Schwa" }
+            ],
+            fraction: [
+                { c: "⅟", t: "Numerador de Fracción Uno" }, { c: "½", t: "Fracción Común Un Medio" }, { c: "⅓", t: "Fracción Común Un Tercio" },
+                { c: "⅕", t: "Fracción Común Un Quinto" }, { c: "⅙", t: "Fracción Común Un Sexto" }, { c: "⅛", t: "Fracción Común Un Octavo" },
+                { c: "⅔", t: "Fracción Común Dos Tercios" }, { c: "⅖", t: "Fracción Común Dos Quintos" }, { c: "⅚", t: "Fracción Común Cinco Sextos" },
+                { c: "⅜", t: "Fracción Común Tres Octavos" }, { c: "¾", t: "Fracción Común Tres Cuartos" }, { c: "⅗", t: "Fracción Común Tres Quintos" },
+                { c: "⅝", t: "Fracción Común Cinco Octavos" }, { c: "⅞", t: "Fracción Común Siete Octavos" }, { c: "⅘", t: "Fracción Común Cuatro Quintos" },
+                { c: "¼", t: "Fracción Común Un Cuarto" }, { c: "⅐", t: "Fracción Común Un Séptimo" }, { c: "⅑", t: "Fracción Común Un Noveno" },
+                { c: "⅒", t: "Fracción Común Un Décimo" }, { c: "↉", t: "Fracción Común Cero Tercios" }, { c: "%", t: "Signo de Porcentaje" },
+                { c: "℅", t: "Al Cuidado De" }, { c: "‰", t: "Signo de Por Mil" }, { c: "‱", t: "Signo de Por Diez Mil" }
+            ],
+            comparison: [
+                { c: "≤", t: "Menor o Igual Que" }, { c: "≥", t: "Mayor o Igual Que" }, { c: "≦", t: "Menor Que Sobre Igual A" }, { c: "≧", t: "Mayor Que Sobre Igual A" }, { c: "≨", t: "Menor Que Pero No Igual A" }, { c: "≩", t: "Mayor Que Pero No Igual A" },
+                { c: "⊰", t: "Precede Bajo Relación" }, { c: "⊱", t: "Sucede Bajo Relación" }, { c: "⋛", t: "Mayor Que Igual A o Menor Que" }, { c: "⋚", t: "Menor Que Igual A o Mayor Que" }, { c: "≂", t: "Menos Tilde" }, { c: "≃", t: "Asintóticamente Igual A" },
+                { c: "≄", t: "No Asintóticamente Igual A" }, { c: "≅", t: "Aproximadamente Igual A" }, { c: "≆", t: "Aproximadamente Pero No Realmente Igual A" }, { c: "≇", t: "Ni Aproximadamente Ni Realmente Igual A" }, { c: "≈", t: "Casi Igual A" }, { c: "≉", t: "No Casi Igual A" },
+                { c: "≊", t: "Casi Igual o Igual A" }, { c: "≋", t: "Triple Tilde" }, { c: "≌", t: "Todo Igual A" }, { c: "≍", t: "Equivalente A" }, { c: "≎", t: "Geométricamente Equivalente A" }, { c: "≏", t: "Diferencia Entre" },
+                { c: "≐", t: "Se Aproxima al Límite" }, { c: "≑", t: "Geométricamente Igual A" }, { c: "≒", t: "Aproximadamente Igual A o la Imagen De" }, { c: "≓", t: "Imagen De o Aproximadamente Igual A" }, { c: "≔", t: "Dos Puntos Igual" }, { c: "≕", t: "Igual Dos Puntos" },
+                { c: "≖", t: "Anillo En Igual A" }, { c: "≗", t: "Anillo Igual A" }, { c: "≘", t: "Corresponde A" }, { c: "≙", t: "Estima" }, { c: "≚", t: "Equiangular A" }, { c: "≛", t: "Estrella Igual" },
+                { c: "≜", t: "Delta Igual A" }, { c: "≝", t: "Igual A Por Definición" }, { c: "≞", t: "Medido Por" }, { c: "≟", t: "Igualdad Cuestionada" }, { c: "≠", t: "No Es Igual A" }, { c: "≡", t: "Idéntico A" },
+                { c: "≢", t: "No Idéntico A" }, { c: "≣", t: "Estrictamente Equivalente A" }
+            ],
+            technical: [
+                { c: "⌀", t: "Signo de Diámetro" }, { c: "⌂", t: "Casa" }, { c: "⌃", t: "Punta de Flecha Arriba" }, { c: "⌄", t: "Punta de Flecha Abajo" }, { c: "⌅", t: "Proyectivo" }, { c: "⌆", t: "Perspectiva" },
+                { c: "⌇", t: "Línea Ondulada" }, { c: "⌈", t: "Techo Izquierdo" }, { c: "⌉", t: "Techo Derecho" }, { c: "⌊", t: "Suelo Izquierdo" }, { c: "⌋", t: "Suelo Derecho" }, { c: "⌌", t: "Marca de Corte Abajo Derecha" },
+                { c: "⌍", t: "Marca de Corte Abajo Izquierda" }, { c: "⌎", t: "Marca de Corte Arriba Derecha" }, { c: "⌏", t: "Marca de Corte Arriba Izquierda" }, { c: "⌐", t: "Signo No Invertido" }, { c: "⌑", t: "Losanje Cuadrado" }, { c: "⌒", t: "Arco" },
+                { c: "⌓", t: "Segmento" }, { c: "⌔", t: "Sector" }, { c: "⌕", t: "Grabadora Telefónica" }, { c: "⌖", t: "Indicador de Posición" }, { c: "⌗", t: "Cuadrado de Videotex" }, { c: "⌘", t: "Signo de Lugar de Interés" },
+                { c: "⌙", t: "Signo No Girado" }, { c: "⌚", t: "Emoji de Reloj" }, { c: "⌛", t: "Emoji de Reloj de Arena" }, { c: "⌜", t: "Esquina Superior Izquierda" }, { c: "⌝", t: "Esquina Superior Derecha" }, { c: "⌞", t: "Esquina Inferior Izquierda" },
+                { c: "⌟", t: "Esquina Inferior Derecha" }, { c: "⌠", t: "Integral Mitad Superior" }, { c: "⌡", t: "Integral Mitad Inferior" }, { c: "⌢", t: "Ceño Fruncido" }, { c: "⌣", t: "Sonrisa" }, { c: "⌤", t: "Punta de Flecha Arriba Entre Dos Barras Horizontales" },
+                { c: "⌥", t: "Tecla Opción" }, { c: "⌦", t: "Borrar A La Derecha" }, { c: "⌧", t: "X En Un Cuadro Rectangular" }, { c: "⌨", t: "Teclado" }, { c: "⌫", t: "Borrar A La Izquierda" }, { c: "⌬", t: "Anillo de Benceno" },
+                { c: "⌭", t: "Cilindricidad" }, { c: "⌮", t: "Perfil Todo Alrededor" }, { c: "⌯", t: "Simetría" }, { c: "⌰", t: "Oscilación Total" }, { c: "⌱", t: "Origen de Dimensión" }, { c: "⌲", t: "Conicidad" },
+                { c: "⌳", t: "Pendiente" }, { c: "⌴", t: "Abocardado" }, { c: "⌵", t: "Avellanado" }, { c: "⌶", t: "Símbolo Funcional APL Viga I" }, { c: "⌷", t: "Símbolo Funcional APL Cuad Aplastado" }, { c: "⌸", t: "Símbolo Funcional APL Cuad Igual" },
+                { c: "⌹", t: "Símbolo Funcional APL Cuad División" }, { c: "⌺", t: "Símbolo Funcional APL Cuad Diamante" }, { c: "⌻", t: "Símbolo Funcional APL Cuad Yota" }, { c: "⌼", t: "Símbolo Funcional APL Cuad Círculo" }, { c: "⌽", t: "Símbolo Funcional APL Círculo Estilo" }, { c: "⌾", t: "Símbolo Funcional APL Círculo Yota" },
+                { c: "⌿", t: "Símbolo Funcional APL Barra Barra" }, { c: "⍀", t: "Símbolo Funcional APL Barra Invertida Barra" }, { c: "⍁", t: "Símbolo Funcional APL Cuad Barra" }, { c: "⍂", t: "Símbolo Funcional APL Cuad Barra Invertida" }, { c: "⍃", t: "Símbolo Funcional APL Cuad Menor Que" }, { c: "⍄", t: "Símbolo Funcional APL Cuad Mayor Que" },
+                { c: "⍅", t: "Símbolo Funcional APL Veleta Hacia la Izquierda" }, { c: "⍆", t: "Símbolo Funcional APL Veleta Hacia la Derecha" }, { c: "⍇", t: "Símbolo Funcional APL Cuad Flecha Hacia la Izquierda" }, { c: "⍈", t: "Símbolo Funcional APL Cuad Flecha Hacia la Derecha" }, { c: "⍉", t: "Símbolo Funcional APL Círculo Barra Invertida" }, { c: "⍊", t: "Símbolo Funcional APL Tachuela Abajo Barra Inferior" },
+                { c: "⍋", t: "Símbolo Funcional APL Delta Estilo" }, { c: "⍌", t: "Símbolo Funcional APL Cuad Intercalación Abajo" }, { c: "⍍", t: "Símbolo Funcional APL Cuad Delta" }, { c: "⍎", t: "Símbolo Funcional APL Tachuela Abajo Yota" }, { c: "⍏", t: "Símbolo Funcional APL Veleta Hacia Arriba" }, { c: "⍐", t: "Símbolo Funcional APL Cuad Flecha Hacia Arriba" },
+                { c: "⍑", t: "Símbolo Funcional APL Tachuela Arriba Barra Superior" }, { c: "⍒", t: "Símbolo Funcional APL Del Estilo" }, { c: "⍓", t: "Símbolo Funcional APL Cuad Intercalación Arriba" }, { c: "⍔", t: "Símbolo Funcional APL Cuad Del" }, { c: "⍕", t: "Símbolo Funcional APL Tachuela Arriba Yota" }, { c: "⍖", t: "Símbolo Funcional APL Veleta Hacia Abajo" },
+                { c: "⍗", t: "Símbolo Funcional APL Cuad Flecha Hacia Abajo" }, { c: "⍘", t: "Símbolo Funcional APL Cita Barra Inferior" }, { c: "⍙", t: "Símbolo Funcional APL Delta Barra Inferior" }, { c: "⍚", t: "Símbolo Funcional APL Diamante Barra Inferior" }, { c: "⍛", t: "Símbolo Funcional APL Yota Barra Inferior" }, { c: "⍜", t: "Símbolo Funcional APL Círculo Barra Inferior" },
+                { c: "⍝", t: "Símbolo Funcional APL Zapato Arriba Yota" }, { c: "⍞", t: "Símbolo Funcional APL Cita Cuad" }, { c: "⍟", t: "Símbolo Funcional APL Círculo Estrella" }, { c: "⍠", t: "Símbolo Funcional APL Cuad Dos Puntos" }, { c: "⍡", t: "Símbolo Funcional APL Tachuela Arriba Diéresis" }, { c: "⍢", t: "Símbolo Funcional APL Del Diéresis" },
+                { c: "⍣", t: "Símbolo Funcional APL Estrella Diéresis" }, { c: "⍤", t: "Símbolo Funcional APL Yota Diéresis" }, { c: "⍥", t: "Símbolo Funcional APL Círculo Diéresis" }, { c: "⍦", t: "Símbolo Funcional APL Zapato Abajo Estilo" }, { c: "⍧", t: "Símbolo Funcional APL Zapato Izquierdo Estilo" }, { c: "⍨", t: "Símbolo Funcional APL Tilde Diéresis" },
+                { c: "⍩", t: "Símbolo Funcional APL Mayor Que Diéresis" }, { c: "⍪", t: "Símbolo Funcional APL Coma Barra" }, { c: "⍫", t: "Símbolo Funcional APL Del Tilde" }, { c: "⍬", t: "Símbolo Funcional APL Zilde" }, { c: "⍭", t: "Símbolo Funcional APL Estilo Tilde" }, { c: "⍮", t: "Símbolo Funcional APL Punto y Coma Barra Inferior" },
+                { c: "⍯", t: "Símbolo Funcional APL Cuad No Igual" }, { c: "⍰", t: "Símbolo Funcional APL Cuad Interrogación" }, { c: "⍱", t: "Símbolo Funcional APL Intercalación Abajo Tilde" }, { c: "⍲", t: "Símbolo Funcional APL Intercalación Arriba Tilde" }, { c: "⍳", t: "Símbolo Funcional APL Iota" }, { c: "⍴", t: "Símbolo Funcional APL Rho" },
+                { c: "⍵", t: "Símbolo Funcional APL Omega" }, { c: "⍶", t: "Símbolo Funcional APL Alfa Barra Inferior" }, { c: "⍷", t: "Símbolo Funcional APL Epsilon Barra Inferior" }, { c: "⍸", t: "Símbolo Funcional APL Iota Barra Inferior" }, { c: "⍹", t: "Símbolo Funcional APL Omega Barra Inferior" }, { c: "⍺", t: "Símbolo Funcional APL Alfa" },
+                { c: "﹘", t: "Semirraya Pequeña" }, { c: "﹝", t: "Corchete de Caparazón de Tortuga Izquierdo Pequeño" }, { c: "﹞", t: "Corchete de Caparazón de Tortuga Derecho Pequeño" }, { c: "﹟", t: "Signo de Número Pequeño" }, { c: "﹡", t: "Asterisco Pequeño" }, { c: "〶", t: "Marca Postal en Círculo" },
+                { c: "␛", t: "Símbolo de Escape" }, { c: "␡", t: "Símbolo de Suprimir" }, { c: "␚", t: "Símbolo de Sustituir" }, { c: "␟", t: "Símbolo de Separador de Unidades" }, { c: "␘", t: "Símbolo de Cancelar" }, { c: "␠", t: "Símbolo de Espacio" },
+                { c: "␤", t: "Símbolo de Nueva Línea" }, { c: "␋", t: "Símbolo de Tabulación Vertical" }, { c: "␌", t: "Símbolo de Avance de Página" }, { c: "␍", t: "Símbolo de Retorno de Carro" }, { c: "␎", t: "Símbolo de Desplazamiento Saliente" }, { c: "␏", t: "Símbolo de Desplazamiento Entrante" },
+                { c: "␐", t: "Símbolo de Escape de Enlace de Datos" }, { c: "␑", t: "Símbolo de Control de Dispositivo Uno" }, { c: "␒", t: "Símbolo de Control de Dispositivo Dos" }, { c: "␓", t: "Símbolo de Control de Dispositivo Tres" }, { c: "␔", t: "Símbolo de Control de Dispositivo Cuatro" }, { c: "␕", t: "Símbolo de Reconocimiento Negativo" },
+                { c: "␖", t: "Símbolo de Espera Síncrona" }, { c: "␗", t: "Símbolo de Fin de Bloque de Transmisión" }, { c: "␙", t: "Símbolo de Fin de Medio" }, { c: "␜", t: "Símbolo de Separador de Archivos" }, { c: "␝", t: "Símbolo de Separador de Grupos" }, { c: "␞", t: "Símbolo de Separador de Registros" },
+                { c: "␀", t: "Símbolo de Nulo" }, { c: "␁", t: "Símbolo de Inicio de Encabezado" }, { c: "␂", t: "Símbolo de Inicio de Texto" }, { c: "␃", t: "Símbolo de Fin de Texto" }, { c: "␄", t: "Símbolo de Fin de Transmisión" }, { c: "␅", t: "Símbolo de Consulta" },
+                { c: "␆", t: "Símbolo de Reconocimiento" }, { c: "␇", t: "Símbolo de Campana" }, { c: "␈", t: "Símbolo de Retroceso" }, { c: "␉", t: "Símbolo de Tabulación Horizontal" }, { c: "␊", t: "Símbolo de Salto de Línea" }, { c: "␢", t: "Símbolo en Blanco" },
+                { c: "␣", t: "Caja Abierta" }, { c: "⎋", t: "Círculo Roto con Flecha Noroeste" }, { c: "", t: "Logotipo de Apple Inc." }, { c: "ᴴᴰ", t: "HD" }
+            ],
+            square: [
+                { c: "❏", t: "Cuadrado Blanco con Sombra Abajo a la Derecha" }, { c: "❐", t: "Cuadrado Blanco con Sombra Arriba a la Derecha" }, { c: "❑", t: "Cuadrado Blanco Sombreado Abajo a la Derecha" }, { c: "❒", t: "Cuadrado Blanco Sombreado Arriba a la Derecha" }, { c: "▀", t: "Bloque de Mitad Superior" }, { c: " ", t: "Bloque de Un Octavo Inferior" },
+                { c: "▂", t: "Bloque de Un Cuarto Inferior" }, { c: "▃", t: "Bloque de Tres Octavos Inferior" }, { c: "▄", t: "Bloque de Mitad Inferior" }, { c: "▅", t: "Bloque de Cinco Octavos Inferior" }, { c: "▆", t: "Bloque de Tres Cuartos Inferior" }, { c: "▇", t: "Bloque de Siete Octavos Inferior" },
+                { c: "▉", t: "Bloque de Siete Octavos Izquierdo" }, { c: "▊", t: "Bloque de Tres Cuartos Izquierdo" }, { c: "▋", t: "Bloque de Cinco Octavos Izquierdo" }, { c: "█", t: "Bloque Completo" }, { c: "▌", t: "Bloque de Mitad Izquierdo" }, { c: "▐", t: "Bloque de Mitad Derecho" },
+                { c: "▍", t: "Bloque de Tres Octavos Izquierdo" }, { c: "▎", t: "Bloque de Un Cuarto Izquierdo" }, { c: "▏", t: "Bloque de Un Octavo Izquierdo" }, { c: "▕", t: "Bloque de Un Octavo Derecho" }, { c: "░", t: "Sombra Ligera" }, { c: "▒", t: "Sombra Media" },
+                { c: "▓", t: "Sombra Oscura" }, { c: "▔", t: "Bloque de Un Octavo Superior" }, { c: "▬", t: "Rectángulo Negro" }, { c: "▢", t: "Cuadrado Blanco con Esquinas Redondeadas" }, { c: "▣", t: "Cuadrado Blanco Conteniendo Cuadrado Negro Pequeño" }, { c: "▤", t: "Cuadrado con Relleno Horizontal" },
+                { c: "▥", t: "Cuadrado con Relleno Vertical" }, { c: "▦", t: "Cuadrado con Relleno Ortogonal Cruzado" }, { c: "▧", t: "Cuadrado con Relleno Diagonal Superior Izquierdo a Inferior Derecho" }, { c: "▨", t: "Cuadrado con Relleno Diagonal Superior Derecho a Inferior Izquierdo" }, { c: "▩", t: "Cuadrado con Relleno Diagonal Cruzado" }, { c: "▪", t: "Cuadrado Negro Pequeño" },
+                { c: "▫", t: "Cuadrado Blanco Pequeño" }, { c: "▭", t: "Rectángulo Blanco" }, { c: "▮", t: "Rectángulo Vertical Negro" }, { c: "▯", t: "Rectángulo Vertical Blanco" }, { c: "☰", t: "Trigrama para Cielo" }, { c: "☲", t: "Trigrama para Fuego" },
+                { c: "☱", t: "Trigrama para Lago" }, { c: "☴", t: "Trigrama para Viento" }, { c: "☵", t: "Trigrama para Agua" }, { c: "☶", t: "Trigrama para Montaña" }, { c: "☳", t: "Trigrama para Trueno" }, { c: "☷", t: "Trigrama para Tierra" },
+                { c: "▰", t: "Paralelogramo Negro" }, { c: "▱", t: "Paralelogramo Blanco" }, { c: "◧", t: "Cuadrado con Mitad Izquierda Negra" }, { c: "◨", t: "Cuadrado con Mitad Derecha Negra" }, { c: "◩", t: "Cuadrado con Mitad Diagonal Superior Izquierda Negra" }, { c: "◪", t: "Cuadrado con Mitad Diagonal Inferior Derecha Negra" },
+                { c: "◫", t: "Cuadrado Blanco con Línea Divisoria Vertical" }, { c: "∎", t: "Fin de la Demostración" }, { c: "■", t: "Cuadrado Negro" }, { c: "□", t: "Cuadrado Blanco" }, { c: "⊞", t: "Más en Cuadrado" }, { c: "⊟", t: "Menos en Cuadrado" },
+                { c: "⊠", t: "Por en Cuadrado" }, { c: "⊡", t: "Operador Punto en Cuadrado" }, { c: "❘", t: "Barra Vertical Ligera" }, { c: "❙", t: "Barra Vertical Media" }, { c: "❚", t: "Barra Vertical Gruesa" }, { c: "〓", t: "Marca Geta" },
+                { c: "◊", t: "Losanje" }, { c: "◈", t: "Diamante Blanco Conteniendo Diamante Negro Pequeño" }, { c: "◇", t: "Diamante Blanco" }, { c: "◆", t: "Diamante Negro" }, { c: "⎔", t: "Símbolo de Función de Software" }, { c: "⎚", t: "Símbolo de Borrar Pantalla" },
+                { c: "☖", t: "Pieza de Shogi Blanca" }, { c: "☗", t: "Pieza de Shogi Negra" }
+            ],
+            triangle: [
+                { c: "◄", t: "Puntero Negro Hacia la Izquierda" }, { c: "▲", t: "Triángulo Negro Hacia Arriba" }, { c: "▼", t: "Triángulo Negro Hacia Abajo" }, { c: "►", t: "Puntero Negro Hacia la Derecha" }, { c: "◀", t: "Triángulo Negro Hacia la Izquierda" }, { c: "◣", t: "Triángulo Negro Inferior Izquierdo" },
+                { c: "◥", t: "Triángulo Negro Superior Derecho" }, { c: "◤", t: "Triángulo Negro Superior Izquierdo" }, { c: "◢", t: "Triángulo Negro Inferior Derecho" }, { c: "▶", t: "Triángulo Negro Hacia la Derecha" }, { c: "◂", t: "Triángulo Pequeño Negro Hacia la Izquierda" }, { c: "▴", t: "Triángulo Pequeño Negro Hacia Arriba" },
+                { c: "▾", t: "Triángulo Pequeño Negro Hacia Abajo" }, { c: "▸", t: "Triángulo Pequeño Negro Hacia la Derecha" }, { c: "◁", t: "Triángulo Blanco Hacia la Izquierda" }, { c: "△", t: "Triángulo Blanco Hacia Arriba" }, { c: "▽", t: "Triángulo Blanco Hacia Abajo" }, { c: "▷", t: "Triángulo Blanco Hacia la Derecha" },
+                { c: "∆", t: "Incremento" }, { c: "∇", t: "Nabla" }, { c: "⊳", t: "Contiene Como Subgrupo Normal" }, { c: "⊲", t: "Subgrupo Normal De" }, { c: "⊴", t: "Subgrupo Normal De o Igual A" }, { c: "⊵", t: "Contiene Como Subgrupo Normal o Igual A" },
+                { c: "◅", t: "Puntero Blanco Hacia la Izquierda" }, { c: "▻", t: "Puntero Blanco Hacia la Derecha" }, { c: "▵", t: "Triángulo Pequeño Blanco Hacia Arriba" }, { c: "▿", t: "Triángulo Pequeño Blanco Hacia Abajo" }, { c: "◃", t: "Triángulo Pequeño Blanco Hacia la Izquierda" }, { c: "▹", t: "Triángulo Pequeño Blanco Hacia la Derecha" },
+                { c: "◭", t: "Triángulo Hacia Arriba con Mitad Izquierda Negra" }, { c: "◮", t: "Triángulo Hacia Arriba con Mitad Derecha Negra" }, { c: "⫷", t: "Menor Que Triple Anidado" }, { c: "⫸", t: "Mayor Que Triple Anidado" }, { c: "⋖", t: "Menor Que con Punto" }, { c: "⋗", t: "Mayor Que con Punto" },
+                { c: "⋪", t: "No Subgrupo Normal De" }, { c: "⋫", t: "No Contiene Como Subgrupo Normal" }, { c: "⋬", t: "No Subgrupo Normal De o Igual A" }, { c: "⋭", t: "No Contiene Como Subgrupo Normal o Igual" }, { c: "⊿", t: "Triángulo Rectángulo" }, { c: "◬", t: "Triángulo Blanco Hacia Arriba con Punto" },
+                { c: "≜", t: "Delta Igual A" }, { c: "⑅", t: "Pajarita OCR" }
+            ],
+            line: [
+                { c: "│", t: "Dibujo de Caja Vertical Ligero" }, { c: "┃", t: "Dibujo de Caja Vertical Grueso" }, { c: "╽", t: "Dibujo de Caja Vertical Ligero Arriba y Grueso Abajo" }, { c: "╿", t: "Dibujo de Caja Vertical Grueso Arriba y Ligero Abajo" }, { c: "╏", t: "Dibujo de Caja Vertical de Doble Guion Grueso" },
+                { c: "║", t: "Dibujo de Caja Vertical Doble" }, { c: "╎", t: "Dibujo de Caja Vertical de Doble Guion Ligero" }, { c: "┇", t: "Dibujo de Caja Vertical de Triple Guion Grueso" }, { c: "︱", t: "Forma de Presentación para Raya Vertical" }, { c: "┊", t: "Dibujo de Caja Vertical de Cuádruple Guion Ligero" },
+                { c: "︳", t: "Forma de Presentación para Línea Baja Vertical" }, { c: "┋", t: "Dibujo de Caja Vertical de Cuádruple Guion Grueso" }, { c: "┆", t: "Dibujo de Caja Vertical de Triple Guion Ligero" }, { c: "╵", t: "Dibujo de Caja Arriba Ligero" }, { c: "〡", t: "Numeral de Hangzhou Uno" },
+                { c: "〢", t: "Numeral de Hangzhou Dos" }, { c: "╹", t: "Dibujo de Caja Arriba Grueso" }, { c: "╻", t: "Dibujo de Caja Abajo Grueso" }, { c: "╷", t: "Dibujo de Caja Abajo Ligero" }, { c: "〣", t: "Numeral de Hangzhou Tres" },
+                { c: "☰", t: "Trigrama para Cielo" }, { c: "☱", t: "Trigrama para Lago" }, { c: "☲", t: "Trigrama para Fuego" }, { c: "☳", t: "Trigrama para Trueno" }, { c: "☴", t: "Trigrama para Viento" },
+                { c: "☵", t: "Trigrama para Agua" }, { c: "☶", t: "Trigrama para Montaña" }, { c: "☷", t: "Trigrama para Tierra" }, { c: "≡", t: "Idéntico A" }, { c: "✕", t: "X de Multiplicación" },
+                { c: "═", t: "Dibujo de Caja Horizontal Doble" }, { c: "━", t: "Dibujo de Caja Horizontal Grueso" }, { c: "─", t: "Dibujo de Caja Horizontal Ligero" }, { c: "╍", t: "Dibujo de Caja Horizontal de Doble Guion Grueso" }, { c: "┅", t: "Dibujo de Caja Horizontal de Triple Guion Grueso" },
+                { c: "┉", t: "Dibujo de Caja Horizontal de Cuádruple Guion Grueso" }, { c: "┄", t: "Dibujo de Caja Horizontal de Triple Guion Ligero" }, { c: "┈", t: "Dibujo de Caja Horizontal de Cuádruple Guion Ligero" }, { c: "╌", t: "Dibujo de Caja Horizontal de Doble Guion Ligero" }, { c: "╴", t: "Dibujo de Caja Izquierda Ligero" },
+                { c: "╶", t: "Dibujo de Caja Derecha Ligero" }, { c: "╸", t: "Dibujo de Caja Izquierda Grueso" }, { c: "╺", t: "Dibujo de Caja Derecha Grueso" }, { c: "╼", t: "Dibujo de Caja Izquierda Ligero y Derecha Grueso" }, { c: "╾", t: "Dibujo de Caja Izquierda Grueso y Derecha Ligero" },
+                { c: "﹉", t: "Línea Superior Discontinua" }, { c: "﹍", t: "Línea Inferior Discontinua" }, { c: "﹊", t: "Línea Central Superior" }, { c: "﹎", t: "Línea Central Inferior" }, { c: "︲", t: "Forma de Presentación para Semirraya Vertical" },
+                { c: "⑆", t: "Identificación de Banco Sucursal OCR" }, { c: "⑇", t: "Cantidad de Cheque OCR" }, { c: "⑈", t: "Guion OCR" }, { c: "⑉", t: "Número de Cuenta de Cliente OCR" }, { c: "⑊", t: "Doble Barra Invertida OCR" },
+                { c: "⑄", t: "Hebilla de Cinturón OCR" }, { c: "⑀", t: "Gancho OCR" }, { c: "︴", t: "Forma de Presentación para Línea Baja Ondulada Vertical" }, { c: "﹏", t: "Línea Baja Ondulada" }, { c: "﹌", t: "Línea Superior Ondulada Doble" },
+                { c: "﹋", t: "Línea Superior Ondulada" }, { c: "╳", t: "Dibujo de Caja Cruz Diagonal Ligera" }, { c: "╲", t: "Dibujo de Caja Diagonal Superior Izquierda a Inferior Derecha Ligera" }, { c: "╱", t: "Dibujo de Caja Diagonal Superior Derecha a Inferior Izquierda Ligera" }, { c: "︶", t: "Forma de Presentación para Paréntesis Derecho Vertical" },
+                { c: "︵", t: "Forma de Presentación para Paréntesis Izquierdo Vertical" }, { c: "〵", t: "Marca de Repetición Kana Vertical Mitad Inferior" }, { c: "〴", t: "Marca de Repetición Kana Vertical con Sonorización Mitad Superior" }, { c: "〳", t: "Marca de Repetición Kana Vertical Mitad Superior" }, { c: "〆", t: "Marca de Cierre Ideográfico" },
+                { c: "`", t: "Acento Grave" }, { c: "ᐟ", t: "Silábico Canadiense Agudo Final" }, { c: "‐", t: "Guion" }, { c: "⁃", t: "Viñeta de Guion" }, { c: "⎯", t: "Extensión de Línea Horizontal" },
+                { c: "〄", t: "Símbolo de Norma Industrial Japonesa" }
+            ],
+            corner: [
+                { c: "﹄", t: "Forma de Presentación para Corchete de Esquina Blanco Vertical Derecho" }, { c: "﹃", t: "Forma de Presentación para Corchete de Esquina Blanco Vertical Izquierdo" }, { c: "﹂", t: "Forma de Presentación para Corchete de Esquina Vertical Derecho" }, { c: "﹁", t: "Forma de Presentación para Corchete de Esquina Vertical Izquierdo" }, { c: "┕", t: "Dibujo de Caja Arriba Ligero y Derecha Grueso" },
+                { c: "┓", t: "Dibujo de Caja Abajo Grueso e Izquierda Ligero" }, { c: "└", t: "Dibujo de Caja Arriba Ligero y Derecha Ligero" }, { c: "┐", t: "Dibujo de Caja Abajo Ligero e Izquierda Ligero" }, { c: "┖", t: "Dibujo de Caja Arriba Grueso y Derecha Ligero" }, { c: "┒", t: "Dibujo de Caja Abajo Grueso e Izquierda Ligero" },
+                { c: "┗", t: "Dibujo de Caja Arriba Grueso y Derecha Grueso" }, { c: "┑", t: "Dibujo de Caja Abajo Ligero e Izquierda Grueso" }, { c: "┍", t: "Dibujo de Caja Abajo Ligero y Derecha Grueso" }, { c: "┙", t: "Dibujo de Caja Arriba Ligero e Izquierda Grueso" }, { c: "┏", t: "Dibujo de Caja Abajo Grueso y Derecha Grueso" },
+                { c: "┛", t: "Dibujo de Caja Arriba Grueso e Izquierda Grueso" }, { c: "┎", t: "Dibujo de Caja Abajo Grueso y Derecha Ligero" }, { c: "┚", t: "Dibujo de Caja Arriba Grueso e Izquierda Ligero" }, { c: "┌", t: "Dibujo de Caja Abajo Ligero y Derecha Ligero" }, { c: "┘", t: "Dibujo de Caja Arriba Ligero e Izquierda Ligero" },
+                { c: "「", t: "Corchete de Esquina Izquierdo" }, { c: "」", t: "Corchete de Esquina Derecho" }, { c: "『", t: "Corchete de Esquina Blanco Izquierdo" }, { c: "』", t: "Corchete de Esquina Blanco Derecho" }, { c: "˩", t: "Barra de Tono Extra Bajo Modificadora" },
+                { c: "˥", t: "Barra de Tono Extra Alto Modificadora" }, { c: "├", t: "Dibujo de Caja Vertical Ligero y Derecha Ligero" }, { c: "┝", t: "Dibujo de Caja Vertical Ligero y Derecha Grueso" }, { c: "┞", t: "Dibujo de Caja Arriba Grueso y Derecha Abajo Ligero" }, { c: "┟", t: "Dibujo de Caja Abajo Grueso y Derecha Arriba Ligero" },
+                { c: "┠", t: "Dibujo de Caja Vertical Grueso y Derecha Ligero" }, { c: "┡", t: "Dibujo de Caja Abajo Ligero y Derecha Arriba Grueso" }, { c: "┢", t: "Dibujo de Caja Arriba Ligero y Derecha Abajo Grueso" }, { c: "┣", t: "Dibujo de Caja Vertical Grueso y Derecha Grueso" }, { c: "┤", t: "Dibujo de Caja Vertical Ligero e Izquierda Ligero" },
+                { c: "┥", t: "Dibujo de Caja Vertical Ligero e Izquierda Grueso" }, { c: "┦", t: "Dibujo de Caja Arriba Grueso e Izquierda Abajo Ligero" }, { c: "┧", t: "Dibujo de Caja Abajo Grueso e Izquierda Arriba Ligero" }, { c: "┨", t: "Dibujo de Caja Vertical Grueso e Izquierda Ligero" }, { c: "┩", t: "Dibujo de Caja Abajo Ligero e Izquierda Arriba Grueso" },
+                { c: "┪", t: "Dibujo de Caja Arriba Ligero e Izquierda Abajo Grueso" }, { c: "┫", t: "Dibujo de Caja Vertical Grueso e Izquierda Grueso" }, { c: "┬", t: "Dibujo de Caja Abajo Ligero y Horizontal Ligero" }, { c: "┭", t: "Dibujo de Caja Izquierda Grueso y Derecha Abajo Ligero" }, { c: "┮", t: "Dibujo de Caja Derecha Grueso e Izquierda Abajo Ligero" },
+                { c: "┯", t: "Dibujo de Caja Abajo Ligero y Horizontal Grueso" }, { c: "┰", t: "Dibujo de Caja Abajo Grueso y Horizontal Ligero" }, { c: "┱", t: "Dibujo de Caja Derecha Ligero e Izquierda Abajo Grueso" }, { c: "┲", t: "Dibujo de Caja Izquierda Ligero y Derecha Abajo Grueso" }, { c: "┳", t: "Dibujo de Caja Abajo Grueso y Horizontal Grueso" },
+                { c: "┴", t: "Dibujo de Caja Arriba Ligero y Horizontal Ligero" }, { c: "┵", t: "Dibujo de Caja Izquierda Grueso y Derecha Arriba Ligero" }, { c: "┶", t: "Dibujo de Caja Derecha Grueso e Izquierda Arriba Ligero" }, { c: "┷", t: "Dibujo de Caja Arriba Ligero y Horizontal Grueso" }, { c: "┸", t: "Dibujo de Caja Arriba Grueso y Horizontal Ligero" },
+                { c: "┹", t: "Dibujo de Caja Derecha Ligero e Izquierda Arriba Grueso" }, { c: "┺", t: "Dibujo de Caja Izquierda Ligero y Derecha Arriba Grueso" }, { c: "┻", t: "Dibujo de Caja Arriba Grueso y Horizontal Grueso" }, { c: "┼", t: "Dibujo de Caja Vertical Ligero y Horizontal Ligero" }, { c: "┽", t: "Dibujo de Caja Izquierda Grueso y Derecha Vertical Ligero" },
+                { c: "┾", t: "Dibujo de Caja Derecha Grueso e Izquierda Vertical Ligero" }, { c: "┿", t: "Dibujo de Caja Vertical Ligero y Horizontal Grueso" }, { c: "╀", t: "Dibujo de Caja Arriba Grueso y Abajo Horizontal Ligero" }, { c: "╁", t: "Dibujo de Caja Abajo Grueso y Arriba Horizontal Ligero" }, { c: "╂", t: "Dibujo de Caja Vertical Grueso y Horizontal Ligero" },
+                { c: "╃", t: "Dibujo de Caja Izquierda Arriba Grueso y Derecha Abajo Ligero" }, { c: "╄", t: "Dibujo de Caja Derecha Arriba Grueso e Izquierda Abajo Ligero" }, { c: "╅", t: "Dibujo de Caja Izquierda Abajo Grueso y Derecha Arriba Ligero" }, { c: "╆", t: "Dibujo de Caja Derecha Abajo Grueso e Izquierda Arriba Ligero" }, { c: "╇", t: "Dibujo de Caja Abajo Ligero y Arriba Horizontal Grueso" },
+                { c: "╈", t: "Dibujo de Caja Arriba Ligero y Abajo Horizontal Grueso" }, { c: "╉", t: "Dibujo de Caja Derecha Ligero e Izquierda Vertical Grueso" }, { c: "╊", t: "Dibujo de Caja Izquierda Ligero y Derecha Vertical Grueso" }, { c: "╋", t: "Dibujo de Caja Vertical Grueso y Horizontal Grueso" }, { c: "╒", t: "Dibujo de Caja Abajo Simple y Derecha Doble" },
+                { c: "╕", t: "Dibujo de Caja Abajo Simple e Izquierda Doble" }, { c: "╓", t: "Dibujo de Caja Abajo Doble y Derecha Simple" }, { c: "╖", t: "Dibujo de Caja Abajo Doble e Izquierda Simple" }, { c: "╔", t: "Dibujo de Caja Doble Abajo y Derecha" }, { c: "╗", t: "Dibujo de Caja Doble Abajo e Izquierda" },
+                { c: "╘", t: "Dibujo de Caja Arriba Simple y Derecha Doble" }, { c: "╛", t: "Dibujo de Caja Arriba Simple e Izquierda Doble" }, { c: "╙", t: "Dibujo de Caja Arriba Doble y Derecha Simple" }, { c: "╜", t: "Dibujo de Caja Arriba Doble e Izquierda Simple" }, { c: "╚", t: "Dibujo de Caja Doble Arriba y Derecha" },
+                { c: "╝", t: "Dibujo de Caja Doble Arriba e Izquierda" }, { c: "╞", t: "Dibujo de Caja Vertical Simple y Derecha Doble" }, { c: "╡", t: "Dibujo de Caja Vertical Simple e Izquierda Doble" }, { c: "╟", t: "Dibujo de Caja Vertical Doble y Derecha Simple" }, { c: "╢", t: "Dibujo de Caja Vertical Doble e Izquierda Simple" },
+                { c: "╠", t: "Dibujo de Caja Doble Vertical y Derecha" }, { c: "╣", t: "Dibujo de Caja Doble Vertical e Izquierda" }, { c: "╥", t: "Dibujo de Caja Abajo Doble y Horizontal Simple" }, { c: "╨", t: "Dibujo de Caja Arriba Doble y Horizontal Simple" }, { c: "╧", t: "Dibujo de Caja Arriba Simple y Horizontal Doble" },
+                { c: "╤", t: "Dibujo de Caja Abajo Simple y Horizontal Doble" }, { c: "╦", t: "Dibujo de Caja Doble Abajo y Horizontal" }, { c: "╩", t: "Dibujo de Caja Doble Arriba y Horizontal" }, { c: "╪", t: "Dibujo de Caja Vertical Simple y Horizontal Doble" }, { c: "╫", t: "Dibujo de Caja Vertical Doble y Horizontal Simple" },
+                { c: "╬", t: "Dibujo de Caja Doble Vertical y Horizontal" }, { c: "〒", t: "Marca Postal" }, { c: "⊢", t: "Tachuela Derecha" }, { c: "⊣", t: "Tachuela Izquierda" }, { c: "⊤", t: "Tachuela Abajo" },
+                { c: "⊥", t: "Tachuela Arriba" }, { c: "╭", t: "Dibujo de Caja Arco Ligero Abajo y Derecha" }, { c: "╮", t: "Dibujo de Caja Arco Ligero Abajo e Izquierda" }, { c: "╯", t: "Dibujo de Caja Arco Ligero Arriba e Izquierda" }, { c: "╰", t: "Dibujo de Caja Arco Ligero Arriba y Derecha" },
+                { c: "⊦", t: "Aserción" }, { c: "⊧", t: "Modelos" }, { c: "⊨", t: "Verdadero" }, { c: "⊩", t: "Fuerza" }, { c: "⊪", t: "Torniquete Derecho de Triple Barra Vertical" },
+                { c: "⊫", t: "Torniquete Doble Derecho de Doble Barra Vertical" }, { c: "⊬", t: "No Prueba" }, { c: "⊭", t: "No Verdadero" }, { c: "⊮", t: "No Fuerza" }, { c: "⊯", t: "Torniquete Doble Derecho de Doble Barra Vertical Negado" },
+                { c: "⊺", t: "Intercalar" }, { c: "〦", t: "Numeral de Hangzhou Seis" }, { c: "〧", t: "Numeral de Hangzhou Siete" }, { c: "〨", t: "Numeral de Hangzhou Ocho" }, { c: "˦", t: "Barra de Tono Alto Modificadora" },
+                { c: "˧", t: "Barra de Tono Medio Modificadora" }, { c: "˨", t: "Barra de Tono Bajo Modificadora" }, { c: "⑁", t: "Silla OCR" }, { c: "⑂", t: "Tenedor OCR" }, { c: "⑃", t: "Tenedor Invertido OCR" },
+                { c: "∟", t: "Ángulo Recto" }
+            ],
+            circle: [
+                { c: "◉", t: "Ojo de Pez" }, { c: "○", t: "Círculo Blanco" }, { c: "◌", t: "Círculo Punteado" }, { c: "◍", t: "Círculo con Relleno Vertical" }, { c: "◎", t: "Diana" },
+                { c: "●", t: "Círculo Negro" }, { c: "◐", t: "Círculo con Mitad Izquierda Negra" }, { c: "◑", t: "Círculo con Mitad Derecha Negra" }, { c: "◒", t: "Círculo con Mitad Inferior Negra" }, { c: "◓", t: "Círculo con Mitad Superior Negra" },
+                { c: "◔", t: "Círculo con Cuadrante Superior Derecho Negro" }, { c: "◕", t: "Círculo con Todo Menos Cuadrante Superior Izquierdo Negro" }, { c: "◖", t: "Círculo con Mitad Izquierda Negra" }, { c: "◗", t: "Círculo con Mitad Derecha Negra" }, { c: "❂", t: "Estrella de Ocho Puntas con Centro Abierto en Círculo" },
+                { c: "☢", t: "Signo Radioactivo" }, { c: "⊗", t: "Por en Círculo" }, { c: "⊙", t: "Operador Punto en Círculo" }, { c: "◘", t: "Viñeta Inversa" }, { c: "◙", t: "Círculo Blanco Inverso" },
+                { c: "◚", t: "Mitad Superior de Círculo Blanco Inverso" }, { c: "◛", t: "Mitad Inferior de Círculo Blanco Inverso" }, { c: "◜", t: "Arco Circular de Cuadrante Superior Izquierdo" }, { c: "◝", t: "Arco Circular de Cuadrante Superior Derecho" }, { c: "◞", t: "Arco Circular de Cuadrante Inferior Derecho" },
+                { c: "◟", t: "Arco Circular de Cuadrante Inferior Izquierdo" }, { c: "◠", t: "Semicírculo Superior" }, { c: "◡", t: "Semicírculo Inferior" }, { c: "◯", t: "Círculo Grande" }, { c: "〇", t: "Número Ideográfico Cero" },
+                { c: "㊶", t: "Marca Postal en Círculo" }, { c: "⚫", t: "Emoji de Círculo Negro Mediano" }, { c: "⬤", t: "Círculo Grande Negro" }, { c: "◦", t: "Viñeta Blanca" }, { c: "∅", t: "Conjunto Vacío" },
+                { c: "∘", t: "Operador Anillo" }, { c: "⊕", t: "Más en Círculo" }, { c: "⊖", t: "Menos en Círculo" }, { c: "⊘", t: "Barra de División en Círculo" }, { c: "⊚", t: "Operador Anillo en Círculo" },
+                { c: "⊛", t: "Operador Asterisco en Círculo" }, { c: "⊜", t: "Igual en Círculo" }, { c: "⊝", t: "Guion en Círculo" }, { c: "❍", t: "Círculo Blanco Sombreado" }, { c: "⦿", t: "Viñeta en Círculo" }
+            ],
+            phonetic: [
+                { c: "ʌ", t: "Letra Latina Pequeña V Invertida" }, { c: "ɑ:", t: "La fonética IPA ɑː" }, { c: "æ", t: "Letra Latina Pequeña Ae" }, { c: "e", t: "Letra Latina Pequeña E" }, { c: "ə", t: "Letra Latina Pequeña Schwa" },
+                { c: "ɜ:", t: "La fonética IPA ɜ:" }, { c: "ɪ", t: "Letra Latina Mayúscula Pequeña I" }, { c: "i:", t: "La fonética IPA i:" }, { c: "ɒ", t: "Letra Latina Pequeña Alfa Invertida" }, { c: "ɔ:", t: "La fonética IPA ɔ:" },
+                { c: "ʊ", t: "Letra Latina Pequeña Ípsilon" }, { c: "u:", t: "La fonética IPA u:" }, { c: "aɪ", t: "La fonética IPA aɪ" }, { c: "aʊ", t: "La fonética IPA aʊ" }, { c: "eɪ", t: "La fonética IPA eɪ" },
+                { c: "oʊ", t: "La fonética IPA oʊ" }, { c: "ɔɪ", t: "La fonética IPA ɔɪ" }, { c: "eə", t: "La fonética IPA eə" }, { c: "ɪə", t: "La fonética IPA ɪə" }, { c: "ʊə", t: "La fonética IPA ʊə" },
+                { c: "b", t: "Letra Latina Pequeña B" }, { c: "d", t: "Letra Latina Pequeña D" }, { c: "f", t: "Letra Latina Pequeña F" }, { c: "g", t: "Letra Latina Pequeña G" }, { c: "h", t: "Letra Latina Pequeña H" },
+                { c: "j", t: "Letra Latina Pequeña J" }, { c: "k", t: "Letra Latina Pequeña K" }, { c: "l", t: "Letra Latina Pequeña L" }, { c: "m", t: "Letra Latina Pequeña M" }, { c: "n", t: "Letra Latina Pequeña N" },
+                { c: "ŋ", t: "Letra Latina Pequeña Eng" }, { c: "p", t: "Letra Latina Pequeña P" }, { c: "r", t: "Letra Latina Pequeña R" }, { c: "s", t: "Letra Latina Pequeña S" }, { c: "ʃ", t: "Letra Latina Pequeña Esh" },
+                { c: "t", t: "Letra Latina Pequeña T" }, { c: "tʃ", t: "La fonética IPA tʃ" }, { c: "θ", t: "Letra Griega Pequeña Theta" }, { c: "ð", t: "Letra Latina Pequeña Eth" }, { c: "v", t: "Letra Latina Pequeña V" },
+                { c: "w", t: "Letra Latina Pequeña W" }, { c: "z", t: "Letra Latina Pequeña Z" }, { c: "ʒ", t: "Letra Latina Pequeña Ezh" }, { c: "dʒ", t: "La fonética IPA dʒ" }
+            ],
+            latin: [
+                { c: "ą", t: "Letra Latina Pequeña A con Ogonek" }, { c: "č", t: "Letra Latina Pequeña C con Carón" }, { c: "Ĥ", t: "Letra Latina Mayúscula H con Acento Circunflejo" }, { c: "ħ", t: "Letra Latina Pequeña H con Trazo" }, { c: "ĩ", t: "Letra Latina Pequeña I con Tilde" },
+                { c: "Ň", t: "Letra Latina Mayúscula N con Carón" }, { c: "Ř", t: "Letra Latina Mayúscula R con Carón" }, { c: "Ť", t: "Letra Latina Mayúscula T con Carón" }, { c: "Ŵ", t: "Letra Latina Mayúscula W con Acento Circunflejo" }, { c: "Ž", t: "Letra Latina Mayúscula Z con Carón" },
+                { c: "Ⓐ", t: "Letra Latina Mayúscula A en Círculo" }, { c: "Ⓑ", t: "Letra Latina Mayúscula B en Círculo" }, { c: "Ⓒ", t: "Letra Latina Mayúscula C en Círculo" }, { c: "Ⓓ", t: "Letra Latina Mayúscula D en Círculo" }, { c: "Ⓔ", t: "Letra Latina Mayúscula E en Círculo" },
+                { c: "Ⓕ", t: "Letra Latina Mayúscula F en Círculo" }, { c: "Ⓖ", t: "Letra Latina Mayúscula G en Círculo" }, { c: "Ⓗ", t: "Letra Latina Mayúscula H en Círculo" }, { c: "Ⓘ", t: "Letra Latina Mayúscula I en Círculo" }, { c: "Ⓙ", t: "Letra Latina Mayúscula J en Círculo" },
+                { c: "Ⓚ", t: "Letra Latina Mayúscula K en Círculo" }, { c: "Ⓛ", t: "Letra Latina Mayúscula L en Círculo" }, { c: "Ⓜ", t: "Letra Latina Mayúscula M en Círculo" }, { c: "Ⓝ", t: "Letra Latina Mayúscula N en Círculo" }, { c: "Ⓞ", t: "Letra Latina Mayúscula O en Círculo" },
+                { c: "Ⓟ", t: "Letra Latina Mayúscula P en Círculo" }, { c: "Ⓠ", t: "Letra Latina Mayúscula Q en Círculo" }, { c: "Ⓡ", t: "Letra Latina Mayúscula R en Círculo" }, { c: "Ⓢ", t: "Letra Latina Mayúscula S en Círculo" }, { c: "Ⓣ", t: "Letra Latina Mayúscula T en Círculo" },
+                { c: "Ⓤ", t: "Letra Latina Mayúscula U en Círculo" }, { c: "Ⓥ", t: "Letra Latina Mayúscula V en Círculo" }, { c: "Ⓦ", t: "Letra Latina Mayúscula W en Círculo" }, { c: "Ⓧ", t: "Letra Latina Mayúscula X en Círculo" }, { c: "Ⓨ", t: "Letra Latina Mayúscula Y en Círculo" },
+                { c: "Ⓩ", t: "Letra Latina Mayúscula Z en Círculo" }, { c: "ⓐ", t: "Letra Latina Pequeña A en Círculo" }, { c: "ⓑ", t: "Letra Latina Pequeña B en Círculo" }, { c: "ⓒ", t: "Letra Latina Pequeña C en Círculo" }, { c: "ⓓ", t: "Letra Latina Pequeña D en Círculo" },
+                { c: "ⓔ", t: "Letra Latina Pequeña E en Círculo" }, { c: "ⓕ", t: "Letra Latina Pequeña F en Círculo" }, { c: "ⓖ", t: "Letra Latina Pequeña G en Círculo" }, { c: "ⓗ", t: "Letra Latina Pequeña H en Círculo" }, { c: "ⓘ", t: "Letra Latina Pequeña I en Círculo" },
+                { c: "ⓙ", t: "Letra Latina Pequeña J en Círculo" }, { c: "ⓚ", t: "Letra Latina Pequeña K en Círculo" }, { c: "ⓛ", t: "Letra Latina Pequeña L en Círculo" }, { c: "ⓜ", t: "Letra Latina Pequeña M en Círculo" }, { c: "ⓝ", t: "Letra Latina Pequeña N en Círculo" },
+                { c: "ⓞ", t: "Letra Latina Pequeña O en Círculo" }, { c: "ⓟ", t: "Letra Latina Pequeña P en Círculo" }, { c: "ⓠ", t: "Letra Latina Pequeña Q en Círculo" }, { c: "ⓡ", t: "Letra Latina Pequeña R en Círculo" }, { c: "ⓢ", t: "Letra Latina Pequeña S en Círculo" },
+                { c: "ⓣ", t: "Letra Latina Pequeña T en Círculo" }, { c: "ⓤ", t: "Letra Latina Pequeña U en Círculo" }, { c: "ⓥ", t: "Letra Latina Pequeña V en Círculo" }, { c: "ⓦ", t: "Letra Latina Pequeña W en Círculo" }, { c: "ⓧ", t: "Letra Latina Pequeña X en Círculo" },
+                { c: "ⓨ", t: "Letra Latina Pequeña Y en Círculo" }, { c: "ⓩ", t: "Letra Latina Pequeña Z en Círculo" }
+            ],
+            greek_letters: [
+                { c: "α", t: "Letra Griega Pequeña Alfa" }, { c: "β", t: "Letra Griega Pequeña Beta" }, { c: "γ", t: "Letra Griega Pequeña Gamma" }, { c: "δ", t: "Letra Griega Pequeña Delta" }, { c: "ε", t: "Letra Griega Pequeña Épsilon" },
+                { c: "ζ", t: "Letra Griega Pequeña Zeta" }, { c: "η", t: "Letra Griega Pequeña Eta" }, { c: "θ", t: "Letra Griega Pequeña Theta" }, { c: "ι", t: "Letra Griega Pequeña Iota" }, { c: "κ", t: "Letra Griega Pequeña Kappa" },
+                { c: "λ", t: "Letra Griega Pequeña Lambda" }, { c: "μ", t: "Letra Griega Pequeña Mu" }, { c: "ν", t: "Letra Griega Pequeña Nu" }, { c: "ξ", t: "Letra Griega Pequeña Xi" }, { c: "ο", t: "Letra Griega Pequeña Ómicron" },
+                { c: "π", t: "Letra Griega Pequeña Pi" }, { c: "ρ", t: "Letra Griega Pequeña Rho" }, { c: "ς", t: "Letra Griega Pequeña Sigma Final" }, { c: "σ", t: "Letra Griega Pequeña Sigma" }, { c: "τ", t: "Letra Griega Pequeña Tau" },
+                { c: "υ", t: "Letra Griega Pequeña Ípsilon" }, { c: "φ", t: "Letra Griega Pequeña Fi" }, { c: "χ", t: "Letra Griega Pequeña Ji" }, { c: "ψ", t: "Letra Griega Pequeña Psi" }, { c: "ω", t: "Letra Griega Pequeña Omega" },
+                { c: "Α", t: "Letra Griega Mayúscula Alfa" }, { c: "Β", t: "Letra Griega Mayúscula Beta" }, { c: "Γ", t: "Letra Griega Mayúscula Gamma" }, { c: "Δ", t: "Letra Griega Mayúscula Delta" }, { c: "Ε", t: "Letra Griega Mayúscula Épsilon" },
+                { c: "Ζ", t: "Letra Griega Mayúscula Zeta" }, { c: "Η", t: "Letra Griega Mayúscula Eta" }, { c: "Θ", t: "Letra Griega Mayúscula Theta" }, { c: "Ι", t: "Letra Griega Mayúscula Iota" }, { c: "Κ", t: "Letra Griega Mayúscula Kappa" },
+                { c: "Λ", t: "Letra Griega Mayúscula Lambda" }, { c: "Μ", t: "Letra Griega Mayúscula Mu" }, { c: "Ν", t: "Letra Griega Mayúscula Nu" }, { c: "Ξ", t: "Letra Griega Mayúscula Xi" }, { c: "Ο", t: "Letra Griega Mayúscula Ómicron" },
+                { c: "Π", t: "Letra Griega Mayúscula Pi" }, { c: "Ρ", t: "Letra Griega Mayúscula Rho" }, { c: "Σ", t: "Letra Griega Mayúscula Sigma" }, { c: "Τ", t: "Letra Griega Mayúscula Tau" }, { c: "Υ", t: "Letra Griega Mayúscula Ípsilon" },
+                { c: "Φ", t: "Letra Griega Mayúscula Fi" }, { c: "Χ", t: "Letra Griega Mayúscula Ji" }, { c: "Ψ", t: "Letra Griega Mayúscula Psi" }, { c: "Ω", t: "Letra Griega Mayúscula Omega" }
+            ],
+            chinese: [
+                { c: "㊊", t: "Ideograma en Círculo Luna" }, { c: "㊋", t: "Ideograma en Círculo Fuego" }, { c: "㊌", t: "Ideograma en Círculo Agua" }, { c: "㊍", t: "Ideograma en Círculo Madera" }, { c: "㊎", t: "Ideograma en Círculo Metal" },
+                { c: "㊏", t: "Ideograma en Círculo Tierra" }, { c: "㊐", t: "Ideograma en Círculo Sol" }, { c: "㊑", t: "Ideograma en Círculo Stock" }, { c: "㊒", t: "Ideograma en Círculo Tener" }, { c: "㊓", t: "Ideograma en Círculo Sociedad" },
+                { c: "㊔", t: "Ideograma en Círculo Nombre" }, { c: "㊕", t: "Ideograma en Círculo Especial" }, { c: "㊖", t: "Ideograma en Círculo Financiero" }, { c: "㊗", t: "Ideograma en Círculo Felicitación" }, { c: "㊘", t: "Ideograma en Círculo Labor" },
+                { c: "㊙", t: "Ideograma en Círculo Secreto" }, { c: "㊚", t: "Ideograma en Círculo Masculino" }, { c: "㊛", t: "Ideograma en Círculo Femenino" }, { c: "㊜", t: "Ideograma en Círculo Adecuado" }, { c: "㊝", t: "Ideograma en Círculo Excelente" },
+                { c: "㊞", t: "Ideograma en Círculo Impresión" }, { c: "㊟", t: "Ideograma en Círculo Atención" }, { c: "㊠", t: "Ideograma en Círculo Artículo" }, { c: "㊡", t: "Ideograma en Círculo Descanso" }, { c: "㊢", t: "Ideograma en Círculo Copia" },
+                { c: "㊣", t: "Ideograma en Círculo Correcto" }, { c: "㊤", t: "Ideograma en Círculo Alto" }, { c: "㊥", t: "Ideograma en Círculo Centro" }, { c: "㊦", t: "Ideograma en Círculo Bajo" }, { c: "㊧", t: "Ideograma en Círculo Izquierda" },
+                { c: "㊨", t: "Ideograma en Círculo Derecha" }, { c: "㊩", t: "Ideograma en Círculo Medicina" }, { c: "㊪", t: "Ideograma en Círculo Religión" }, { c: "㊫", t: "Ideograma en Círculo Estudio" }, { c: "㊬", t: "Ideograma en Círculo Supervisar" },
+                { c: "㊭", t: "Ideograma en Círculo Empresa" }, { c: "㊮", t: "Ideograma en Círculo Recurso" }, { c: "㊯", t: "Ideograma en Círculo Alianza" }, { c: "㊰", t: "Ideograma en Círculo Noche" }
+            ],
+            japanese: [
+                { c: "ぁ", t: "Letra Hiragana Pequeña A" }, { c: "あ", t: "Letra Hiragana A" }, { c: "ぃ", t: "Letra Hiragana Pequeña I" }, { c: "い", t: "Letra Hiragana I" }, { c: "ぅ", t: "Letra Hiragana Pequeña U" },
+                { c: "う", t: "Letra Hiragana U" }, { c: "ぇ", t: "Letra Hiragana Pequeña E" }, { c: "え", t: "Letra Hiragana E" }, { c: "ぉ", t: "Letra Hiragana Pequeña O" }, { c: "お", t: "Letra Hiragana O" },
+                { c: "か", t: "Letra Hiragana Ka" }, { c: "が", t: "Letra Hiragana Ga" }, { c: "き", t: "Letra Hiragana Ki" }, { c: "ぎ", t: "Letra Hiragana Gi" }, { c: "く", t: "Letra Hiragana Ku" },
+                { c: "ぐ", t: "Letra Hiragana Gu" }, { c: "け", t: "Letra Hiragana Ke" }, { c: "げ", t: "Letra Hiragana Ge" }, { c: "こ", t: "Letra Hiragana Ko" }, { c: "ご", t: "Letra Hiragana Go" },
+                { c: "さ", t: "Letra Hiragana Sa" }, { c: "ざ", t: "Letra Hiragana Za" }, { c: "し", t: "Letra Hiragana Si" }, { c: "じ", t: "Letra Hiragana Zi" }, { c: "す", t: "Letra Hiragana Su" },
+                { c: "ず", t: "Letra Hiragana Zu" }, { c: "せ", t: "Letra Hiragana Se" }, { c: "ぜ", t: "Letra Hiragana Ze" }, { c: "そ", t: "Letra Hiragana So" }, { c: "ぞ", t: "Letra Hiragana Zo" },
+                { c: "た", t: "Letra Hiragana Ta" }, { c: "だ", t: "Letra Hiragana Da" }, { c: "ち", t: "Letra Hiragana Ti" }, { c: "ぢ", t: "Letra Hiragana Di" }, { c: "っ", t: "Letra Hiragana Pequeña Tu" },
+                { c: "つ", t: "Letra Hiragana Tu" }, { c: "づ", t: "Letra Hiragana Du" }, { c: "て", t: "Letra Hiragana Te" }, { c: "で", t: "Letra Hiragana De" }, { c: "と", t: "Letra Hiragana To" },
+                { c: "ど", t: "Letra Hiragana Do" }, { c: "な", t: "Letra Hiragana Na" }, { c: "に", t: "Letra Hiragana Ni" }, { c: "ぬ", t: "Letra Hiragana Nu" }, { c: "ね", t: "Letra Hiragana Ne" },
+                { c: "の", t: "Letra Hiragana No" }, { c: "は", t: "Letra Hiragana Ha" }, { c: "ば", t: "Letra Hiragana Ba" }, { c: "ぱ", t: "Letra Hiragana Pa" }, { c: "ひ", t: "Letra Hiragana Hi" },
+                { c: "び", t: "Letra Hiragana Bi" }, { c: "ぴ", t: "Letra Hiragana Pi" }, { c: "ふ", t: "Letra Hiragana Hu" }, { c: "ぶ", t: "Letra Hiragana Bu" }, { c: "ぷ", t: "Letra Hiragana Pu" },
+                { c: "へ", t: "Letra Hiragana He" }, { c: "べ", t: "Letra Hiragana Be" }, { c: "ぺ", t: "Letra Hiragana Pe" }, { c: "ほ", t: "Letra Hiragana Ho" }, { c: "ぼ", t: "Letra Hiragana Bo" },
+                { c: "ぽ", t: "Letra Hiragana Po" }, { c: "ま", t: "Letra Hiragana Ma" }, { c: "み", t: "Letra Hiragana Mi" }
+            ],
+            korean: [
+                { c: "ㄱ", t: "Letra Hangul Kiyeok" }, { c: "ㄲ", t: "Letra Hangul Ssangkiyeok" }, { c: "ㄳ", t: "Letra Hangul Kiyeok-Sios" }, { c: "ㄴ", t: "Letra Hangul Nieun" }, { c: "ㄵ", t: "Letra Hangul Nieun-Cieuc" },
+                { c: "ㄶ", t: "Letra Hangul Nieun-Hieuh" }, { c: "ㄷ", t: "Letra Hangul Tikeut" }, { c: "ㄸ", t: "Letra Hangul Ssangtikeut" }, { c: "ㄹ", t: "Letra Hangul Rieul" }, { c: "ㄺ", t: "Letra Hangul Rieul-Kiyeok" },
+                { c: "ㄻ", t: "Letra Hangul Rieul-Mieum" }, { c: "ㄼ", t: "Letra Hangul Rieul-Pieup" }, { c: "ㄽ", t: "Letra Hangul Rieul-Sios" }, { c: "ㄾ", t: "Letra Hangul Rieul-Thieuth" }, { c: "ㄿ", t: "Letra Hangul Rieul-Phieuph" },
+                { c: "ㅀ", t: "Letra Hangul Rieul-Hieuh" }, { c: "ㅁ", t: "Letra Hangul Mieum" }, { c: "ㅂ", t: "Letra Hangul Pieup" }, { c: "ㅃ", t: "Letra Hangul Ssangpieup" }, { c: "ㅄ", t: "Letra Hangul Pieup-Sios" },
+                { c: "ㅅ", t: "Letra Hangul Sios" }, { c: "ㅆ", t: "Letra Hangul Ssangsios" }, { c: "ㅇ", t: "Letra Hangul Ieung" }, { c: "ㅈ", t: "Letra Hangul Cieuc" }, { c: "ㅉ", t: "Letra Hangul Ssangcieuc" },
+                { c: "ㅊ", t: "Letra Hangul Chieuch" }, { c: "ㅋ", t: "Letra Hangul Khieukh" }, { c: "ㅌ", t: "Letra Hangul Thieuth" }, { c: "ㅍ", t: "Letra Hangul Phieuph" }, { c: "ㅎ", t: "Letra Hangul Hieuh" },
+                { c: "ㅏ", t: "Letra Hangul A" }, { c: "ㅐ", t: "Letra Hangul Ae" }, { c: "ㅑ", t: "Letra Hangul Ya" }, { c: "ㅒ", t: "Letra Hangul Yae" }, { c: "ㅓ", t: "Letra Hangul Eo" },
+                { c: "ㅔ", t: "Letra Hangul E" }, { c: "ㅕ", t: "Letra Hangul Yeo" }, { c: "ㅖ", t: "Letra Hangul Ye" }, { c: "ㅗ", t: "Letra Hangul O" }, { c: "ㅘ", t: "Letra Hangul Wa" },
+                { c: "ㅙ", t: "Letra Hangul Wae" }, { c: "ㅚ", t: "Letra Hangul Oe" }, { c: "ㅛ", t: "Letra Hangul Yo" }, { c: "ㅜ", t: "Letra Hangul U" }, { c: "ㅝ", t: "Letra Hangul Weo" },
+                { c: "ㅞ", t: "Letra Hangul We" }, { c: "ㅟ", t: "Letra Hangul Wi" }, { c: "ㅠ", t: "Letra Hangul Yu" }, { c: "ㅡ", t: "Letra Hangul Eu" }, { c: "ㅢ", t: "Letra Hangul Yi" },
+                { c: "ㅥ", t: "Letra Hangul Ssangnieun" }, { c: "ㅦ", t: "Letra Hangul Nieun-Tikeut" }, { c: "ㅧ", t: "Letra Hangul Nieun-Sios" }, { c: "ㅨ", t: "Letra Hangul Nieun-Pansios" }, { c: "ㅩ", t: "Letra Hangul Rieul-Kiyeok-Sios" },
+                { c: "ㅪ", t: "Letra Hangul Rieul-Tikeut" }, { c: "ㅫ", t: "Letra Hangul Rieul-Pieup-Sios" }, { c: "ㅬ", t: "Letra Hangul Rieul-Pansios" }, { c: "ㅭ", t: "Letra Hangul Rieul-Yeorinhieuh" }, { c: "ㅮ", t: "Letra Hangul Mieum-Pieup" },
+                { c: "ㅯ", t: "Letra Hangul Mieum-Sios" }, { c: "ㅰ", t: "Letra Hangul Mieum-Pansios" }, { c: "ㅱ", t: "Letra Hangul Kapyeounmieum" }, { c: "ㅲ", t: "Letra Hangul Pieup-Kiyeok" }, { c: "ㅳ", t: "Letra Hangul Pieup-Tikeut" },
+                { c: "ㅴ", t: "Letra Hangul Pieup-Sios-Kiyeok" }, { c: "ㅵ", t: "Letra Hangul Pieup-Sios-Tikeut" }, { c: "ㅶ", t: "Letra Hangul Pieup-Cieuc" }, { c: "ㅷ", t: "Letra Hangul Pieup-Thieuth" }, { c: "ㅸ", t: "Letra Hangul Kapyeounpieup" },
+                { c: "ㅹ", t: "Letra Hangul Kapyeounssangpieup" }, { c: "ㅺ", t: "Letra Hangul Sios-Kiyeok" }, { c: "ㅻ", t: "Letra Hangul Sios-Nieun" }, { c: "ㅼ", t: "Letra Hangul Sios-Tikeut" }, { c: "ㅽ", t: "Letra Hangul Sios-Pieup" },
+                { c: "ㅾ", t: "Letra Hangul Sios-Cieuc" }, { c: "ㅿ", t: "Letra Hangul Pansios" }, { c: "ㆀ", t: "Letra Hangul Ssangieung" }, { c: "ㆁ", t: "Letra Hangul Yesieung" }, { c: "ㆂ", t: "Letra Hangul Yesieung-Sios" },
+                { c: "ㆃ", t: "Letra Hangul Yesieung-Pansios" }, { c: "ㆄ", t: "Letra Hangul Kapyeounphieuph" }, { c: "ㆅ", t: "Letra Hangul Ssanghieuh" }, { c: "ㆆ", t: "Letra Hangul Yeorinhieuh" }, { c: "ㆇ", t: "Letra Hangul Yo-Ya" },
+                { c: "ㆈ", t: "Letra Hangul Yo-Yae" }, { c: "ㆉ", t: "Letra Hangul Yo-I" }, { c: "ㆊ", t: "Letra Hangul Yu-Yeo" }
+            ]
+        };
+
+        // --- CONFIGURACIÓN DE CATEGORÍAS ---
+        const categories = [
+            { id: 'all', name: 'Todo', icon: '♾️' },
+            { id: 'stars', name: 'Estrellas', icon: '★' },
+            { id: 'office', name: 'Oficina', icon: '©' },
+            { id: 'currency', name: 'Moneda', icon: '$' },
+            { id: 'brackets', name: 'Paréntesis', icon: '{ }' },
+            { id: 'chess', name: 'Ajedrez', icon: '♟' },
+            { id: 'music', name: 'Música', icon: '♫' },
+            { id: 'weather', name: 'Clima', icon: '☀' },
+            { id: 'arrows', name: 'Flechas', icon: '➜' },
+            { id: 'zodiac', name: 'Zodiaco', icon: '♈' },
+            { id: 'heart', name: 'Corazones', icon: '♥' },
+            { id: 'check', name: 'Check', icon: '✓' },
+            { id: 'people', name: 'Gente', icon: '☺' },
+            { id: 'punctuation', name: 'Puntuación', icon: '&' },
+            { id: 'math', name: 'Matemáticas', icon: '∞' },
+            { id: 'number', name: 'Números', icon: '➊' },
+            { id: 'fraction', name: 'Fracciones', icon: '½' },
+            { id: 'comparison', name: 'Comparación', icon: '≠' },
+            { id: 'technical', name: 'Técnicos', icon: '⌘' },
+            { id: 'square', name: 'Cuadrados', icon: '■' },
+            { id: 'triangle', name: 'Triángulos', icon: '▲' },
+            { id: 'line', name: 'Líneas', icon: '━' },
+            { id: 'corner', name: 'Esquinas', icon: '┌' },
+            { id: 'circle', name: 'Círculos', icon: '○' },
+            { id: 'phonetic', name: 'Fonética', icon: 'æ' },
+            { id: 'latin', name: 'Latín', icon: 'A' },
+            { id: 'greek_letters', name: 'Griego', icon: 'Ω' },
+            { id: 'chinese', name: 'Chino', icon: '㊊' },
+            { id: 'japanese', name: 'Japonés', icon: 'あ' },
+            { id: 'korean', name: 'Coreano', icon: 'ㄱ' }
+        ];
+
+        // --- ESTADO GLOBAL ---
+        let currentCat = 'all';
+        let flatDB = [];
+        let filteredItems = [];
+        let selectedSymbols = new Set(); // Set para selección múltiple
+
+        // Aplanar la base de datos
+        Object.keys(rawData).forEach(cat => {
+            rawData[cat].forEach(item => {
+                flatDB.push({ ...item, g: cat });
+            });
+        });
+
+        // --- ELEMENTOS DOM ---
+        const grid = document.getElementById('grid');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const catList = document.getElementById('catList');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearchBtn'); // Nuevo elemento
+        const menuBtn = document.getElementById('menuBtn');
+        const multiActions = document.getElementById('multiActions');
+        const multiCount = document.getElementById('multiCount');
+        const copyPopupText = document.getElementById('copyPopupText');
+
+        // --- RENDERIZADO INICIAL ---
+        function init() {
+            renderCategoryList();
+            renderSymbols();
+            searchInput.focus();
+            window.addEventListener('keydown', handleGlobalKeys);
+        }
+
+        function renderCategoryList() {
+            catList.innerHTML = categories.map(cat => `
+        <button class="cat-chip ${cat.id === currentCat ? 'active' : ''}" 
+                onclick="selectCategory('${cat.id}')" 
+                data-id="${cat.id}"
+                role="tab">
+            <span>${cat.icon}</span>
+            <span>${cat.name}</span>
+        </button>
+    `).join('');
+        }
+
+        function renderSymbols(query = '') {
+            const q = query.toLowerCase();
+
+            filteredItems = flatDB.filter(item => {
+                const matchCat = currentCat === 'all' || item.g === currentCat;
+                const tokens = q.split(/\s+/).filter(t => t);
+                const matchSearch = !q || tokens.every(token =>
+                    item.t.toLowerCase().includes(token) || item.c.includes(token)
+                );
+                return matchCat && matchSearch;
+            });
+
+            if (filteredItems.length === 0) {
+                grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">
+            No se encontraron símbolos.
+        </div>`;
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+
+            filteredItems.forEach((item, index) => {
+                // Usamos <button> para que sea enfocable nativamente
+                const el = document.createElement('button');
+                el.className = `card ${selectedSymbols.has(item.c) ? 'selected' : ''}`;
+                el.textContent = item.c;
+                el.title = item.t;
+                el.dataset.index = index;
+                el.dataset.char = item.c;
+
+                // EVENTOS DE CLIC / TOUCH
+
+                // 1. Escritorio: Click normal vs CTRL+Click
+                el.addEventListener('click', (e) => {
+                    // Si es un click generado por long press, ignorar lógica normal
+                    if (el.dataset.longPressed) {
+                        delete el.dataset.longPressed;
+                        return;
+                    }
+
+                    if (e.ctrlKey || e.metaKey) {
+                        toggleSelection(item.c);
+                    } else {
+                        // Si ya tenemos selección múltiple, click simple limpia selección y copia el nuevo
+                        if (selectedSymbols.size > 0) {
+                            // Opcional: ¿Limpiar o añadir?
+                            // Para consistencia simple: click simple = copia individual inmediata, sin afectar multiselección
+                            // Si el usuario quiere multiselección, usa CTRL.
+                            copyToClipboard(item.c);
+                        } else {
+                            copyToClipboard(item.c);
+                        }
+                    }
+                });
+
+                // 2. Móvil: Long Press detection
+                let pressTimer;
+
+                const startPress = (e) => {
+                    pressTimer = setTimeout(() => {
+                        // Long press detectado
+                        el.dataset.longPressed = "true"; // Marcar para evitar click posterior
+                        toggleSelection(item.c);
+                        if (navigator.vibrate) navigator.vibrate(50);
+                    }, 600); // 600ms para long press
+                };
+
+                const cancelPress = () => {
+                    clearTimeout(pressTimer);
+                };
+
+                el.addEventListener('touchstart', startPress, { passive: true });
+                el.addEventListener('touchend', cancelPress);
+                el.addEventListener('touchmove', cancelPress); // Cancelar si mueve el dedo (scroll)
+
+                // 3. NUEVO: Prevenir menú contextual nativo (click derecho o long press)
+                el.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                });
+
+                // Navegación teclado
+                el.addEventListener('keydown', handleGridKeydown);
+
+                fragment.appendChild(el);
+            });
+
+            grid.innerHTML = '';
+            grid.appendChild(fragment);
+        }
+
+        // --- LÓGICA SELECCIÓN MÚLTIPLE ---
+
+        function toggleSelection(char) {
+            // CORRECCIÓN: Usar querySelectorAll para manejar duplicados visibles
+            // El problema original era que querySelector solo devolvía el primer elemento encontrado,
+            // causando que si había duplicados (ej: Check Mark en varias categorías),
+            // al hacer clic en el segundo, se seleccionaba visualmente el primero.
+            const cards = grid.querySelectorAll(`.card[data-char="${char}"]`);
+
+            if (selectedSymbols.has(char)) {
+                selectedSymbols.delete(char);
+                cards.forEach(card => card.classList.remove('selected'));
+            } else {
+                selectedSymbols.add(char);
+                cards.forEach(card => card.classList.add('selected'));
+            }
+
+            updateMultiCopyUI();
+        }
+
+        function updateMultiCopyUI() {
+            const count = selectedSymbols.size;
+            multiCount.textContent = count;
+
+            if (count > 0) {
+                multiActions.classList.add('active');
+            } else {
+                multiActions.classList.remove('active');
+            }
+        }
+
+        function copySelected() {
+            if (selectedSymbols.size === 0) return;
+
+            // Unir símbolos (separados por espacio o nada)
+            const textToCopy = Array.from(selectedSymbols).join(' ');
+
+            copyToClipboard(textToCopy, true); // true indica que es selección múltiple
+        }
+
+        function clearSelection() {
+            selectedSymbols.clear();
+            updateMultiCopyUI();
+            // Quitar clase visualmente
+            const cards = grid.querySelectorAll('.card.selected');
+            cards.forEach(c => c.classList.remove('selected'));
+        }
+
+
+        // --- GESTIÓN DE TECLADO ---
+
+        function handleGlobalKeys(e) {
+            if (e.ctrlKey && e.shiftKey && (e.key === 'F' || e.key === 'f')) {
+                e.preventDefault();
+                toggleMenu(true);
+                setTimeout(() => {
+                    const firstChip = catList.querySelector('.cat-chip');
+                    if (firstChip) firstChip.focus();
+                }, 100);
+            }
+
+            if (e.key === 'Escape') {
+                if (menuOverlay.classList.contains('open')) {
+                    toggleMenu(false);
+                    searchInput.focus();
+                } else if (selectedSymbols.size > 0) {
+                    // ESC también limpia selección si no hay menú
+                    clearSelection();
+                }
+            }
+        }
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                e.preventDefault();
+                const firstCard = grid.querySelector('.card');
+                if (firstCard) firstCard.focus();
+            }
+        });
+
+        function handleGridKeydown(e) {
+            const currentBtn = e.target;
+            const index = parseInt(currentBtn.dataset.index);
+            const cards = Array.from(grid.querySelectorAll('.card'));
+
+            // Cálculo columnas
+            let columns = 1;
+            if (cards.length > 1) {
+                const firstTop = cards[0].getBoundingClientRect().top;
+                for (let i = 1; i < cards.length; i++) {
+                    if (cards[i].getBoundingClientRect().top > firstTop) {
+                        columns = i;
+                        break;
+                    }
+                }
+            }
+            if (cards.length > 1 && columns === 1 && cards[1].getBoundingClientRect().top === cards[0].getBoundingClientRect().top) {
+                columns = cards.length;
+            }
+
+            let nextIndex = null;
+
+            switch (e.key) {
+                case 'ArrowRight': nextIndex = index + 1; break;
+                case 'ArrowLeft': nextIndex = index - 1; break;
+                case 'ArrowDown': nextIndex = index + columns; break;
+                case 'ArrowUp': nextIndex = index - columns; break;
+                case 'Home': nextIndex = 0; break;
+                case 'End': nextIndex = cards.length - 1; break;
+                // Permitir selección con teclado también
+                case ' ': // Espacio para seleccionar si se usa CTRL
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        toggleSelection(currentBtn.textContent);
+                        return;
+                    }
+                    break;
+            }
+
+            if (nextIndex !== null && nextIndex >= 0 && nextIndex < cards.length) {
+                e.preventDefault();
+                cards[nextIndex].focus();
+            } else if (e.key === 'ArrowUp' && (index - columns < 0)) {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        }
+
+        catList.addEventListener('keydown', (e) => {
+            const activeElement = document.activeElement;
+            if (!activeElement.classList.contains('cat-chip')) return;
+
+            const chips = Array.from(catList.querySelectorAll('.cat-chip'));
+            const index = chips.indexOf(activeElement);
+            let nextIndex = null;
+
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') nextIndex = index + 1;
+            else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') nextIndex = index - 1;
+
+            if (nextIndex !== null && nextIndex >= 0 && nextIndex < chips.length) {
+                e.preventDefault();
+                chips[nextIndex].focus();
+            }
+        });
+
+
+        // --- INTERACCIÓN GENÉRICA ---
+
+        window.selectCategory = (id) => {
+            currentCat = id;
+            renderCategoryList();
+            renderSymbols(searchInput.value);
+            toggleMenu(false);
+            searchInput.focus();
+        };
+
+        function toggleMenu(forceState) {
+            const isOpen = menuOverlay.classList.contains('open');
+            const newState = forceState !== undefined ? forceState : !isOpen;
+            menuOverlay.classList.toggle('open', newState);
+
+            if (newState) {
+                setTimeout(() => {
+                    const activeChip = catList.querySelector('.cat-chip.active');
+                    if (activeChip) activeChip.focus();
+                    else {
+                        const firstChip = catList.querySelector('.cat-chip');
+                        if (firstChip) firstChip.focus();
+                    }
+                }, 50);
+            }
+        }
+
+        menuBtn.onclick = () => toggleMenu();
+        menuOverlay.onclick = (e) => {
+            if (e.target === menuOverlay) toggleMenu(false);
+        }
+
+        // Nueva funcionalidad: Botón limpiar
+        searchInput.addEventListener('input', (e) => {
+            renderSymbols(e.target.value);
+            // Mostrar u ocultar el botón 'X'
+            if (e.target.value.length > 0) {
+                clearSearchBtn.classList.add('visible');
+            } else {
+                clearSearchBtn.classList.remove('visible');
+            }
+        });
+
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            renderSymbols('');
+            clearSearchBtn.classList.remove('visible');
+            searchInput.focus();
+        });
+
+
+        function copyToClipboard(text, isMulti = false) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showPopup(isMulti ? "Selección copiada" : "Copiado");
+                    if (isMulti) clearSelection();
+                } else {
+                    // Fallback moderno
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            showPopup(isMulti ? "Selección copiada" : "Copiado");
+                            if (isMulti) clearSelection();
+                        }).catch(err => console.error("Async copy failed", err));
+                    }
+                }
+            } catch (err) {
+                console.error('Copy error', err);
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        let popupTimer;
+        function showPopup(msg = "Copiado") {
+            const p = document.getElementById('copyPopup');
+            copyPopupText.textContent = msg;
+            p.classList.add('show');
+            clearTimeout(popupTimer);
+            popupTimer = setTimeout(() => {
+                p.classList.remove('show');
+            }, 1500);
+        }
+
+        init();
+
+    </script>
+</body>
+
+</html>

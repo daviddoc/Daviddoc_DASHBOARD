@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CSV Editor</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f81f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='18' height='18' rx='2'/><line x1='3' y1='9' x2='21' y2='9'/><line x1='3' y1='15' x2='21' y2='15'/><line x1='9' y1='3' x2='9' y2='21'/><line x1='15' y1='3' x2='15' y2='21'/></svg>">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg0:#0d1117;--bg1:#161b22;--bg2:#21262d;--bg3:#30363d;
+  --border:#30363d;--border2:#444c56;
+  --text0:#e6edf3;--text1:#c9d1d9;--text2:#8b949e;
+  --accent:#2f81f7;--accent-h:#58a6ff;
+  --green:#238636;--green-h:#2ea043;
+  --red:#da3633;--red-h:#f85149;
+  --sel-bg:#1c3a5e;--sel-border:#2f81f7;
+  --header-bg:#1c2128;--cell-bg:#0d1117;--row-hover:#161b22;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg0);color:var(--text1);height:100dvh;display:flex;flex-direction:column;overflow:hidden;user-select:none}
+
+/* HEADER */
+.header{background:var(--bg1);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{color:var(--accent);display:flex;align-items:center}
+.brand-name{font-size:1.05rem;font-weight:700;color:var(--text0);letter-spacing:-.3px}
+.brand-name em{color:var(--accent);font-style:normal}
+.sel-badge{font-size:.75rem;color:var(--text2);padding:2px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;white-space:nowrap}
+.hdr-actions{display:flex;gap:5px;flex-wrap:wrap}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border:1px solid var(--border);background:var(--bg2);color:var(--text1);border-radius:6px;cursor:pointer;font-size:.82rem;font-family:inherit;font-weight:500;transition:background .12s,border-color .12s;white-space:nowrap;user-select:none}
+.btn:hover{background:var(--bg3);border-color:var(--border2)}
+.btn svg{flex-shrink:0}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.btn.primary:hover{background:var(--green-h)}
+.btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn.danger:hover{background:var(--red-h)}
+.btn.accent{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.accent:hover{background:var(--accent-h)}
+@media(max-width:600px){.btn-label{display:none}.btn{padding:7px 8px}}
+
+/* FORMULA BAR */
+.fbar{background:var(--bg1);border-bottom:1px solid var(--border);padding:4px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.name-box{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:3px 8px;min-width:64px;text-align:center;font-size:.8rem;font-family:'Consolas','Courier New',monospace;color:var(--accent);font-weight:700}
+.fbar-sep{width:1px;height:18px;background:var(--border)}
+.fx-label{color:var(--accent);font-style:italic;font-size:.85rem;font-family:Georgia,serif;flex-shrink:0}
+.fbar-val{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:3px 9px;font-size:.82rem;color:var(--text1);font-family:'Consolas','Courier New',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* TOOLBAR */
+.toolbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:5px 12px;display:flex;align-items:center;gap:3px;flex-wrap:wrap;flex-shrink:0}
+.tsep{width:1px;height:22px;background:var(--border);margin:0 5px}
+.cbx{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.81rem;color:var(--text1);user-select:none}
+.cbx input{width:14px;height:14px;cursor:pointer;accent-color:var(--accent)}
+
+/* MAIN */
+.main{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* SIDEBAR */
+.sidebar{width:152px;background:var(--bg1);border-right:1px solid var(--border);padding:10px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:5px}
+.stat{background:var(--bg2);border-radius:5px;padding:8px 10px}
+.stat-lbl{font-size:.68rem;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+.stat-val{font-size:.95rem;font-weight:700;color:var(--accent);font-family:'Consolas',monospace}
+@media(max-width:768px){.sidebar{display:none}}
+
+/* TABLE WRAPPER */
+.tw{flex:1;overflow:auto;position:relative;background:var(--cell-bg)}
+
+/* DROP OVERLAY */
+.drop-ov{position:absolute;inset:16px;background:rgba(13,17,23,.93);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:200;border:2px dashed var(--accent);border-radius:10px;pointer-events:none}
+.drop-ov.on{display:flex;pointer-events:all}
+.drop-txt{font-size:1.2rem;color:var(--accent);font-weight:500}
+
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:300px;color:var(--text2);text-align:center;padding:40px;gap:12px}
+.empty h2{color:var(--text1);font-size:1.1rem}
+.empty p{max-width:380px;font-size:.88rem;line-height:1.6}
+
+/* SELECTION OVERLAY */
+#sel-ov{position:absolute;display:none;pointer-events:none;border:2px solid var(--sel-border);z-index:40;border-radius:1px}
+.sh{position:absolute;width:11px;height:11px;background:var(--bg1);border:2px solid var(--sel-border);border-radius:50%;pointer-events:all;touch-action:none;cursor:default;z-index:50}
+.sh-tl{top:-6px;left:-6px}
+.sh-br{bottom:-6px;right:-6px}
+@media(pointer:coarse){.sh{width:18px;height:18px}.sh-tl{top:-9px;left:-9px}.sh-br{bottom:-9px;right:-9px}}
+
+/* CELL EDITOR */
+#ced{position:absolute;display:none;z-index:100;background:var(--bg1);border:2px solid var(--accent);outline:none;padding:5px 9px;font-size:.88rem;font-family:inherit;color:var(--text0);box-shadow:0 3px 16px rgba(0,0,0,.6);min-width:80px}
+
+/* DATA TABLE */
+.dt{border-collapse:collapse;font-size:.87rem}
+.dt td,.dt th{border:1px solid var(--border)}
+
+/* Corner cell */
+.corner{position:sticky;top:0;left:0;z-index:30;background:var(--header-bg);min-width:44px;width:44px;cursor:pointer;text-align:center;padding:8px 4px;border:1px solid var(--border)}
+.corner:hover{background:var(--bg3)}
+
+/* Column headers */
+.dt th.ch{background:var(--header-bg);position:sticky;top:0;z-index:20;padding:0;min-width:90px}
+.ch-in{display:flex;flex-direction:column}
+.ch-name-row{display:flex;align-items:center;padding:7px 10px 7px 10px;gap:6px;font-weight:600;color:var(--text1);cursor:default}
+.ch-name-row:hover{background:var(--bg3)}
+.ch-lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;min-width:0}
+.ch-lbl:hover{color:var(--accent-h)}
+.sort-btn{display:flex;align-items:center;color:var(--text2);padding:2px 3px;border-radius:3px;cursor:pointer;flex-shrink:0;transition:all .12s}
+.sort-btn:hover{background:var(--bg3);color:var(--text1)}
+.sort-btn.on{color:var(--accent)}
+.ch-filter{padding:0 6px 5px}
+.ch-filter input{width:100%;padding:3px 7px;background:var(--bg0);border:1px solid var(--border);border-radius:3px;color:var(--text1);font-size:.76rem;font-family:inherit;outline:none}
+.ch-filter input:focus{border-color:var(--accent)}
+.ch-filter input::placeholder{color:var(--text2)}
+
+/* Row headers */
+.dt td.rh{background:var(--header-bg);position:sticky;left:0;z-index:15;width:44px;min-width:44px;text-align:center;font-size:.74rem;color:var(--text2);padding:7px 4px;cursor:pointer;white-space:nowrap;user-select:none}
+.dt td.rh:hover{background:var(--bg3);color:var(--text1)}
+.dt td.rh.rsel{background:var(--sel-bg);color:var(--text0)}
+
+/* Data cells */
+.dt td.dc{background:var(--cell-bg);padding:0;position:relative;cursor:cell}
+.dt tr:hover td.dc{background:var(--row-hover)}
+.cv{padding:6px 9px;min-height:31px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;pointer-events:none;color:var(--text1);font-size:.87rem;line-height:1.4}
+td.dc.insel{background:var(--sel-bg) !important}
+td.dc.insel .cv{color:var(--text0)}
+td.dc.actcell{box-shadow:inset 0 0 0 2px var(--sel-border);background:var(--sel-bg) !important}
+td.dc.actcell .cv{color:var(--text0)}
+
+/* CONTEXT MENU */
+.cmenu{position:fixed;background:var(--bg1);border:1px solid var(--border2);border-radius:8px;padding:5px 0;min-width:215px;z-index:1000;box-shadow:0 8px 32px rgba(0,0,0,.65);display:none}
+.cmenu.on{display:block;animation:cmIn .1s ease-out}
+@keyframes cmIn{from{opacity:0;transform:scale(.95) translateY(-3px)}to{opacity:1;transform:none}}
+.ci{padding:8px 15px;cursor:pointer;font-size:.86rem;display:flex;align-items:center;gap:10px;color:var(--text1);transition:background .1s}
+.ci:hover{background:var(--accent);color:#fff}
+.ci svg{flex-shrink:0}
+.ci .cshort{margin-left:auto;font-size:.73rem;color:var(--text2);font-family:monospace}
+.ci:hover .cshort{color:rgba(255,255,255,.6)}
+.csep{height:1px;background:var(--border);margin:4px 0}
+
+/* MODAL */
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px}
+.moverlay.on{display:flex}
+.modal{background:var(--bg1);border:1px solid var(--border2);border-radius:12px;max-width:640px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 16px 64px rgba(0,0,0,.7)}
+.modal.wide{max-width:720px}
+.mhdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mtitle{font-size:1rem;font-weight:600;color:var(--text0)}
+.mclose{background:none;border:none;color:var(--text2);cursor:pointer;padding:4px;display:flex;border-radius:4px;transition:all .12s}
+.mclose:hover{background:var(--bg3);color:var(--text0)}
+.mbody{padding:16px 20px;flex:1;overflow-y:auto}
+.mfoot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
+.txprev{width:100%;min-height:200px;background:var(--bg0);border:1px solid var(--border);border-radius:6px;padding:11px;color:var(--text1);font-family:'Consolas','Courier New',monospace;font-size:.8rem;resize:vertical;white-space:pre;overflow:auto}
+
+/* HELP */
+.hsec{margin-bottom:16px}
+.hsec h4{color:var(--accent);font-size:.86rem;margin-bottom:7px;font-weight:600}
+.hsec ul{list-style:none;display:flex;flex-direction:column;gap:4px}
+.hsec li{font-size:.83rem;color:var(--text1);display:flex;align-items:baseline;gap:7px}
+.hsec li::before{content:'·';color:var(--text2)}
+kbd{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:1px 6px;font-family:monospace;font-size:.8em;box-shadow:0 2px 0 rgba(0,0,0,.3);white-space:nowrap;color:var(--text0)}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:11px 16px;display:flex;align-items:center;gap:9px;box-shadow:0 4px 20px rgba(0,0,0,.5);transform:translateY(70px);opacity:0;transition:all .22s ease;z-index:3000;font-size:.86rem;max-width:300px}
+.toast.show{transform:none;opacity:1}
+.toast.success .ti{color:#3fb950}
+.toast.error .ti{color:var(--red)}
+
+/* SCROLLBARS */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg0)}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text2)}
+::-webkit-scrollbar-corner{background:var(--bg0)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="brand">
+    <span class="brand-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+    </span>
+    <span class="brand-name">CSV<em>Editor</em></span>
+    <span class="sel-badge" id="selBadge">Sin selección</span>
+  </div>
+  <div class="hdr-actions">
+    <button class="btn" onclick="E.openFile()" title="Abrir archivo CSV">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <span class="btn-label">Abrir</span>
+    </button>
+    <button class="btn" onclick="E.pastePrompt()" title="Pegar datos (Ctrl+V)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      <span class="btn-label">Pegar</span>
+    </button>
+    <button class="btn primary" onclick="E.exportCSV()" title="Exportar CSV">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span class="btn-label">CSV</span>
+    </button>
+    <button class="btn primary" onclick="E.exportMd()" title="Exportar Markdown">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span class="btn-label">Markdown</span>
+    </button>
+    <button class="btn danger" onclick="E.clearAll()" title="Limpiar todo">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      <span class="btn-label">Limpiar</span>
+    </button>
+    <button class="btn" onclick="E.showHelp()" title="Ayuda">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span class="btn-label">Ayuda</span>
+    </button>
+  </div>
+</header>
+
+<!-- FORMULA BAR -->
+<div class="fbar">
+  <div class="name-box" id="nameBox">—</div>
+  <div class="fbar-sep"></div>
+  <div class="fx-label">fx</div>
+  <div class="fbar-val" id="fbarVal">—</div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <label class="cbx">
+    <input type="checkbox" id="hasHeader" checked onchange="E.toggleHeader()">
+    <span>Encabezado</span>
+  </label>
+  <div class="tsep"></div>
+  <button class="btn" onclick="E.addRow()" title="Insertar fila después de selección">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="14" width="18" height="7" rx="1"/><line x1="12" y1="4" x2="12" y2="11"/><line x1="8.5" y1="7.5" x2="15.5" y2="7.5"/></svg>
+    <span class="btn-label">Fila</span>
+  </button>
+  <button class="btn" onclick="E.addColumn()" title="Añadir columna al final">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="3" width="7" height="18" rx="1"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="7.5" y1="8.5" x2="7.5" y2="15.5"/></svg>
+    <span class="btn-label">Columna</span>
+  </button>
+  <button class="btn danger" onclick="E.deleteRows()" title="Eliminar filas seleccionadas">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+    <span class="btn-label">Filas</span>
+  </button>
+  <button class="btn danger" onclick="E.deleteCols()" title="Eliminar columnas seleccionadas">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><line x1="14" y1="9" x2="20" y2="15"/><line x1="20" y1="9" x2="14" y2="15"/></svg>
+    <span class="btn-label">Columnas</span>
+  </button>
+  <div class="tsep"></div>
+  <button class="btn" onclick="E.undo()" title="Deshacer (Ctrl+Z)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.01"/></svg>
+    <span class="btn-label">Deshacer</span>
+  </button>
+  <button class="btn" onclick="E.redo()" title="Rehacer (Ctrl+Y)">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-4.01"/></svg>
+    <span class="btn-label">Rehacer</span>
+  </button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <aside class="sidebar">
+    <div class="stat"><div class="stat-lbl">Filas</div><div class="stat-val" id="sRows">0</div></div>
+    <div class="stat"><div class="stat-lbl">Columnas</div><div class="stat-val" id="sCols">0</div></div>
+    <div class="stat"><div class="stat-lbl">Selección</div><div class="stat-val" id="sSel">0</div></div>
+    <div class="stat"><div class="stat-lbl">Suma</div><div class="stat-val" id="sSum">—</div></div>
+    <div class="stat"><div class="stat-lbl">Promedio</div><div class="stat-val" id="sAvg">—</div></div>
+    <div class="stat"><div class="stat-lbl">Mínimo</div><div class="stat-val" id="sMin">—</div></div>
+    <div class="stat"><div class="stat-lbl">Máximo</div><div class="stat-val" id="sMax">—</div></div>
+  </aside>
+
+  <div class="tw" id="tw">
+    <div class="drop-ov" id="dropOv">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--accent);opacity:.7"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <div class="drop-txt">Suelta el archivo aquí</div>
+    </div>
+    <div class="empty" id="empty">
+      <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=".8" style="opacity:.3"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+      <h2>Sin datos</h2>
+      <p>Pega datos desde Excel o cualquier tabla, abre un archivo CSV, o arrastra un fichero aquí.</p>
+      <button class="btn accent" onclick="E.pastePrompt()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Pegar datos
+      </button>
+    </div>
+    <!-- Selection overlay -->
+    <div id="sel-ov">
+      <div class="sh sh-tl" id="shTL"></div>
+      <div class="sh sh-br" id="shBR"></div>
+    </div>
+    <!-- Floating cell editor -->
+    <input id="ced" type="text" autocomplete="off" autocorrect="off" spellcheck="false">
+    <!-- Table -->
+    <table class="dt" id="dt" style="display:none">
+      <thead id="dtHead"></thead>
+      <tbody id="dtBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="cmenu" id="cmenu">
+  <div class="ci" onclick="E.copy('tab')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    Copiar<span class="cshort">Ctrl+C</span>
+  </div>
+  <div class="ci" onclick="E.copy('csv')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+    Copiar como CSV
+  </div>
+  <div class="ci" onclick="E.copy('md')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Copiar como Markdown
+  </div>
+  <div class="csep"></div>
+  <div class="ci" onclick="E.pastePrompt()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+    Pegar<span class="cshort">Ctrl+V</span>
+  </div>
+  <div class="csep"></div>
+  <div class="ci" id="cmInsert1" onclick="E.ctxInsertBefore()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Insertar fila arriba
+  </div>
+  <div class="ci" id="cmInsert2" onclick="E.ctxInsertAfter()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Insertar fila abajo
+  </div>
+  <div class="csep"></div>
+  <div class="ci" onclick="E.clearCells()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    Vaciar contenido<span class="cshort">Del</span>
+  </div>
+  <div class="ci" onclick="E.deleteRows()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+    Eliminar filas
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="moverlay" id="expModal">
+  <div class="modal">
+    <div class="mhdr">
+      <h3 class="mtitle" id="expTitle">Exportar</h3>
+      <button class="mclose" onclick="E.closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="mbody"><textarea class="txprev" id="expPrev" readonly></textarea></div>
+    <div class="mfoot">
+      <button class="btn" onclick="E.closeModal()">Cerrar</button>
+      <button class="btn" onclick="E.copyExport()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copiar
+      </button>
+      <button class="btn primary" onclick="E.downloadExport()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div class="moverlay" id="helpModal">
+  <div class="modal wide">
+    <div class="mhdr">
+      <h3 class="mtitle">Ayuda — Atajos y funciones</h3>
+      <button class="mclose" onclick="E.closeHelp()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="mbody">
+      <div class="hsec"><h4>Edición de celdas</h4><ul>
+        <li><kbd>F2</kbd> o doble clic/tap — entrar en modo edición</li>
+        <li><kbd>Escape</kbd> — cancelar edición sin guardar</li>
+        <li><kbd>Enter</kbd> — confirmar y bajar</li>
+        <li><kbd>Shift+Enter</kbd> — confirmar y subir</li>
+        <li><kbd>Tab</kbd> — confirmar y moverse a la derecha</li>
+        <li><kbd>Shift+Tab</kbd> — confirmar y moverse a la izquierda</li>
+        <li>Cualquier tecla — reemplaza el contenido de la celda activa</li>
+      </ul></div>
+      <div class="hsec"><h4>Navegación</h4><ul>
+        <li><kbd>↑ ↓ ← →</kbd> — mover celda activa</li>
+        <li><kbd>Ctrl+↑↓←→</kbd> — saltar al borde del bloque de datos</li>
+        <li><kbd>Home</kbd> — ir a la primera columna de la fila</li>
+        <li><kbd>Ctrl+Home</kbd> — ir a la celda A1</li>
+        <li><kbd>Ctrl+End</kbd> — ir a la última celda con datos</li>
+        <li><kbd>Page Up / Page Down</kbd> — desplazar vista</li>
+      </ul></div>
+      <div class="hsec"><h4>Selección</h4><ul>
+        <li><kbd>Shift+↑↓←→</kbd> — extender selección</li>
+        <li><kbd>Shift+Clic</kbd> — extender selección hasta el clic</li>
+        <li><kbd>Ctrl+A</kbd> — seleccionar todo</li>
+        <li>Clic en número de fila — seleccionar fila completa</li>
+        <li>Clic en nombre de columna — seleccionar columna completa</li>
+        <li>Arrastrar tiradores — redimensionar selección con ratón o dedo</li>
+        <li>Arrastrar sobre celdas — seleccionar rango</li>
+      </ul></div>
+      <div class="hsec"><h4>Acciones</h4><ul>
+        <li><kbd>Ctrl+C</kbd> — copiar selección (formato tabulado)</li>
+        <li><kbd>Ctrl+V</kbd> — pegar desde portapapeles</li>
+        <li><kbd>Delete</kbd> — vaciar celdas seleccionadas</li>
+        <li><kbd>Backspace</kbd> — vaciar celda activa y editar</li>
+        <li><kbd>Ctrl+Z</kbd> — deshacer</li>
+        <li><kbd>Ctrl+Y</kbd> o <kbd>Ctrl+Shift+Z</kbd> — rehacer</li>
+      </ul></div>
+      <div class="hsec"><h4>Ordenar y filtrar</h4><ul>
+        <li>Clic en el icono de flecha del encabezado — ordenar por columna</li>
+        <li>Campo de texto bajo el encabezado — filtrar por columna</li>
+        <li>Clic derecho — menú contextual con más opciones</li>
+      </ul></div>
+    </div>
+    <div class="mfoot"><button class="btn primary" onclick="E.closeHelp()">Entendido</button></div>
+  </div>
+</div>
+
+
+<!-- PASTE MODAL -->
+<div class="moverlay" id="pasteModal">
+  <div class="modal">
+    <div class="mhdr">
+      <h3 class="mtitle">Pegar datos</h3>
+      <button class="mclose" onclick="E.closePasteModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="mbody">
+      <p style="font-size:.85rem;color:var(--text2);margin-bottom:10px">Pega aquí tus datos (desde Excel, Calc, CSV…) y pulsa <strong style="color:var(--text1)">Importar</strong>.</p>
+      <textarea class="txprev" id="pasteArea" placeholder="Pega aquí con Ctrl+V o pulsación larga…" style="min-height:220px;resize:vertical"></textarea>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="E.closePasteModal()">Cancelar</button>
+      <button class="btn primary" onclick="E.confirmPaste()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        Importar
+      </button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileIn" accept=".csv,.txt,.tsv" style="display:none" onchange="E.handleFile(event)">
+
+<div class="toast" id="toast">
+  <span class="ti" id="toastIcon">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  </span>
+  <span id="toastMsg">OK</span>
+</div>
+
+<script>
+'use strict';
+// =====================================================
+// CSV EDITOR — complete rewrite with Excel behaviours
+// =====================================================
+class CSVEditor {
+  constructor() {
+    this.data = [];
+    this.hasHeader = true;
+    this.filters = {};
+    this.sortCol = -1;
+    this.sortDir = 'asc';
+    this.hist = [];
+    this.hIdx = -1;
+    this.maxHist = 100;
+    // Selection: anchor + active define the range
+    this.anchor = null;   // {r,c}
+    this.active = null;   // {r,c}
+    // Editing
+    this.editing = null;  // {r,c}
+    // Export
+    this.expContent = '';
+    this.expType = '';
+    // Mouse drag state
+    this.mdown = false;
+    this.mstart = null;
+    // Handle drag
+    this.hdrag = null;    // 'tl'|'br'
+    this.hfixed = null;   // fixed corner when dragging handle
+    // Touch double-tap
+    this.lastTap = 0;
+    this.lastTapRC = null;
+    // Toast timer
+    this._tt = null;
+    this.init();
+  }
+
+  // ---- INIT ----
+  init() {
+    this.bindEvents();
+    this.loadSample();
+  }
+
+  loadSample() {
+    this.data = [
+      ['Nombre','Edad','Ciudad','Salario'],
+      ['Juan Pérez','28','Madrid','35000'],
+      ['María García','34','Barcelona','42000'],
+      ['Carlos López','45','Valencia','55000'],
+      ['Ana Martínez','31','Sevilla','38000']
+    ];
+    this.saveState();
+    this.render();
+  }
+
+  // ---- HISTORY ----
+  saveState() {
+    if (this.hIdx < this.hist.length - 1) this.hist = this.hist.slice(0, this.hIdx + 1);
+    this.hist.push({ data: JSON.parse(JSON.stringify(this.data)), hdr: this.hasHeader });
+    if (this.hist.length > this.maxHist) this.hist.shift(); else this.hIdx++;
+    this.updStats();
+  }
+
+  undo() {
+    if (this.hIdx > 0) {
+      this.hIdx--;
+      const s = this.hist[this.hIdx];
+      this.data = JSON.parse(JSON.stringify(s.data));
+      this.hasHeader = s.hdr;
+      document.getElementById('hasHeader').checked = this.hasHeader;
+      this.clearSel(); this.render(); this.toast('Deshacer', 'success');
+    }
+  }
+
+  redo() {
+    if (this.hIdx < this.hist.length - 1) {
+      this.hIdx++;
+      const s = this.hist[this.hIdx];
+      this.data = JSON.parse(JSON.stringify(s.data));
+      this.hasHeader = s.hdr;
+      document.getElementById('hasHeader').checked = this.hasHeader;
+      this.clearSel(); this.render(); this.toast('Rehacer', 'success');
+    }
+  }
+
+  // ---- RENDER ----
+  render() {
+    if (this.editing) this.commitEdit();
+    const empty = this.data.length === 0;
+    document.getElementById('empty').style.display = empty ? 'flex' : 'none';
+    document.getElementById('dt').style.display = empty ? 'none' : 'table';
+    if (!empty) { this.renderHead(); this.renderBody(); }
+    this.updStats();
+    this.updSelInfo();
+    this.updOverlay();
+  }
+
+  renderHead() {
+    const thead = document.getElementById('dtHead');
+    thead.innerHTML = '';
+    const tr = document.createElement('tr');
+
+    // Corner
+    const corner = document.createElement('th');
+    corner.className = 'corner';
+    corner.title = 'Seleccionar todo (Ctrl+A)';
+    corner.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="opacity:.35;display:block;margin:auto"><rect x="2" y="2" width="8" height="8"/><rect x="14" y="2" width="8" height="8"/><rect x="2" y="14" width="8" height="8"/><rect x="14" y="14" width="8" height="8"/></svg>`;
+    corner.onclick = () => this.selAll();
+    tr.appendChild(corner);
+
+    const nCols = this.data[0]?.length || 0;
+    for (let c = 0; c < nCols; c++) {
+      const th = document.createElement('th');
+      th.className = 'ch';
+      th.dataset.col = c;
+
+      const label = this.hasHeader ? (this.data[0][c] || `Col ${c+1}`) : this.colLetter(c);
+      const isSorted = this.sortCol === c;
+      const sortSvg = isSorted
+        ? (this.sortDir === 'asc'
+            ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>`
+            : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>`)
+        : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg>`;
+
+      th.innerHTML = `<div class="ch-in">
+        <div class="ch-name-row">
+          <span class="ch-lbl" data-selcol="${c}" title="Clic: seleccionar columna">${this.esc(label)}</span>
+          <span class="sort-btn${isSorted?' on':''}" data-sortcol="${c}" title="Ordenar">${sortSvg}</span>
+        </div>
+        <div class="ch-filter"><input type="text" placeholder="Filtrar…" value="${this.filters[c]||''}" data-fcol="${c}"></div>
+      </div>`;
+
+      th.querySelector('.ch-lbl').addEventListener('mousedown', e => {
+        e.preventDefault(); e.stopPropagation();
+        this.selCol(c, e.shiftKey);
+      });
+      th.querySelector('.sort-btn').addEventListener('mousedown', e => {
+        e.preventDefault(); e.stopPropagation();
+        this.sortByCol(c);
+      });
+      th.querySelector('input[data-fcol]').addEventListener('input', e => {
+        const fc = parseInt(e.target.dataset.fcol);
+        e.target.value ? (this.filters[fc] = e.target.value) : delete this.filters[fc];
+        this.renderBody();
+      });
+
+      tr.appendChild(th);
+    }
+    thead.appendChild(tr);
+  }
+
+  renderBody() {
+    const tbody = document.getElementById('dtBody');
+    tbody.innerHTML = '';
+    let rows = this.filteredData();
+    if (this.sortCol >= 0) rows = this.sortedData(rows);
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const ri = this.data.indexOf(row);
+      if (this.hasHeader && ri === 0) continue;
+
+      const tr = document.createElement('tr');
+
+      // Row header
+      const rh = document.createElement('td');
+      rh.className = 'rh';
+      rh.dataset.ri = ri;
+      rh.textContent = this.hasHeader ? ri : ri + 1;
+      rh.addEventListener('mousedown', e => { e.preventDefault(); this.selRow(ri, e.shiftKey); });
+      tr.appendChild(rh);
+
+      // Data cells
+      for (let c = 0; c < row.length; c++) {
+        const td = document.createElement('td');
+        td.className = 'dc';
+        td.dataset.r = ri;
+        td.dataset.c = c;
+        const cv = document.createElement('div');
+        cv.className = 'cv';
+        cv.textContent = row[c] || '';
+        td.appendChild(cv);
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    this.applySelStyle();
+  }
+
+  filteredData() {
+    return this.data.filter((row, idx) => {
+      if (this.hasHeader && idx === 0) return true;
+      for (const col in this.filters) {
+        const f = this.filters[col].toLowerCase();
+        if (f && !(row[col] || '').toLowerCase().includes(f)) return false;
+      }
+      return true;
+    });
+  }
+
+  sortedData(rows) {
+    return [...rows].sort((a, b) => {
+      if (this.hasHeader) {
+        if (this.data.indexOf(a) === 0) return -1;
+        if (this.data.indexOf(b) === 0) return 1;
+      }
+      let va = a[this.sortCol] || '', vb = b[this.sortCol] || '';
+      const na = parseFloat(va.replace(/[,\s]/g,'')), nb = parseFloat(vb.replace(/[,\s]/g,''));
+      if (!isNaN(na) && !isNaN(nb)) return this.sortDir === 'asc' ? na-nb : nb-na;
+      va = va.toLowerCase(); vb = vb.toLowerCase();
+      return va < vb ? (this.sortDir==='asc'?-1:1) : va > vb ? (this.sortDir==='asc'?1:-1) : 0;
+    });
+  }
+
+  sortByCol(col) {
+    this.sortCol === col ? (this.sortDir = this.sortDir==='asc'?'desc':'asc') : (this.sortCol=col, this.sortDir='asc');
+    this.render();
+  }
+
+  // ---- SELECTION ----
+  range() {
+    if (!this.anchor || !this.active) return null;
+    return {
+      r0: Math.min(this.anchor.r, this.active.r),
+      r1: Math.max(this.anchor.r, this.active.r),
+      c0: Math.min(this.anchor.c, this.active.c),
+      c1: Math.max(this.anchor.c, this.active.c)
+    };
+  }
+
+  applySelStyle() {
+    document.querySelectorAll('td.dc.insel,td.dc.actcell').forEach(el => el.classList.remove('insel','actcell'));
+    document.querySelectorAll('td.rh.rsel').forEach(el => el.classList.remove('rsel'));
+    const rng = this.range();
+    if (!rng) return;
+    for (let r = rng.r0; r <= rng.r1; r++) {
+      for (let c = rng.c0; c <= rng.c1; c++) {
+        const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
+        if (td) {
+          td.classList.add('insel');
+          if (this.active && r === this.active.r && c === this.active.c) td.classList.add('actcell');
+        }
+      }
+      const rh = document.querySelector(`td.rh[data-ri="${r}"]`);
+      if (rh) rh.classList.add('rsel');
+    }
+  }
+
+  setSel(anchor, active, extend) {
+    if (extend && this.anchor) { this.active = active; }
+    else { this.anchor = anchor; this.active = active; }
+    this.applySelStyle();
+    this.updSelInfo();
+    this.updOverlay();
+    this.updFbar();
+  }
+
+  clearSel() {
+    this.anchor = null; this.active = null;
+    this.applySelStyle();
+    this.updSelInfo();
+    this.updOverlay();
+    this.updFbar();
+  }
+
+  selCell(r, c, extend) {
+    const sr = this.hasHeader ? 1 : 0;
+    const mr = this.data.length - 1;
+    const mc = (this.data[0]?.length || 1) - 1;
+    r = Math.max(sr, Math.min(mr, r));
+    c = Math.max(0, Math.min(mc, c));
+    this.setSel({r,c}, {r,c}, extend);
+    this.scrollTo(r, c);
+  }
+
+  selRow(ri, extend) {
+    const mc = (this.data[0]?.length || 1) - 1;
+    if (extend && this.anchor) {
+      this.active = {r: ri, c: mc};
+      if (this.anchor.c !== 0) this.anchor = {r: this.anchor.r, c: 0};
+    } else {
+      this.anchor = {r: ri, c: 0};
+      this.active = {r: ri, c: mc};
+    }
+    this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
+  }
+
+  selCol(ci, extend) {
+    const sr = this.hasHeader ? 1 : 0;
+    const mr = this.data.length - 1;
+    if (extend && this.anchor) {
+      this.active = {r: mr, c: ci};
+    } else {
+      this.anchor = {r: sr, c: ci};
+      this.active = {r: mr, c: ci};
+    }
+    this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
+  }
+
+  selAll() {
+    const sr = this.hasHeader ? 1 : 0;
+    this.anchor = {r: sr, c: 0};
+    this.active = {r: this.data.length-1, c: (this.data[0]?.length||1)-1};
+    this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
+  }
+
+  moveActive(dr, dc, extend, jump) {
+    if (!this.active) { this.selCell(this.hasHeader?1:0, 0, false); return; }
+    let {r, c} = this.active;
+    const sr = this.hasHeader ? 1 : 0;
+    const mr = this.data.length - 1;
+    const mc = (this.data[0]?.length || 1) - 1;
+    if (jump) {
+      if (dr > 0) r = mr; else if (dr < 0) r = sr;
+      else if (dc > 0) c = mc; else if (dc < 0) c = 0;
+    } else {
+      r = Math.max(sr, Math.min(mr, r + dr));
+      c = Math.max(0, Math.min(mc, c + dc));
+    }
+    if (extend) {
+      this.active = {r, c};
+      this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
+    } else {
+      this.selCell(r, c, false);
+    }
+    this.scrollTo(r, c);
+  }
+
+  scrollTo(r, c) {
+    const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
+    if (td) td.scrollIntoView({block:'nearest', inline:'nearest'});
+  }
+
+  // ---- OVERLAY ----
+  updOverlay() {
+    const ov = document.getElementById('sel-ov');
+    const rng = this.range();
+    if (!rng) { ov.style.display = 'none'; return; }
+
+    const tl = document.querySelector(`td.dc[data-r="${rng.r0}"][data-c="${rng.c0}"]`);
+    const br = document.querySelector(`td.dc[data-r="${rng.r1}"][data-c="${rng.c1}"]`);
+    if (!tl || !br) { ov.style.display = 'none'; return; }
+
+    const tw = document.getElementById('tw');
+    const wr = tw.getBoundingClientRect();
+    const tr = tl.getBoundingClientRect();
+    const brr = br.getBoundingClientRect();
+
+    ov.style.display = 'block';
+    ov.style.left = (tr.left - wr.left + tw.scrollLeft) + 'px';
+    ov.style.top  = (tr.top  - wr.top  + tw.scrollTop)  + 'px';
+    ov.style.width  = (brr.right  - tr.left) + 'px';
+    ov.style.height = (brr.bottom - tr.top)  + 'px';
+  }
+
+  // ---- FORMULA BAR ----
+  updFbar() {
+    const nb = document.getElementById('nameBox');
+    const fv = document.getElementById('fbarVal');
+    if (!this.active) { nb.textContent = '—'; fv.textContent = '—'; return; }
+    const {r, c} = this.active;
+    nb.textContent = this.colLetter(c) + (r + 1);
+    fv.textContent = this.data[r]?.[c] ?? '';
+  }
+
+  // ---- STATS ----
+  updStats() {
+    document.getElementById('sRows').textContent = this.data.length;
+    document.getElementById('sCols').textContent = this.data[0]?.length || 0;
+    this.calcStats();
+  }
+
+  calcStats() {
+    const rng = this.range();
+    const ids = ['sSum','sAvg','sMin','sMax'];
+    if (!rng) { ids.forEach(id => document.getElementById(id).textContent = '—'); return; }
+    const nums = [];
+    for (let r = rng.r0; r <= rng.r1; r++)
+      for (let c = rng.c0; c <= rng.c1; c++) {
+        const v = parseFloat((this.data[r]?.[c]||'').replace(/[,\s]/g,''));
+        if (!isNaN(v)) nums.push(v);
+      }
+    if (!nums.length) { ids.forEach(id => document.getElementById(id).textContent = '—'); return; }
+    const sum = nums.reduce((a,b)=>a+b,0);
+    document.getElementById('sSum').textContent = this.fmt(sum);
+    document.getElementById('sAvg').textContent = this.fmt(sum/nums.length);
+    document.getElementById('sMin').textContent = this.fmt(Math.min(...nums));
+    document.getElementById('sMax').textContent = this.fmt(Math.max(...nums));
+  }
+
+  updSelInfo() {
+    const rng = this.range();
+    const badge = document.getElementById('selBadge');
+    const sel = document.getElementById('sSel');
+    if (!rng) { badge.textContent = 'Sin selección'; sel.textContent = '0'; return; }
+    const nr = rng.r1-rng.r0+1, nc = rng.c1-rng.c0+1, tot = nr*nc;
+    badge.textContent = tot===1 ? '1 celda' : `${nr}×${nc} = ${tot} celdas`;
+    sel.textContent = tot;
+    this.calcStats();
+  }
+
+  // ---- CELL EDITING ----
+  startEdit(r, c, initVal) {
+    if (this.editing) this.commitEdit();
+    const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
+    if (!td) return;
+    this.editing = {r, c};
+    const tw = document.getElementById('tw');
+    const wr = tw.getBoundingClientRect();
+    const tr2 = td.getBoundingClientRect();
+    const ced = document.getElementById('ced');
+    ced.style.display = 'block';
+    ced.style.left   = (tr2.left - wr.left + tw.scrollLeft) + 'px';
+    ced.style.top    = (tr2.top  - wr.top  + tw.scrollTop)  + 'px';
+    ced.style.width  = Math.max(tr2.width, 100) + 'px';
+    ced.style.height = tr2.height + 'px';
+    ced.value = initVal !== undefined ? initVal : (this.data[r]?.[c] || '');
+    ced.focus();
+    if (initVal !== undefined) {
+      ced.setSelectionRange(ced.value.length, ced.value.length);
+    } else {
+      ced.select();
+    }
+  }
+
+  commitEdit(dr, dc) {
+    if (!this.editing) return;
+    const {r, c} = this.editing;
+    const ced = document.getElementById('ced');
+    const val = ced.value;
+    if (this.data[r] && val !== this.data[r][c]) {
+      this.data[r][c] = val;
+      this.saveState();
+    }
+    // Update cell view
+    const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
+    if (td) td.querySelector('.cv').textContent = val;
+    // Update header if header row
+    if (this.hasHeader && r === 0) this.renderHead();
+    // Update formula bar
+    if (this.active && this.active.r === r && this.active.c === c)
+      document.getElementById('fbarVal').textContent = val;
+
+    ced.style.display = 'none';
+    this.editing = null;
+    if (dr !== undefined && dc !== undefined) this.moveActive(dr, dc, false, false);
+    this.updStats();
+  }
+
+  cancelEdit() {
+    if (!this.editing) return;
+    document.getElementById('ced').style.display = 'none';
+    this.editing = null;
+  }
+
+  // ---- EVENTS ----
+  bindEvents() {
+    const tw = document.getElementById('tw');
+
+    // Mouse on table wrapper
+    tw.addEventListener('mousedown', e => this.onMD(e));
+    tw.addEventListener('mousemove', e => this.onMM(e));
+    document.addEventListener('mouseup', () => { this.mdown = false; this.mstart = null; });
+
+    // Touch
+    tw.addEventListener('touchstart', e => this.onTS(e), {passive:false});
+    tw.addEventListener('touchmove',  e => this.onTM(e), {passive:false});
+    document.addEventListener('touchend', () => { /* handled in onTouchEnd via closure */ });
+
+    // Double-click
+    document.getElementById('dt').addEventListener('dblclick', e => {
+      const td = e.target.closest('td.dc');
+      if (td) this.startEdit(+td.dataset.r, +td.dataset.c);
+    });
+
+    // Right-click: do NOT clear selection
+    tw.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      const th = e.target.closest('th.ch');
+      this.menuColCtx = th ? parseInt(th.dataset.col) : null;
+      this.showMenu(e.clientX, e.clientY);
+    });
+
+    // Hide context menu on outside click
+    document.addEventListener('mousedown', e => {
+      if (!e.target.closest('#cmenu')) this.hideMenu();
+    });
+
+    // Cell editor blur
+    const ced = document.getElementById('ced');
+    ced.addEventListener('blur', () => { if (this.editing) this.commitEdit(); });
+
+    // Keyboard
+    document.addEventListener('keydown', e => this.onKey(e));
+
+    // Paste
+    document.addEventListener('paste', e => this.onPaste(e));
+
+    // Handle drag
+    this.bindHandles();
+
+    // Drag and drop files
+    this.bindDrop();
+
+    // Scroll: reposition overlay and cell editor
+    tw.addEventListener('scroll', () => {
+      this.updOverlay();
+      if (this.editing) this.repositionEditor();
+    });
+
+    // Window resize
+    window.addEventListener('resize', () => {
+      this.updOverlay();
+      if (this.editing) this.repositionEditor();
+    });
+  }
+
+  repositionEditor() {
+    const {r, c} = this.editing;
+    const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
+    if (!td) return;
+    const tw = document.getElementById('tw');
+    const wr = tw.getBoundingClientRect();
+    const tr = td.getBoundingClientRect();
+    const ced = document.getElementById('ced');
+    ced.style.left = (tr.left - wr.left + tw.scrollLeft) + 'px';
+    ced.style.top  = (tr.top  - wr.top  + tw.scrollTop)  + 'px';
+  }
+
+  onMD(e) {
+    if (e.button === 2) return; // right-click: do not alter selection
+    if (e.target.closest('.sh')) return; // handle drag handled separately
+    const td = e.target.closest('td.dc');
+    if (!td) return;
+    const r = +td.dataset.r, c = +td.dataset.c;
+    if (this.editing) this.commitEdit();
+    if (e.shiftKey && this.anchor) {
+      this.active = {r, c};
+      this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
+    } else {
+      this.selCell(r, c, false);
+    }
+    this.mdown = true;
+    this.mstart = {r, c};
+    e.preventDefault();
+  }
+
+  onMM(e) {
+    if (!this.mdown || !this.mstart) return;
+    const td = e.target.closest('td.dc');
+    if (!td) return;
+    const r = +td.dataset.r, c = +td.dataset.c;
+    if (!this.active || r !== this.active.r || c !== this.active.c) {
+      this.active = {r, c};
+      if (!this.anchor) this.anchor = this.mstart;
+      this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
+    }
+  }
+
+  onTS(e) {
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const td = el?.closest('td.dc');
+    if (!td) return;
+    const r = +td.dataset.r, c = +td.dataset.c;
+
+    // Double-tap detection
+    const now = Date.now();
+    if (now - this.lastTap < 350 && this.lastTapRC?.r === r && this.lastTapRC?.c === c) {
+      e.preventDefault();
+      if (this.editing) this.cancelEdit();
+      this.startEdit(r, c);
+      this.lastTap = 0; this.lastTapRC = null;
+      return;
+    }
+    this.lastTap = now; this.lastTapRC = {r, c};
+
+    if (this.editing) this.commitEdit();
+    this.selCell(r, c, false);
+    this.mdown = true; this.mstart = {r, c};
+    e.preventDefault();
+  }
+
+  onTM(e) {
+    if (!this.mdown) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const td = el?.closest('td.dc');
+    if (!td) return;
+    const r = +td.dataset.r, c = +td.dataset.c;
+    if (!this.active || r !== this.active.r || c !== this.active.c) {
+      this.active = {r, c};
+      if (!this.anchor) this.anchor = this.mstart;
+      this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
+    }
+    e.preventDefault();
+  }
+
+  onKey(e) {
+    const inCed = this.editing !== null;
+    const inInput = document.activeElement.tagName === 'INPUT' && document.activeElement.id !== 'ced';
+    if (inInput) return;
+
+    const ctrl = e.ctrlKey || e.metaKey;
+    const shift = e.shiftKey;
+
+    // In edit mode
+    if (inCed) {
+      switch (e.key) {
+        case 'Escape':    e.preventDefault(); this.cancelEdit(); break;
+        case 'Enter':     e.preventDefault(); this.commitEdit(shift?-1:1, 0); break;
+        case 'Tab':       e.preventDefault(); this.commitEdit(0, shift?-1:1); break;
+        case 'F2':        e.preventDefault(); document.getElementById('ced').select(); break;
+      }
+      return;
+    }
+
+    // Not in edit mode — Ctrl shortcuts
+    if (ctrl) {
+      switch (e.key.toLowerCase()) {
+        case 'z':  e.preventDefault(); shift ? this.redo() : this.undo(); return;
+        case 'y':  e.preventDefault(); this.redo(); return;
+        case 'c':  e.preventDefault(); this.copy('tab'); return;
+        case 'a':  e.preventDefault(); this.selAll(); return;
+        case 'home': e.preventDefault(); this.selCell(this.hasHeader?1:0, 0, shift); return;
+        case 'end': {
+          e.preventDefault();
+          const mr = this.data.length-1, mc = (this.data[0]?.length||1)-1;
+          if (shift && this.anchor) { this.active={r:mr,c:mc}; this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar(); this.scrollTo(mr,mc); }
+          else this.selCell(mr, mc, false);
+          return;
+        }
+        case 'arrowup':    e.preventDefault(); this.moveActive(-1,0,shift,true); return;
+        case 'arrowdown':  e.preventDefault(); this.moveActive(1,0,shift,true); return;
+        case 'arrowleft':  e.preventDefault(); this.moveActive(0,-1,shift,true); return;
+        case 'arrowright': e.preventDefault(); this.moveActive(0,1,shift,true); return;
+      }
+    }
+
+    switch (e.key) {
+      case 'ArrowUp':    e.preventDefault(); this.moveActive(-1,0,shift,false); break;
+      case 'ArrowDown':  e.preventDefault(); this.moveActive(1,0,shift,false); break;
+      case 'ArrowLeft':  e.preventDefault(); this.moveActive(0,-1,shift,false); break;
+      case 'ArrowRight': e.preventDefault(); this.moveActive(0,1,shift,false); break;
+      case 'Tab':        e.preventDefault(); this.moveActive(0,shift?-1:1,false,false); break;
+      case 'Enter':      e.preventDefault(); if (this.active) this.moveActive(shift?-1:1,0,false,false); break;
+      case 'F2':         e.preventDefault(); if (this.active) this.startEdit(this.active.r, this.active.c); break;
+      case 'Escape':     e.preventDefault(); this.clearSel(); break;
+      case 'Delete':     e.preventDefault(); this.clearCells(); break;
+      case 'Backspace':
+        if (this.active) {
+          e.preventDefault();
+          this.selCell(this.active.r, this.active.c, false);
+          this.startEdit(this.active.r, this.active.c, '');
+        }
+        break;
+      case 'Home':
+        e.preventDefault();
+        if (this.active) {
+          if (shift && this.anchor) {
+            this.active = {r:this.active.r, c:0};
+            this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
+          } else { this.selCell(this.active.r, 0, false); }
+        }
+        break;
+      case 'End': {
+        e.preventDefault();
+        const mc = (this.data[0]?.length||1)-1;
+        if (this.active) {
+          if (shift && this.anchor) {
+            this.active = {r:this.active.r, c:mc};
+            this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
+          } else { this.selCell(this.active.r, mc, false); }
+        }
+        break;
+      }
+      case 'PageUp':   e.preventDefault(); document.getElementById('tw').scrollTop -= 280; break;
+      case 'PageDown': e.preventDefault(); document.getElementById('tw').scrollTop += 280; break;
+      default:
+        // Printable key starts editing
+        if (this.active && e.key.length === 1 && !ctrl)
+          this.startEdit(this.active.r, this.active.c, e.key);
+    }
+  }
+
+  // ---- HANDLE DRAG ----
+  bindHandles() {
+    const tl = document.getElementById('shTL');
+    const br = document.getElementById('shBR');
+
+    const startDrag = (which, e) => {
+      e.preventDefault(); e.stopPropagation();
+      const rng = this.range();
+      if (!rng) return;
+      this.hdrag = which;
+      this.hfixed = which === 'tl' ? {r:rng.r1,c:rng.c1} : {r:rng.r0,c:rng.c0};
+    };
+
+    const moveDrag = (clientX, clientY) => {
+      if (!this.hdrag) return;
+      const el = document.elementFromPoint(clientX, clientY);
+      const td = el?.closest('td.dc');
+      if (!td) return;
+      this.setSel(this.hfixed, {r:+td.dataset.r, c:+td.dataset.c}, false);
+    };
+
+    tl.addEventListener('mousedown', e => startDrag('tl', e));
+    br.addEventListener('mousedown', e => startDrag('br', e));
+    tl.addEventListener('touchstart', e => startDrag('tl', e), {passive:false});
+    br.addEventListener('touchstart', e => startDrag('br', e), {passive:false});
+
+    document.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
+    document.addEventListener('touchmove', e => {
+      if (!this.hdrag) return;
+      e.preventDefault();
+      moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }, {passive:false});
+
+    const endDrag = () => { this.hdrag = null; this.hfixed = null; };
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchend', endDrag);
+  }
+
+  // ---- DRAG AND DROP ----
+  bindDrop() {
+    const tw = document.getElementById('tw');
+    const ov = document.getElementById('dropOv');
+    ['dragenter','dragover','dragleave','drop'].forEach(ev =>
+      tw.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
+    tw.addEventListener('dragenter', () => ov.classList.add('on'));
+    ov.addEventListener('dragleave', e => { if (e.target===ov) ov.classList.remove('on'); });
+    tw.addEventListener('drop', e => {
+      ov.classList.remove('on');
+      const f = e.dataTransfer.files[0];
+      if (f) this.readFile(f);
+    });
+  }
+
+  // ---- ROW / COL OPERATIONS ----
+  addRow() {
+    const nc = this.data[0]?.length || 3;
+    const rng = this.range();
+    const at = rng ? rng.r1 + 1 : this.data.length;
+    this.data.splice(at, 0, new Array(nc).fill(''));
+    this.saveState(); this.render(); this.toast('Fila añadida', 'success');
+  }
+
+  addColumn() {
+    this.data.forEach(row => row.push(''));
+    this.saveState(); this.render(); this.toast('Columna añadida', 'success');
+  }
+
+  deleteRows() {
+    const rng = this.range();
+    if (!rng) { this.toast('Sin selección', 'error'); return; }
+    const rows = [];
+    for (let i = rng.r0; i <= rng.r1; i++) rows.push(i);
+    const del = rows.filter(i => !(this.hasHeader && i===0));
+    if (!del.length) { this.toast('No se puede eliminar el encabezado', 'error'); return; }
+    del.sort((a,b)=>b-a).forEach(i => this.data.splice(i,1));
+    this.clearSel(); this.saveState(); this.render();
+    this.toast(`${del.length} fila(s) eliminada(s)`, 'success');
+    this.hideMenu();
+  }
+
+  deleteCols() {
+    const rng = this.range();
+    if (!rng) { this.toast('Sin selección', 'error'); return; }
+    const cols = [];
+    for (let c = rng.c0; c <= rng.c1; c++) cols.push(c);
+    cols.sort((a,b)=>b-a).forEach(c => this.data.forEach(row => row.splice(c,1)));
+    this.clearSel(); this.saveState(); this.render();
+    this.toast(`${cols.length} columna(s) eliminada(s)`, 'success');
+  }
+
+  clearCells() {
+    const rng = this.range();
+    if (!rng) return;
+    for (let r = rng.r0; r <= rng.r1; r++)
+      for (let c = rng.c0; c <= rng.c1; c++) {
+        if (this.data[r]) this.data[r][c] = '';
+        const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
+        if (td) td.querySelector('.cv').textContent = '';
+      }
+    this.saveState(); this.hideMenu(); this.toast('Contenido vaciado', 'success');
+  }
+
+  ctxInsertBefore() {
+    this.menuColCtx !== null ? this.insertColBefore(this.menuColCtx) : this.insertBefore();
+  }
+
+  ctxInsertAfter() {
+    this.menuColCtx !== null ? this.insertColAfter(this.menuColCtx) : this.insertAfter();
+  }
+
+  insertColBefore(col) {
+    this.data.forEach(row => row.splice(col, 0, ''));
+    this.saveState(); this.render(); this.hideMenu(); this.toast('Columna insertada a la izquierda', 'success');
+  }
+
+  insertColAfter(col) {
+    this.data.forEach(row => row.splice(col + 1, 0, ''));
+    this.saveState(); this.render(); this.hideMenu(); this.toast('Columna insertada a la derecha', 'success');
+  }
+
+  insertBefore() {
+    const rng = this.range();
+    if (!rng) { this.toast('Sin selección', 'error'); return; }
+    const nc = this.data[0]?.length || 3;
+    this.data.splice(rng.r0, 0, new Array(nc).fill(''));
+    this.saveState(); this.render(); this.hideMenu(); this.toast('Fila insertada arriba', 'success');
+  }
+
+  insertAfter() {
+    const rng = this.range();
+    if (!rng) { this.toast('Sin selección', 'error'); return; }
+    const nc = this.data[0]?.length || 3;
+    this.data.splice(rng.r1+1, 0, new Array(nc).fill(''));
+    this.saveState(); this.render(); this.hideMenu(); this.toast('Fila insertada abajo', 'success');
+  }
+
+  clearAll() {
+    if (!confirm('¿Eliminar todos los datos?')) return;
+    this.data = [['','',''],['','',''],['','','']]; this.filters = {}; this.sortCol = -1;
+    this.clearSel(); this.saveState(); this.render(); this.toast('Datos eliminados', 'success');
+  }
+
+  toggleHeader() {
+    this.hasHeader = document.getElementById('hasHeader').checked;
+    this.saveState(); this.render();
+  }
+
+  // ---- COPY / PASTE ----
+  getSelData() {
+    const rng = this.range();
+    if (!rng) return [];
+    const out = [];
+    for (let r = rng.r0; r <= rng.r1; r++) {
+      const row = [];
+      for (let c = rng.c0; c <= rng.c1; c++) row.push(this.data[r]?.[c] || '');
+      out.push(row);
+    }
+    return out;
+  }
+
+  copy(fmt) {
+    const d = this.getSelData();
+    if (!d.length) { this.toast('Sin selección', 'error'); return; }
+    let text;
+    if (fmt === 'tab') {
+      text = d.map(r => r.join('\t')).join('\n');
+    } else if (fmt === 'csv') {
+      text = d.map(r => r.map(c => {
+        const s = String(c).replace(/"/g,'""');
+        return (s.includes(',')||s.includes('"')||s.includes('\n')) ? `"${s}"` : s;
+      }).join(',')).join('\n');
+    } else {
+      text = '';
+      d.forEach((row,i) => {
+        text += '| ' + row.map(c=>c||' ').join(' | ') + ' |\n';
+        if (i===0) text += '| ' + row.map(()=>'---').join(' | ') + ' |\n';
+      });
+    }
+    navigator.clipboard.writeText(text).then(() => this.toast('Copiado', 'success'));
+    this.hideMenu();
+  }
+
+  pastePrompt() {
+    if (!navigator.clipboard?.readText) { this.openPasteModal(); return; }
+    navigator.clipboard.readText()
+      .then(text => {
+        if (!text.trim()) { this.toast('Portapapeles vacío', 'error'); return; }
+        this.parseInsert(text);
+      })
+      .catch(() => this.openPasteModal());
+  }
+
+  openPasteModal() {
+    const area = document.getElementById('pasteArea');
+    area.value = '';
+    document.getElementById('pasteModal').classList.add('on');
+    setTimeout(() => area.focus(), 80);
+  }
+
+  closePasteModal() {
+    document.getElementById('pasteModal').classList.remove('on');
+  }
+
+  confirmPaste() {
+    const text = document.getElementById('pasteArea').value;
+    if (!text.trim()) { this.toast('Nada que importar', 'error'); return; }
+    this.closePasteModal();
+    this.parseInsert(text);
+  }
+
+  onPaste(e) {
+    if (document.activeElement.id === 'ced') return;
+    if (document.activeElement.id === 'pasteArea') return;
+    const inInput = document.activeElement.tagName === 'INPUT' && document.activeElement.id !== 'ced';
+    if (inInput) return;
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('Text');
+    if (!text.trim()) { this.toast('Portapapeles vacío', 'error'); return; }
+    this.parseInsert(text);
+  }
+
+  parseInsert(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (!lines.length) return;
+    let delim = '\t';
+    if (lines[0].includes(',') && !lines[0].includes('\t')) delim = ',';
+    else if (lines[0].includes(';') && !lines[0].includes('\t')) delim = ';';
+    const parsed = lines.map(l => this.parseLine(l, delim));
+
+    if (this.active && this.data.length > 0) {
+      const sr = this.active.r, sc = this.active.c;
+      while (this.data.length < sr + parsed.length)
+        this.data.push(new Array(this.data[0]?.length||0).fill(''));
+      const maxC = Math.max(...parsed.map(r=>r.length));
+      this.data.forEach(row => { while(row.length < sc+maxC) row.push(''); });
+      for (let i=0; i<parsed.length; i++)
+        for (let j=0; j<parsed[i].length; j++)
+          this.data[sr+i][sc+j] = parsed[i][j];
+    } else {
+      this.data = parsed;
+    }
+    this.saveState(); this.render(); this.toast(`${parsed.length} filas pegadas`, 'success');
+  }
+
+  parseLine(line, delim) {
+    const res=[]; let cur='', inQ=false;
+    for (let i=0; i<line.length; i++) {
+      const ch=line[i], nx=line[i+1];
+      if (ch==='"') { if(inQ&&nx==='"'){cur+='"';i++;}else inQ=!inQ; }
+      else if (ch===delim&&!inQ) { res.push(cur.trim()); cur=''; }
+      else cur+=ch;
+    }
+    res.push(cur.trim());
+    return res;
+  }
+
+  // ---- FILE I/O ----
+  openFile() { document.getElementById('fileIn').click(); }
+
+  handleFile(e) {
+    const f = e.target.files[0];
+    if (f) this.readFile(f);
+    e.target.value = '';
+  }
+
+  readFile(f) {
+    const reader = new FileReader();
+    reader.onload = e => { this.parseInsert(e.target.result); this.toast(`"${f.name}" cargado`, 'success'); };
+    reader.readAsText(f);
+  }
+
+  // ---- EXPORT ----
+  exportCSV() {
+    this.expContent = this.toCSV(); this.expType = 'csv';
+    document.getElementById('expTitle').textContent = 'Exportar como CSV';
+    document.getElementById('expPrev').value = this.expContent;
+    document.getElementById('expModal').classList.add('on');
+  }
+
+  exportMd() {
+    this.expContent = this.toMd(); this.expType = 'md';
+    document.getElementById('expTitle').textContent = 'Exportar como Markdown';
+    document.getElementById('expPrev').value = this.expContent;
+    document.getElementById('expModal').classList.add('on');
+  }
+
+  toCSV() {
+    return this.data.map(row => row.map(c => {
+      const s = String(c).replace(/"/g,'""');
+      return (s.includes(',')||s.includes('"')||s.includes('\n')) ? `"${s}"` : s;
+    }).join(',')).join('\n');
+  }
+
+  toMd() {
+    if (!this.data.length) return '';
+    let r = '| '+this.data[0].map(c=>c||' ').join(' | ')+' |\n';
+    r += '| '+this.data[0].map(()=>'---').join(' | ')+' |\n';
+    const s = this.hasHeader ? 1 : 0;
+    for (let i=s; i<this.data.length; i++)
+      r += '| '+this.data[i].map(c=>c||' ').join(' | ')+' |\n';
+    return r;
+  }
+
+  closeModal() { document.getElementById('expModal').classList.remove('on'); }
+
+  copyExport() {
+    navigator.clipboard.writeText(this.expContent).then(() => this.toast('Copiado', 'success'));
+  }
+
+  downloadExport() {
+    const blob = new Blob([this.expContent], {type: this.expType==='csv'?'text/csv':'text/markdown'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download=`datos.${this.expType}`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    this.toast('Archivo descargado', 'success');
+  }
+
+  // ---- CONTEXT MENU ----
+  showMenu(x, y) {
+    const m = document.getElementById('cmenu');
+    const isCol = this.menuColCtx !== null;
+    const svgPlus = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+    document.getElementById('cmInsert1').innerHTML = svgPlus + (isCol ? ' Insertar columna a la izquierda' : ' Insertar fila arriba');
+    document.getElementById('cmInsert2').innerHTML = svgPlus + (isCol ? ' Insertar columna a la derecha' : ' Insertar fila abajo');
+    m.style.left='0'; m.style.top='0';
+    m.classList.add('on');
+    const w=m.offsetWidth, h=m.offsetHeight;
+    const vw=window.innerWidth, vh=window.innerHeight;
+    m.style.left = Math.max(4,Math.min(x,vw-w-4)) + 'px';
+    m.style.top  = Math.max(4,Math.min(y,vh-h-4)) + 'px';
+  }
+
+  hideMenu() { document.getElementById('cmenu').classList.remove('on'); }
+
+  // ---- HELP ----
+  showHelp() { document.getElementById('helpModal').classList.add('on'); }
+  closeHelp() { document.getElementById('helpModal').classList.remove('on'); }
+
+  // ---- UTILS ----
+  esc(t) { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+
+  colLetter(col) {
+    let r=''; col++;
+    while(col>0){ col--; r=String.fromCharCode(65+(col%26))+r; col=Math.floor(col/26); }
+    return r;
+  }
+
+  fmt(n) {
+    return Number.isInteger(n) ? n.toLocaleString() : n.toLocaleString(undefined,{maximumFractionDigits:2});
+  }
+
+  toast(msg, type='success') {
+    const t = document.getElementById('toast');
+    const ic = document.getElementById('toastIcon');
+    document.getElementById('toastMsg').textContent = msg;
+    ic.innerHTML = type==='success'
+      ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
+      : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+    t.className = `toast ${type} show`;
+    clearTimeout(this._tt);
+    this._tt = setTimeout(() => t.classList.remove('show'), 2800);
+  }
+}
+
+const E = new CSVEditor();
+</script>
+</body>
+</html>

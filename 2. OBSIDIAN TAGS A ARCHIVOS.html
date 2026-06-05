@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador VIBE CODING</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        h1 { margin-top: 0; font-size: 1.5rem; color: #0f172a; }
+        
+        .upload-area {
+            border: 2px dashed var(--border);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            background: #f8fafc;
+        }
+
+        input[type="file"] {
+            font-size: 1rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover { background-color: var(--primary-hover); }
+        button.secondary { background-color: #64748b; }
+        button.secondary:hover { background-color: #475569; }
+        
+        .file-list-container {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 1.5rem;
+            background: white;
+        }
+
+        .file-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .file-item:last-child { border-bottom: none; }
+        .file-item:hover { background-color: #f1f5f9; }
+        
+        .file-item input[type="checkbox"] {
+            width: 1.2rem;
+            height: 1.2rem;
+            cursor: pointer;
+        }
+
+        .file-item label {
+            flex: 1;
+            cursor: pointer;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .hidden { display: none; }
+        .empty-state { padding: 2rem; text-align: center; color: #64748b; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Generador de snippets basados en TAGS</h1>
+        <p>Selecciona un archivo de texto plano para procesar sus líneas.</p>
+        
+        <div class="upload-area">
+            <input type="file" id="fileInput" accept=".txt,.md,.csv,.log">
+        </div>
+
+        <div id="workspace" class="hidden">
+            <div class="controls">
+                <button class="secondary" id="btnSelectAll">Marcar Todos</button>
+                <button class="secondary" id="btnDeselectAll">Desmarcar Todos</button>
+                <button id="btnGenerateZip">Descargar ZIP Generado</button>
+            </div>
+
+            <div class="file-list-container" id="fileList">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        let fileDataList = [];
+
+        /* =========================================================
+           MiniZip: Creador nativo de archivos ZIP (Store Mode) 
+           Con soporte explícito para UTF-8 (Bit 11 activado)
+        ========================================================= */
+        class MiniZip {
+            constructor() { this.files = []; }
+            
+            addFile(name, content) {
+                const utf8 = new TextEncoder().encode(content);
+                this.files.push({ name, content: utf8 });
+            }
+            
+            generate() {
+                let zipData = [], centralDirectory = [], offset = 0;
+                const write32 = (val) => [val & 255, (val >> 8) & 255, (val >> 16) & 255, (val >> 24) & 255];
+                const write16 = (val) => [val & 255, (val >> 8) & 255];
+                
+                const utf8Flag = 2048; 
+                
+                for (let file of this.files) {
+                    let nameBuf = new TextEncoder().encode(file.name);
+                    let contentBuf = file.content;
+                    let crc = this.crc32(contentBuf);
+                    
+                    let localHeader = [...[80,75,3,4], ...write16(10), ...write16(utf8Flag), ...write16(0), ...write16(0), ...write16(0), ...write32(crc), ...write32(contentBuf.length), ...write32(contentBuf.length), ...write16(nameBuf.length), ...write16(0), ...nameBuf];
+                    zipData.push(new Uint8Array(localHeader));
+                    zipData.push(contentBuf);
+                    
+                    let centralHeader = [...[80,75,1,2], ...write16(10), ...write16(10), ...write16(utf8Flag), ...write16(0), ...write16(0), ...write16(0), ...write32(crc), ...write32(contentBuf.length), ...write32(contentBuf.length), ...write16(nameBuf.length), ...write16(0), ...write16(0), ...write16(0), ...write16(0), ...write32(0), ...write32(offset), ...nameBuf];
+                    centralDirectory.push(new Uint8Array(centralHeader));
+                    offset += localHeader.length + contentBuf.length;
+                }
+                
+                let cdSize = centralDirectory.reduce((acc, val) => acc + val.length, 0);
+                
+                let eocd = [...[80,75,5,6], ...write16(0), ...write16(0), ...write16(this.files.length), ...write16(this.files.length), ...write32(cdSize), ...write32(offset), ...write16(0)];
+                
+                let allParts = [...zipData, ...centralDirectory, new Uint8Array(eocd)];
+                let totalLength = allParts.reduce((acc, val) => acc + val.length, 0);
+                let finalZip = new Uint8Array(totalLength);
+                let pos = 0;
+                for (let part of allParts) {
+                    finalZip.set(part, pos);
+                    pos += part.length;
+                }
+                
+                return new Blob([finalZip], { type: 'application/zip' });
+            }
+            
+            crc32(data) {
+                let crc = 0xFFFFFFFF;
+                for (let i = 0; i < data.length; i++) {
+                    crc ^= data[i];
+                    for (let j = 0; j < 8; j++) {
+                        crc = (crc >>> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+                    }
+                }
+                return crc ^ 0xFFFFFFFF;
+            }
+        }
+
+        /* =========================================================
+           Lógica de la Aplicación (UI y Procesamiento)
+        ========================================================= */
+        const fileInput = document.getElementById('fileInput');
+        const workspace = document.getElementById('workspace');
+        const fileListContainer = document.getElementById('fileList');
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split(/\r?\n/);
+                fileDataList = [];
+                
+                lines.forEach((line, index) => {
+                    const sinEspacios = line.replace(/\s+/g, '');
+                    
+                    if (sinEspacios.length > 0) {
+                        fileDataList.push({
+                            id: `chk_${index}`,
+                            filename: `${sinEspacios}.md`,
+                            // Usamos \x20 que es el código hexadecimal del espacio.
+                            // Así ningún editor de texto borrará estos espacios accidentalmente.
+                            content: `${sinEspacios} |\x20\x20`,
+                            selected: true
+                        });
+                    }
+                });
+
+                renderList();
+                workspace.classList.remove('hidden');
+            };
+            reader.readAsText(file, 'UTF-8');
+        });
+
+        function renderList() {
+            if (fileDataList.length === 0) {
+                fileListContainer.innerHTML = '<div class="empty-state">El archivo está vacío o no contiene texto válido.</div>';
+                return;
+            }
+
+            fileListContainer.innerHTML = fileDataList.map(f => `
+                <div class="file-item">
+                    <input type="checkbox" id="${f.id}" ${f.selected ? 'checked' : ''} onchange="toggleSelection('${f.id}')">
+                    <label for="${f.id}">${f.filename}</label>
+                </div>
+            `).join('');
+        }
+
+        window.toggleSelection = function(id) {
+            const fileObj = fileDataList.find(f => f.id === id);
+            if (fileObj) fileObj.selected = !fileObj.selected;
+        }
+
+        document.getElementById('btnSelectAll').addEventListener('click', () => {
+            fileDataList.forEach(f => f.selected = true);
+            renderList();
+        });
+
+        document.getElementById('btnDeselectAll').addEventListener('click', () => {
+            fileDataList.forEach(f => f.selected = false);
+            renderList();
+        });
+
+        document.getElementById('btnGenerateZip').addEventListener('click', () => {
+            const archivosAMontar = fileDataList.filter(f => f.selected);
+            
+            if (archivosAMontar.length === 0) {
+                alert('No has seleccionado ningún archivo para generar.');
+                return;
+            }
+
+            const zip = new MiniZip();
+            archivosAMontar.forEach(f => {
+                zip.addFile(f.filename, f.content);
+            });
+
+            const blob = zip.generate();
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'archivos_md_generados.zip';
+            document.body.appendChild(link);
+            link.click();
+            
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>

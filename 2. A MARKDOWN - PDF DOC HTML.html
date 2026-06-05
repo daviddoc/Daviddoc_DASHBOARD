@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LocalDOCtoMarkdown</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2392278F' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'/><polyline points='14 2 14 8 20 8'/><path d='M8 13v-1h2v1'/><path d='M12 17v-4'/><path d='M12 13l-4 4'/><path d='M12 13l4 4'/><path d='M16 13v-1h-2v1'/></svg>">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gray: {
+              750: '#2d3748',
+              850: '#1a202c',
+              950: '#0b0f19',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Styles -->
+  <style>
+    html,
+    body,
+    #root {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* Custom Scrollbar Styles */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0d1117;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 5px;
+      border: 2px solid #0d1117;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #484f58;
+    }
+
+    .cursor-wait {
+      cursor: wait;
+    }
+
+    /* Animation Utilities */
+    .animate-in {
+      animation-duration: 150ms;
+      animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+      animation-fill-mode: both;
+    }
+
+    .fade-in {
+      animation-name: fadeIn;
+    }
+
+    .zoom-in-95 {
+      animation-name: zoomIn95;
+    }
+
+    .slide-in-from-top-2 {
+      animation-name: slideInFromTop2;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes zoomIn95 {
+      from {
+        transform: scale(0.95);
+      }
+
+      to {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes slideInFromTop2 {
+      from {
+        transform: translateY(-0.5rem);
+      }
+
+      to {
+        transform: translateY(0);
+      }
+    }
+  </style>
+
+  <!-- React & ReactDOM (cdnjs - often more reliable than unpkg in corp environments) -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin
+    src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+
+  <!-- Babel Standalone -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+  <!-- PDF.js -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    // Initialize PDF.js worker immediately
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+
+  <!-- Mammoth.js for Word -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+  <!-- Turndown for HTML -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/turndown/7.1.2/turndown.min.js"></script>
+  <script crossorigin src="https://unpkg.com/turndown-plugin-gfm/dist/turndown-plugin-gfm.js"></script>
+
+</head>
+
+<body class="bg-gray-950 text-gray-100 font-sans antialiased selection:bg-blue-500 selection:text-white">
+  <div id="root" class="h-full"></div>
+
+  <!-- Application Code -->
+  <script type="text/babel" data-presets="react,typescript">
+    // ----------------------------------------------------------------------
+    // GLOBALS & UTILS
+    // ----------------------------------------------------------------------
+    const { useState, useRef, useEffect, useMemo, useCallback } = React;
+
+    // --- HOOKS ---
+    function useOnClickOutside(ref, handler) {
+      useEffect(() => {
+        const listener = (event) => {
+          // Do nothing if clicking ref's element or descendent elements
+          if (!ref.current || ref.current.contains(event.target)) {
+            return;
+          }
+          handler(event);
+        };
+        document.addEventListener("mousedown", listener);
+        document.addEventListener("touchstart", listener);
+        return () => {
+          document.removeEventListener("mousedown", listener);
+          document.removeEventListener("touchstart", listener);
+        };
+      }, [ref, handler]);
+    }
+
+    // ----------------------------------------------------------------------
+    // ICONS (Inlined to prevent CDN loading errors)
+    // ----------------------------------------------------------------------
+    const Icon = ({ children, className, ...props }) => (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        {...props}
+      >
+        {children}
+      </svg>
+    );
+
+    const Upload = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" x2="12" y1="3" y2="15" /></Icon>;
+    const AlertTriangle = (props) => <Icon {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></Icon>;
+    const Loader2 = (props) => <Icon {...props}><path d="M21 12a9 9 0 1 1-6.219-8.56" /></Icon>;
+    const Info = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></Icon>;
+    const Plus = (props) => <Icon {...props}><path d="M5 12h14" /><path d="M12 5v14" /></Icon>;
+    const ChevronLeft = (props) => <Icon {...props}><path d="m15 18-6-6 6-6" /></Icon>;
+    const Copy = (props) => <Icon {...props}><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></Icon>;
+    const Download = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></Icon>;
+    const Trash2 = (props) => <Icon {...props}><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></Icon>;
+    const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>;
+    const Settings = (props) => <Icon {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></Icon>;
+    const X = (props) => <Icon {...props}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></Icon>;
+    const Wand2 = (props) => <Icon {...props}><path d="m19 2 2 2-2 2-2-2 2-2Z" /><path d="m5 17 2 2-2 2-2-2 2-2Z" /><path d="m9 9 11 11" /><path d="m15.5 12.5 1.41-1.42a2 2 0 1 0-2.82-2.82L12.5 9.5a2 2 0 1 0 0 2.82" /></Icon>;
+    const FileText = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><line x1="10" x2="8" y1="9" y2="9" /></Icon>;
+    const FileCode = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><path d="m9 13-2 2 2 2" /><path d="m15 13 2 2-2 2" /></Icon>;
+    const FileType = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><path d="M9 13v-1h6v1" /><path d="M12 12v6" /></Icon>;
+    const ChevronDown = (props) => <Icon {...props}><path d="m6 9 6 6 6-6" /></Icon>;
+    const Check = (props) => <Icon {...props}><polyline points="20 6 9 17 4 12" /></Icon>;
+
+    // Custom Brand Icon (Doc -> MD)
+    const LogoIcon = (props) => (
+      <Icon {...props}>
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+        <polyline points="14 2 14 8 20 8" />
+        {/* Markdown 'M' / Arrow Stylized */}
+        <polyline points="8 12 12 16 16 12" />
+        <line x1="12" x2="12" y1="11" y2="16" />
+      </Icon>
+    );
+
+    // ----------------------------------------------------------------------
+    // SERVICES
+    // ----------------------------------------------------------------------
+
+    // --- PDF Service ---
+    const parsePdfToRawData = async (file, onProgress) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            if (!window.pdfjsLib) throw new Error("PDF.js library not loaded");
+
+            const typedarray = new Uint8Array(e.target.result);
+            const pdf = await window.pdfjsLib.getDocument(typedarray).promise;
+
+            const allItems = [];
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+              if (onProgress) onProgress(i, pdf.numPages);
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+
+              // Map to our internal format
+              const pageItems = textContent.items.map((item) => ({
+                str: item.str,
+                x: item.transform[4],
+                y: item.transform[5],
+                h: Math.sqrt(item.transform[0] * item.transform[0] + item.transform[1] * item.transform[1]),
+                w: item.width,
+                hasEOL: item.hasEOL,
+                pageNum: i,
+              }));
+
+              // Process Page Items (Sort Y desc [Top to Bottom], X asc [Left to Right])
+              pageItems.sort((a, b) => {
+                const yDiff = b.y - a.y;
+                if (Math.abs(yDiff) > 6) return yDiff; // Increased tolerance from 4 to 6
+                return a.x - b.x;
+              });
+
+              allItems.push(...pageItems);
+              allItems.push({ str: "---PAGE_BREAK---", x: 0, y: -99999, h: 0, w: 0, hasEOL: true });
+            }
+
+            // --- HEADER/FOOTER DETECTION ---
+            // Split into per-page buckets, find texts that repeat in >50% of pages
+            // at the extreme top/bottom Y of each page. Filter them out.
+            if (pdf.numPages >= 3) {
+              const pages = [];
+              let currentPage = [];
+              for (const item of allItems) {
+                if (item.str === "---PAGE_BREAK---") {
+                  if (currentPage.length > 0) pages.push(currentPage);
+                  currentPage = [];
+                } else {
+                  currentPage.push(item);
+                }
+              }
+              if (currentPage.length > 0) pages.push(currentPage);
+
+              const textFreq = {};
+              for (const page of pages) {
+                if (page.length === 0) continue;
+                const ys = page.map(it => it.y);
+                const minY = Math.min(...ys);
+                const maxY = Math.max(...ys);
+                const pageHeight = maxY - minY || 1;
+                const threshold = pageHeight * 0.08; // top/bottom 8%
+                const zoneTexts = new Set();
+                for (const it of page) {
+                  if (it.y <= minY + threshold || it.y >= maxY - threshold) {
+                    const key = it.str.trim();
+                    if (key) zoneTexts.add(key);
+                  }
+                }
+                for (const key of zoneTexts) {
+                  textFreq[key] = (textFreq[key] || 0) + 1;
+                }
+              }
+              const minRepeat = Math.max(2, Math.floor(pdf.numPages * 0.5));
+              const repeatedTexts = new Set(
+                Object.entries(textFreq)
+                  .filter(([, count]) => count >= minRepeat)
+                  .map(([text]) => text)
+              );
+              if (repeatedTexts.size > 0) {
+                const filtered = allItems.filter(it => !repeatedTexts.has(it.str.trim()));
+                allItems.length = 0;
+                allItems.push(...filtered);
+              }
+            }
+
+            // Store per-page dimensions for the visual annotator
+            const pageDims = {};
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const vp = page.getViewport({ scale: 1 });
+              pageDims[i] = { width: vp.width, height: vp.height };
+            }
+
+            resolve({ items: allItems, pageCount: pdf.numPages, pageDims });
+          } catch (err) {
+            console.error("PDF Parsing Error", err);
+            reject(err);
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    };
+
+    // Shared helper: group flat item array into lines (arrays of items)
+    // Returns [{items, key}] where key = `p${pageNum}_y${Math.round(y)}`
+    const groupItemsIntoLines = (items) => {
+      const lines = [];
+      let currentLine = [];
+      let lastY = -1;
+      for (const item of items) {
+        if (item.str === "---PAGE_BREAK---") {
+          if (currentLine.length > 0) lines.push({ items: currentLine, key: `p${currentLine[0].pageNum}_y${Math.round(currentLine[0].y)}` });
+          currentLine = [];
+          lines.push({ items: [item], key: 'pagebreak' });
+          lastY = -1;
+          continue;
+        }
+        if (lastY !== -1 && Math.abs(lastY - item.y) > 6) {
+          if (currentLine.length > 0) lines.push({ items: currentLine, key: `p${currentLine[0].pageNum}_y${Math.round(currentLine[0].y)}` });
+          currentLine = [];
+        }
+        currentLine.push(item);
+        lastY = item.y;
+      }
+      if (currentLine.length > 0) lines.push({ items: currentLine, key: `p${currentLine[0].pageNum}_y${Math.round(currentLine[0].y)}` });
+      return lines;
+    };
+
+    const generateMarkdownFromPdf = (data, options, annotations = {}) => {
+      let fullMarkdown = "";
+
+      // --- MULTI-COLUMN DETECTION & REORDERING ---
+      // If a page has two distinct X clusters (left/right columns), reorder items
+      // so all left-column items come before right-column items on that page.
+      const reorderedItems = [];
+      let pageItems = [];
+      for (const item of data.items) {
+        if (item.str === "---PAGE_BREAK---") {
+          if (pageItems.length > 0) {
+            // Check for 2-column layout by clustering X positions
+            const xs = pageItems.map(it => it.x);
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const pageWidth = maxX - minX;
+            if (pageWidth > 200) {
+              // Build histogram of X positions in 10 buckets
+              const buckets = new Array(10).fill(0);
+              for (const x of xs) {
+                const idx = Math.min(9, Math.floor(((x - minX) / pageWidth) * 10));
+                buckets[idx]++;
+              }
+              // Find a valley in the middle 40-60% range suggesting two columns
+              const midStart = 3, midEnd = 6;
+              const midMin = Math.min(...buckets.slice(midStart, midEnd + 1));
+              const sideMax = Math.max(
+                Math.max(...buckets.slice(0, midStart)),
+                Math.max(...buckets.slice(midEnd + 1))
+              );
+              const hasValley = sideMax > 3 && midMin < sideMax * 0.3;
+              if (hasValley) {
+                // Find column split point
+                const valleyIdx = buckets.slice(midStart, midEnd + 1).indexOf(midMin) + midStart;
+                const splitX = minX + (valleyIdx / 10) * pageWidth + pageWidth * 0.05;
+                const leftCol = pageItems.filter(it => it.x < splitX).sort((a, b) => b.y - a.y || a.x - b.x);
+                const rightCol = pageItems.filter(it => it.x >= splitX).sort((a, b) => b.y - a.y || a.x - b.x);
+                reorderedItems.push(...leftCol, ...rightCol);
+              } else {
+                reorderedItems.push(...pageItems);
+              }
+            } else {
+              reorderedItems.push(...pageItems);
+            }
+            pageItems = [];
+          }
+          reorderedItems.push(item);
+        } else {
+          pageItems.push(item);
+        }
+      }
+      if (pageItems.length > 0) reorderedItems.push(...pageItems);
+
+      const items = reorderedItems;
+
+      let lastY = -1;
+
+      // Group items into lines
+      const lines = [];
+      let currentLine = [];
+      // tableBuffer stores { text, colXs } entries for validation
+      let tableBuffer = [];
+
+      // Helper: Process and flush table buffer
+      const flushTableBuffer = () => {
+        if (tableBuffer.length === 0) return "";
+
+        // RULE: Single row is NOT a table
+        if (tableBuffer.length < 2) {
+          return tableBuffer.map(r => r.text).join('\n') + "\n\n";
+        }
+
+        // VALIDATION: Check column X-position consistency across rows.
+        // A real table has columns aligned. If most rows disagree on column count,
+        // it's likely just spaced-out text — flush as plain paragraphs.
+        const colCounts = tableBuffer.map(r => r.colXs.length);
+        const mostCommonCount = colCounts.sort((a, b) =>
+          colCounts.filter(v => v === b).length - colCounts.filter(v => v === a).length
+        )[0];
+        const consistentRows = tableBuffer.filter(r => r.colXs.length === mostCommonCount);
+        if (consistentRows.length < Math.ceil(tableBuffer.length * 0.6) || mostCommonCount < 2) {
+          // Not a real table — return as plain text (strip pipe formatting)
+          return tableBuffer.map(r => r.text.replace(/^\|\s*|\s*\|$/g, '').replace(/\s*\|\s*/g, '  ')).join('\n') + "\n\n";
+        }
+
+        // Use only the consistent rows
+        const validRows = tableBuffer.filter(r => r.colXs.length === mostCommonCount);
+
+        // 1. Separate Header from Body
+        const headerRow = validRows[0].text;
+        const bodyRows = validRows.slice(1).map(r => r.text);
+
+        const processedRows = [headerRow];
+
+        // 2. Insert Separator
+        const colCount = Math.max(1, headerRow.split('|').length - 2);
+        const separator = "|" + " --- |".repeat(colCount);
+        processedRows.push(separator);
+        processedRows.push(...bodyRows);
+
+        return processedRows.join('\n') + "\n\n";
+      };
+
+      for (const item of items) {
+        if (item.str === "---PAGE_BREAK---") {
+          if (currentLine.length > 0) lines.push(currentLine);
+          currentLine = [];
+          lines.push({ ...item }); // Push as new object to be safe
+          lastY = -1;
+          continue;
+        }
+
+        if (lastY !== -1 && Math.abs(lastY - item.y) > 6) { // Increased tolerance from 4 to 6
+          if (currentLine.length > 0) lines.push(currentLine);
+          currentLine = [];
+        }
+
+        currentLine.push(item);
+        lastY = item.y;
+      }
+      if (currentLine.length > 0) lines.push(currentLine);
+
+      // Process lines
+      for (let i = 0; i < lines.length; i++) {
+        const line = Array.isArray(lines[i]) ? lines[i] : [lines[i]]; // Handle single item page break
+        const isPageBreak = line.length === 1 && line[0].str === "---PAGE_BREAK---";
+
+        if (isPageBreak) {
+          fullMarkdown += "\n\n---\n\n";
+          continue;
+        }
+
+        // --- MANUAL ANNOTATION OVERRIDE ---
+        const lineKey = line[0].pageNum ? `p${line[0].pageNum}_y${Math.round(line[0].y)}` : null;
+        const manualAnnotation = lineKey ? annotations[lineKey] : null;
+
+        // If annotated as 'ignore', skip completely
+        if (manualAnnotation === 'ignore') continue;
+
+        // A. Header Detection
+        const maxHeight = Math.max(...line.map(i => i.h));
+        let prefix = "";
+        if (manualAnnotation && ['H1','H2','H3','H4'].includes(manualAnnotation)) {
+          // Manual annotation overrides heuristic
+          prefix = '#'.repeat(parseInt(manualAnnotation[1])) + ' ';
+        } else if (maxHeight >= options.pdfMinHeaderSize) {
+          if (maxHeight > options.pdfMinHeaderSize + 6) prefix = "# ";
+          else if (maxHeight > options.pdfMinHeaderSize + 2) prefix = "## ";
+          else prefix = "### ";
+        }
+
+        // B. Table / Column Detection
+        let lineText = "";
+        // Manual 'table' annotation forces table treatment; manual header prevents it
+        let isTableCandidate = manualAnnotation === 'table';
+
+        if (!isTableCandidate && !manualAnnotation && line.length > 1) {
+          let largeGaps = 0;
+          for (let j = 0; j < line.length - 1; j++) {
+            const gap = line[j + 1].x - (line[j].x + line[j].w);
+            if (gap > 20) largeGaps++;
+          }
+          if (largeGaps >= 1 && prefix === "") isTableCandidate = true;
+        }
+
+        for (let j = 0; j < line.length; j++) {
+          const item = line[j];
+          if (j > 0) {
+            const prev = line[j - 1];
+            const gap = item.x - (prev.x + prev.w);
+            if (gap > 20 && isTableCandidate) {
+              lineText += " | ";
+            } else if (gap > 3) {
+              lineText += " ";
+            }
+          }
+          lineText += item.str;
+        }
+
+        if (isTableCandidate) {
+          // Collect column X positions for consistency validation
+          const colXs = [line[0].x];
+          for (let j = 1; j < line.length; j++) {
+            const gap = line[j].x - (line[j - 1].x + line[j - 1].w);
+            if (gap > 20) colXs.push(line[j].x);
+          }
+          lineText = "| " + lineText + " |";
+          tableBuffer.push({ text: lineText, colXs });
+          continue; // Don't write yet, wait for block end
+        } else {
+          // Flush buffer if we just exited a table
+          if (tableBuffer.length > 0) {
+            fullMarkdown += flushTableBuffer();
+            tableBuffer = [];
+          }
+        }
+
+        // D. List & Spacing Handling
+        // Check if the lines start with a list marker (1. 1- 1) - * •)
+        // Updated regex to support "1.-" (multiple punctuation chars)
+        const isListStart = /^(\s*)([0-9]+[.)-]+|[-*•])\s/.test(lineText);
+
+        // Split "Inline" lists (e.g. "1.- A 2.- B") -> "1.- A\n2.- B"
+        if (isListStart) {
+          lineText = lineText.replace(/(\s)([0-9]+[.)-]+\s)/g, '$1\n$2');
+        }
+
+        // E. Vertical Spacing
+        // (Only run logic if NOT in table - captured by continue above)
+
+        if (i > 0) {
+          const prevLine = Array.isArray(lines[i - 1]) ? lines[i - 1] : [lines[i - 1]];
+          if (prevLine[0].str !== "---PAGE_BREAK---") {
+            const prevY = prevLine[0].y;
+            const currY = line[0].y;
+            const diff = prevY - currY;
+
+            // REFINED LOGIC: Tight vs Loose Lists
+            // (Table logic removed from here as it is handled by flushTableBuffer)
+            if (diff > options.pdfVerticalSpacing) {
+              // Large gap = Paragraph break (Double Newline)
+              fullMarkdown += "\n\n";
+            } else if (isListStart) {
+              // List item with small gap = Tight List (Single Newline)
+              fullMarkdown += "\n";
+            } else {
+              // Normal text continuation
+              fullMarkdown += " ";
+            }
+          }
+        }
+
+        fullMarkdown += prefix + lineText;
+      }
+
+      // Final flush
+      if (tableBuffer.length > 0) {
+        fullMarkdown += flushTableBuffer();
+      }
+
+      return fullMarkdown;
+    };
+
+    // --- Word Service ---
+    const convertWordToMarkdown = async (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            if (!window.mammoth) throw new Error("Mammoth library not loaded");
+            if (!window.TurndownService) throw new Error("Turndown library not loaded");
+
+            const arrayBuffer = e.target.result;
+
+            // DEEP RESEARCH: Word Structure
+            // Word uses 'w:styleId' (internal ID) and 'w:name' (display name).
+            // Mammoth prioritizes semantic structure.
+            // To catch all titles, we must map both internal IDs (reliable) and Names (localized).
+
+            const options = {
+              styleMap: [
+                // --- STANDARD INTERNAL IDS (Most Reliable) ---
+                // These work regardless of language (e.g., 'Heading1' is usually the ID for 'Título 1')
+                "p[style-id='Heading1'] => h1:fresh",
+                "p[style-id='Heading2'] => h2:fresh",
+                "p[style-id='Heading3'] => h3:fresh",
+                "p[style-id='Heading4'] => h4:fresh",
+                "p[style-id='Heading5'] => h5:fresh",
+                "p[style-id='Heading6'] => h6:fresh",
+                "p[style-id='Title'] => h1:fresh",
+                "p[style-id='Subtitle'] => h2:fresh",
+
+                // --- ENGLISH DISPLAY NAMES ---
+                "p[style-name='Heading 1'] => h1:fresh",
+                "p[style-name='Heading 2'] => h2:fresh",
+                "p[style-name='Heading 3'] => h3:fresh",
+                "p[style-name='Title'] => h1:fresh",
+                "p[style-name='Subtitle'] => h2:fresh",
+                "p[style-name='Quote'] => blockquote:fresh",
+
+                // --- SPANISH DISPLAY NAMES (Common Variations) ---
+                "p[style-name='Título 1'] => h1:fresh",
+                "p[style-name='Título 2'] => h2:fresh",
+                "p[style-name='Título 3'] => h3:fresh",
+                "p[style-name='Título'] => h1:fresh",
+                "p[style-name='Subtítulo'] => h2:fresh",
+                "p[style-name='Encabezado 1'] => h1:fresh",
+                "p[style-name='Encabezado 2'] => h2:fresh",
+                "p[style-name='Cita'] => blockquote:fresh",
+
+                // --- GENERIC / FALLBACKS ---
+                "r[style-name='Strong'] => strong"
+              ],
+              ignoreEmptyParagraphs: false // Keep structure
+            };
+
+            const result = await window.mammoth.convertToHtml({ arrayBuffer: arrayBuffer }, options);
+            let html = result.value;
+
+            const turndownService = new window.TurndownService({
+              headingStyle: 'atx',
+              codeBlockStyle: 'fenced'
+            });
+
+            if (window.turndownPluginGfm) {
+              const gfm = window.turndownPluginGfm.gfm;
+              turndownService.use(gfm);
+            }
+
+            let markdown = turndownService.turndown(html);
+
+            // --- HEURISTIC POST-PROCESSING (The "Fake Title" Fixer) ---
+            // Many users use "Normal" style + "Bold" + "FontSize" instead of real Headers.
+            // Mammoth loses font size, but usually preserves Bold. 
+            // If a line is:
+            // 1. Surrounded by blank lines
+            // 2. Short (< 80 chars)
+            // 3. Entirely Bold (**Text**)
+            // We treat it as a Header 3 (###).
+
+            const lines = markdown.split('\n');
+            const processedLines = [];
+
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i].trim();
+              const prevLine = i > 0 ? lines[i - 1].trim() : '';
+              const nextLine = i < lines.length - 1 ? lines[i + 1].trim() : '';
+
+              // Check for pure bold line: **Text**
+              const boldMatch = line.match(/^\*\*([^*\n]+)\*\*$/);
+
+              if (boldMatch && line.length < 100) {
+                // It is a candidate. Is it isolated on BOTH sides?
+                // Top: first line, or prev is empty/header
+                const isIsolatedTop = prevLine === '' || prevLine.startsWith('#');
+                // Bottom: last line, or next is empty
+                const isIsolatedBottom = nextLine === '';
+
+                if (isIsolatedTop && isIsolatedBottom) {
+                  // Convert to H3 (Safe default for visual headers)
+                  processedLines.push(`### ${boldMatch[1]}`);
+                  continue;
+                }
+              }
+              processedLines.push(lines[i]);
+            }
+
+            resolve(processedLines.join('\n'));
+
+          } catch (err) {
+            console.error("Word Parsing Error", err);
+            reject(err);
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    };
+
+    // --- HTML Service ---
+    const convertHtmlToMarkdown = async (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            if (!window.TurndownService) throw new Error("Turndown library not loaded");
+
+            const htmlContent = e.target.result;
+
+            // Parse HTML string to DOM to remove non-visual elements
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlContent, 'text/html');
+
+            // Remove scripts, styles, structural/navigation elements
+            const elementsToRemove = doc.querySelectorAll(
+              'script, style, link, meta, noscript, head, iframe, object, embed, ' +
+              'nav, header, footer, aside, ' +
+              '[role="navigation"], [role="banner"], [role="contentinfo"], [role="complementary"]'
+            );
+            elementsToRemove.forEach(el => el.remove());
+
+            const turndownService = new window.TurndownService({
+              headingStyle: 'atx',
+              codeBlockStyle: 'fenced',
+              hr: '---'
+            });
+
+            if (window.turndownPluginGfm) {
+              const gfm = window.turndownPluginGfm.gfm;
+              turndownService.use(gfm);
+            }
+
+            // Pass the cleaned body to Turndown
+            const markdown = turndownService.turndown(doc.body || doc.documentElement);
+            resolve(markdown);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+    };
+
+    // ----------------------------------------------------------------------
+    // COMPONENTS
+    // ----------------------------------------------------------------------
+
+    // --- Button ---
+    const Button = ({
+      children,
+      variant = 'primary',
+      icon,
+      className = '',
+      ...props
+    }) => {
+      const baseStyles = "inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+
+      const variants = {
+        primary: "bg-blue-600 text-white hover:bg-blue-500 focus:ring-blue-500 border border-transparent shadow-md shadow-blue-900/20",
+        secondary: "bg-gray-800 text-gray-200 border border-gray-700 hover:bg-gray-700 focus:ring-blue-500 hover:text-white",
+        danger: "bg-red-900/50 text-red-200 border border-red-900 hover:bg-red-900 hover:text-white focus:ring-red-500",
+        ghost: "text-gray-400 hover:bg-gray-800 hover:text-gray-200 focus:ring-gray-500"
+      };
+
+      return (
+        <button
+          className={`${baseStyles} ${variants[variant]} ${className}`}
+          {...props}
+        >
+          {icon && <span className="mr-2 -ml-1">{icon}</span>}
+          {children}
+        </button>
+      );
+    };
+
+    // --- Editor ---
+    const Editor = ({
+      content,
+      onChange,
+      onClear,
+      pdfOptions,
+      onPdfOptionChange,
+      showPdfSettings = false
+    }) => {
+      const [copied, setCopied] = useState(false);
+      const [showSettings, setShowSettings] = useState(false);
+      const [showMagicTools, setShowMagicTools] = useState(false);
+
+      // Click Outside Handling
+      const cleanupRef = useRef(null);
+      const settingsRef = useRef(null);
+
+      useOnClickOutside(cleanupRef, () => setShowMagicTools(false));
+      useOnClickOutside(settingsRef, () => setShowSettings(false));
+
+      const stats = useMemo(() => {
+        const text = content.trim();
+        if (!text) return { words: 0, chars: 0, time: 0 };
+        const words = text.split(/\s+/).length;
+        const chars = text.length;
+        const time = Math.ceil(words / 200);
+        return { words, chars, time };
+      }, [content]);
+
+      const handleSmartReflow = () => {
+        // 1. Join broken lines: Match line ending with non-punctuation, followed by newline, followed by lowercase/number
+        // EXCLUDING lines that start with a list marker (digit+dot/dash/paren or bullet)
+        // Updated regex to support "1.-"
+        const reflowed = content.replace(/([^\n.?!])\n(?!(?:[0-9]+[.)-]+)|[-*•])(?=[a-z0-9])/gi, '$1 ');
+        // 2. Collapse excessive newlines (3+ -> 2)
+        const cleaned = reflowed.replace(/\n{3,}/g, '\n\n');
+        onChange(cleaned);
+        setShowMagicTools(false);
+      };
+
+      const handleStripLinks = () => {
+        const newContent = content.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+        onChange(newContent);
+        setShowMagicTools(false);
+      };
+
+      const handleAnonymizeEmails = () => {
+        const newContent = content.replace(/[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}/g, '[EMAIL_REMOVED]');
+        onChange(newContent);
+        setShowMagicTools(false);
+      };
+
+      const handleCopy = useCallback(() => {
+        navigator.clipboard.writeText(content);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }, [content]);
+
+      const handleDownload = useCallback(() => {
+        const blob = new Blob([content], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `converted_${new Date().toISOString().slice(0, 10)}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, [content]);
+
+      return (
+        <div className="flex flex-col h-full bg-[#0d1117] rounded-xl shadow-2xl border border-gray-800 overflow-hidden ring-1 ring-white/5 relative">
+          <div className="flex flex-wrap items-center justify-between p-2 sm:p-3 border-b border-gray-800 bg-[#161b22] sticky top-0 z-20 shrink-0 gap-2">
+            <h3 className="hidden sm:flex text-sm font-semibold text-gray-300 pl-2 items-center gap-2">
+              Markdown Editor
+            </h3>
+
+            <div className="sm:hidden text-xs text-gray-500 pl-2">
+              {stats.words} words
+            </div>
+
+            <div className="flex gap-1.5 items-center ml-auto">
+              <div className="relative">
+                <Button
+                  variant={showMagicTools ? "primary" : "secondary"}
+                  onClick={() => setShowMagicTools(!showMagicTools)}
+                  className="!p-2 !h-8 w-8 sm:w-auto sm:!px-3 sm:!h-9 text-xs"
+                  title="Quick Cleanup Tools"
+                >
+                  <Wand2 className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Cleanup</span>
+                </Button>
+                {showMagicTools && (
+                  <div ref={cleanupRef} className="fixed top-20 inset-x-4 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-56 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95">
+                    <div className="text-xs font-bold text-gray-400 px-2 py-1 mb-1">QUICK ACTIONS</div>
+                    <button onClick={handleSmartReflow} className="w-full text-left text-sm px-2 py-2 hover:bg-gray-700 rounded text-gray-200">
+                      Smart Reflow (Fix paragraphs)
+                    </button>
+                    <button onClick={handleStripLinks} className="w-full text-left text-sm px-2 py-2 hover:bg-gray-700 rounded text-gray-200">
+                      Unlink URLs (keep text)
+                    </button>
+                    <button onClick={handleAnonymizeEmails} className="w-full text-left text-sm px-2 py-2 hover:bg-gray-700 rounded text-gray-200">
+                      Anonymize Emails
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {showPdfSettings && pdfOptions && onPdfOptionChange && (
+                <div className="relative">
+                  <Button
+                    variant={showSettings ? "primary" : "secondary"}
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="!p-2 !h-8 w-8 sm:w-auto sm:!px-3 sm:!h-9 text-xs"
+                  >
+                    <Settings className="w-4 h-4 sm:mr-1" />
+                    <span className="hidden sm:inline">PDF Settings</span>
+                  </Button>
+
+                  {showSettings && (
+                    <div ref={settingsRef} className="fixed top-20 inset-x-4 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-72 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 p-4 animate-in fade-in zoom-in-95 duration-100">
+                      <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                        <h4 className="text-sm font-bold text-white">Parser Settings</h4>
+                        <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-white"><X className="w-4 h-4" /></button>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <label className="text-xs font-medium text-gray-300">Paragraph Spacing</label>
+                            <span className="text-xs font-mono text-blue-400">{pdfOptions.pdfVerticalSpacing}px</span>
+                          </div>
+                          <input
+                            type="range" min="5" max="50"
+                            value={pdfOptions.pdfVerticalSpacing}
+                            onChange={(e) => onPdfOptionChange({ ...pdfOptions, pdfVerticalSpacing: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <label className="text-xs font-medium text-gray-300">Header Size Threshold</label>
+                            <span className="text-xs font-mono text-blue-400">{pdfOptions.pdfMinHeaderSize}px</span>
+                          </div>
+                          <input
+                            type="range" min="8" max="40"
+                            value={pdfOptions.pdfMinHeaderSize}
+                            onChange={(e) => onPdfOptionChange({ ...pdfOptions, pdfMinHeaderSize: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="h-6 w-px bg-gray-700 mx-1 hidden sm:block"></div>
+
+              <Button variant="secondary" onClick={handleCopy} title="Copy" className="!p-2 !h-8 w-8 sm:w-auto sm:!px-3 sm:!h-9">
+                {copied ? <CheckCircle className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                <span className="hidden sm:inline ml-2">Copy</span>
+              </Button>
+              <Button variant="secondary" onClick={handleDownload} title="Save" className="!p-2 !h-8 w-8 sm:w-auto sm:!px-3 sm:!h-9">
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline ml-2">Save</span>
+              </Button>
+              <Button variant="danger" onClick={onClear} title="Clear" className="!p-2 !h-8 w-8 sm:w-auto sm:!px-3 sm:!h-9">
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex-1 relative bg-[#0d1117] min-h-0">
+            <textarea
+              className="w-full h-full p-6 font-mono text-sm leading-6 resize-none focus:outline-none bg-[#0d1117] text-gray-300 caret-blue-500 selection:bg-blue-900/50 selection:text-blue-200 placeholder-gray-700 custom-scrollbar"
+              value={content}
+              onChange={(e) => onChange(e.target.value)}
+              spellCheck={false}
+              placeholder="Drag & Drop files or Select files to start..."
+              style={{
+                fontFamily: '"Menlo", "Monaco", "Courier New", monospace',
+                whiteSpace: 'pre-wrap',
+                wordWrap: 'break-word',
+              }}
+            />
+          </div>
+
+          <div className="bg-[#161b22] border-t border-gray-800 px-4 py-1 flex justify-end gap-4 text-[10px] text-gray-500 font-mono uppercase tracking-wider shrink-0">
+            <span>{stats.words} words</span>
+            <span>{stats.chars} chars</span>
+            <span className="hidden sm:inline">~{stats.time} min read</span>
+          </div>
+        </div>
+      );
+    };
+
+    // ----------------------------------------------------------------------
+    // MAIN APP
+    // ----------------------------------------------------------------------
+
+    // ----------------------------------------------------------------------
+    // PDF ANNOTATOR COMPONENT
+    // ----------------------------------------------------------------------
+
+    const ANNOTATION_TOOLS = [
+      { id: 'H1',     label: 'H1',     color: 'bg-blue-500/40 border-blue-400',     badge: 'bg-blue-700 text-blue-100'     },
+      { id: 'H2',     label: 'H2',     color: 'bg-cyan-500/40 border-cyan-400',      badge: 'bg-cyan-700 text-cyan-100'      },
+      { id: 'H3',     label: 'H3',     color: 'bg-teal-500/40 border-teal-400',      badge: 'bg-teal-700 text-teal-100'      },
+      { id: 'H4',     label: 'H4',     color: 'bg-green-500/40 border-green-400',    badge: 'bg-green-700 text-green-100'    },
+      { id: 'table',  label: 'Tabla',  color: 'bg-purple-500/40 border-purple-400',  badge: 'bg-purple-700 text-purple-100'  },
+      { id: 'ignore', label: 'Ignorar',color: 'bg-red-500/40 border-red-400',        badge: 'bg-red-700 text-red-100'        },
+    ];
+
+    const PdfAnnotator = ({ rawPdfData, pdfFile, annotations, onAnnotate, activeTool, onToolChange, onClearAll }) => {
+      const [pageRenders, setPageRenders] = useState([]);
+      const [isRendering, setIsRendering] = useState(false);
+
+      // Render all pages visually using PDF.js canvas API
+      useEffect(() => {
+        if (!pdfFile || !rawPdfData) return;
+        let cancelled = false;
+        setIsRendering(true);
+        setPageRenders([]);
+
+        (async () => {
+          try {
+            const arrayBuffer = await pdfFile.arrayBuffer();
+            const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const renders = [];
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+              if (cancelled) break;
+              const page = await pdf.getPage(i);
+              const vpBase = page.getViewport({ scale: 1 });
+              // Scale to fit ~700px wide, max 1.8x
+              const SCALE = Math.min(1.8, 700 / vpBase.width);
+              const vp = page.getViewport({ scale: SCALE });
+
+              const canvas = document.createElement('canvas');
+              canvas.width = Math.round(vp.width);
+              canvas.height = Math.round(vp.height);
+              await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+
+              renders.push({
+                dataUrl: canvas.toDataURL('image/jpeg', 0.85),
+                widthPdf: vpBase.width,
+                heightPdf: vpBase.height,
+                pageNum: i,
+              });
+
+              if (!cancelled) setPageRenders([...renders]);
+            }
+          } finally {
+            if (!cancelled) setIsRendering(false);
+          }
+        })();
+
+        return () => { cancelled = true; };
+      }, [pdfFile, rawPdfData]);
+
+      // Group raw items into lines per page for overlay positioning
+      const linesByPage = useMemo(() => {
+        if (!rawPdfData) return {};
+        const byPage = {};
+        const allGrouped = groupItemsIntoLines(rawPdfData.items);
+        for (const group of allGrouped) {
+          if (group.key === 'pagebreak') continue;
+          const pNum = group.items[0].pageNum;
+          if (!byPage[pNum]) byPage[pNum] = [];
+          byPage[pNum].push(group);
+        }
+        return byPage;
+      }, [rawPdfData]);
+
+      const activeToolDef = ANNOTATION_TOOLS.find(t => t.id === activeTool);
+      const annotationCount = Object.keys(annotations).length;
+
+      return (
+        <div className="flex flex-col h-full bg-[#0d1117] rounded-xl border border-gray-800 overflow-hidden shadow-2xl">
+          {/* Toolbar */}
+          <div className="shrink-0 bg-[#161b22] border-b border-gray-800 p-2 flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider px-1 mr-1">Herramienta:</span>
+            {ANNOTATION_TOOLS.map(tool => (
+              <button
+                key={tool.id}
+                onClick={() => onToolChange(tool.id)}
+                className={`px-2.5 py-1 rounded text-xs font-bold border transition-all ${
+                  activeTool === tool.id
+                    ? tool.badge + ' border-transparent ring-2 ring-white/30'
+                    : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'
+                }`}
+              >
+                {tool.label}
+              </button>
+            ))}
+            <div className="flex-1" />
+            {annotationCount > 0 && (
+              <button
+                onClick={onClearAll}
+                className="text-[10px] text-red-400 hover:text-red-200 border border-red-900/50 hover:border-red-700 px-2 py-1 rounded transition-colors"
+              >
+                Borrar anotaciones ({annotationCount})
+              </button>
+            )}
+          </div>
+
+          {/* Hint */}
+          <div className="shrink-0 px-3 py-1.5 bg-gray-900/60 border-b border-gray-800/50 text-[10px] text-gray-500 flex items-center gap-2">
+            <span>Clic = anotar línea · Clic sobre anotación existente = eliminarla · Herramienta activa: <strong className="text-gray-300">{activeToolDef?.label}</strong></span>
+          </div>
+
+          {/* Page renders + overlays */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4 bg-gray-950">
+            {isRendering && pageRenders.length === 0 && (
+              <div className="flex items-center justify-center h-32 text-gray-500 text-sm gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Renderizando páginas…
+              </div>
+            )}
+
+            {pageRenders.map(({ dataUrl, widthPdf, heightPdf, pageNum }) => {
+              const lines = linesByPage[pageNum] || [];
+              const aspectRatio = heightPdf / widthPdf;
+
+              return (
+                <div key={pageNum} className="rounded-lg overflow-hidden shadow-xl border border-gray-700">
+                  {/* Page label */}
+                  <div className="bg-gray-800 px-2 py-0.5 text-[10px] text-gray-400 font-mono">
+                    Página {pageNum}
+                  </div>
+
+                  {/* Relative container sized by aspect ratio */}
+                  <div className="relative w-full" style={{ paddingTop: `${aspectRatio * 100}%` }}>
+                    {/* PDF render as background */}
+                    <img
+                      src={dataUrl}
+                      className="absolute inset-0 w-full h-full"
+                      draggable={false}
+                      alt={`Página ${pageNum}`}
+                    />
+
+                    {/* Annotation overlays — one div per detected line */}
+                    {lines.map((group) => {
+                      const lineItems = group.items;
+                      const annotation = annotations[group.key];
+                      const toolDef = annotation ? ANNOTATION_TOOLS.find(t => t.id === annotation) : null;
+
+                      // Compute bounding box in % of page dimensions
+                      const minX = Math.min(...lineItems.map(it => it.x));
+                      const maxX = Math.max(...lineItems.map(it => it.x + (it.w || 0)));
+                      const lineY = lineItems[0].y;  // PDF y = from bottom
+                      const lineH = Math.max(4, Math.max(...lineItems.map(it => it.h)));
+
+                      const left   = (minX / widthPdf) * 100;
+                      const width  = Math.max(2, ((maxX - minX) / widthPdf) * 100);
+                      // Convert PDF bottom-origin Y to top-origin CSS %
+                      const top    = ((heightPdf - lineY - lineH) / heightPdf) * 100;
+                      const height = Math.max(0.4, (lineH / heightPdf) * 100 * 1.15);
+
+                      return (
+                        <div
+                          key={group.key}
+                          className={`absolute cursor-pointer border transition-all group
+                            ${annotation
+                              ? toolDef?.color + ' border-opacity-80'
+                              : 'border-transparent hover:bg-white/10 hover:border hover:border-white/20'
+                            }`}
+                          style={{
+                            left: `${left}%`,
+                            top: `${top}%`,
+                            width: `${width}%`,
+                            height: `${height}%`,
+                          }}
+                          onClick={() => onAnnotate(group.key, annotation === activeTool ? null : activeTool)}
+                          title={annotation
+                            ? `${annotation} — clic para eliminar anotación`
+                            : `Clic para marcar como ${activeTool}`
+                          }
+                        >
+                          {annotation && (
+                            <span
+                              className={`absolute -top-4 left-0 text-[8px] font-bold px-1 py-0.5 rounded pointer-events-none ${toolDef?.badge}`}
+                              style={{ whiteSpace: 'nowrap' }}
+                            >
+                              {annotation}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+
+            {isRendering && pageRenders.length > 0 && (
+              <div className="flex items-center justify-center py-2 text-gray-600 text-xs gap-1.5">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Cargando más páginas…
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // Sample Markdown for "Try Sample" feature
+    const SAMPLE_MARKDOWN = `# Sample Document
+
+## Introduction
+
+This is a **sample document** to demonstrate the Markdown editor.
+You can see how different elements render in the output.
+
+## Features
+
+- Client-side processing — your files never leave this device
+- Supports **PDF**, **Word (.docx)** and **HTML** files
+- Editable Markdown output with Cleanup tools
+
+## Code Example
+
+\`\`\`javascript
+function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+\`\`\`
+
+## Table Example
+
+| Format | Library used | Notes |
+| --- | --- | --- |
+| PDF | PDF.js | Text-based PDFs only |
+| Word | Mammoth.js | .docx format |
+| HTML | Turndown | Strips nav/footer |
+
+> **Tip:** Drag & drop multiple files to batch-convert them.
+`;
+
+    const App = () => {
+      const [markdownContent, setMarkdownContent] = useState('');
+      const [isProcessing, setIsProcessing] = useState(false);
+      const [progress, setProgress] = useState(null); // { current, total }
+      const [error, setError] = useState(null);
+      const [isDragOver, setIsDragOver] = useState(false);
+
+      const [mobileView, setMobileView] = useState('upload'); // 'upload' | 'editor' | 'annotate'
+      const [rawPdfData, setRawPdfData] = useState(null);
+      const [pdfFile, setPdfFile] = useState(null); // original File object for visual rendering
+
+      const [annotations, setAnnotations] = useState({}); // {lineKey: 'H1'|'H2'|'H3'|'H4'|'table'|'ignore'}
+      const [activeTool, setActiveTool] = useState('H1');
+      const [showAnnotator, setShowAnnotator] = useState(false);
+
+      const [pdfOptions, setPdfOptions] = useState({
+        pdfVerticalSpacing: 10,
+        pdfMinHeaderSize: 14,
+      });
+
+      const fileInputRef = useRef(null);
+
+      // Auto-save to sessionStorage so content survives accidental refreshes
+      useEffect(() => {
+        if (markdownContent) {
+          try { sessionStorage.setItem('ldtm_draft', markdownContent); } catch (_) {}
+        }
+      }, [markdownContent]);
+
+      // Restore draft on first load
+      useEffect(() => {
+        try {
+          const draft = sessionStorage.getItem('ldtm_draft');
+          if (draft) {
+            setMarkdownContent(draft);
+            setMobileView('editor');
+          }
+        } catch (_) {}
+      }, []);
+
+      useEffect(() => {
+        if (rawPdfData) {
+          const newMarkdown = generateMarkdownFromPdf(rawPdfData, pdfOptions, annotations);
+          setMarkdownContent(newMarkdown);
+        }
+      }, [pdfOptions, rawPdfData, annotations]);
+
+      const processFiles = useCallback(async (files) => {
+        if (!files || files.length === 0) return;
+
+        setIsProcessing(true);
+        setProgress(null);
+        setError(null);
+        let newContent = "";
+
+        try {
+          const fileArray = Array.from(files);
+
+          let batchHasPdf = false;
+
+          for (let i = 0; i < fileArray.length; i++) {
+            const file = fileArray[i];
+            let result = "";
+
+            if (i > 0 || markdownContent.length > 0) {
+              newContent += `\n\n---\n**Source: ${file.name}**\n---\n\n`;
+            } else if (fileArray.length > 1) {
+              newContent += `**Source: ${file.name}**\n\n`;
+            }
+
+            if (file.type === 'application/pdf') {
+              if (!window.pdfjsLib) throw Object.assign(new Error("PDF.js not loaded"), { code: 'LIB_MISSING', lib: 'PDF.js' });
+              const raw = await parsePdfToRawData(file, (cur, tot) => setProgress({ current: cur, total: tot }));
+              setProgress(null);
+              setRawPdfData(raw);
+              setPdfFile(file);
+              setAnnotations({}); // reset annotations for new file
+              batchHasPdf = true;
+              result = generateMarkdownFromPdf(raw, pdfOptions, {});
+              if (!result.trim()) throw Object.assign(new Error("No text extracted"), { code: 'PDF_NO_TEXT', fileName: file.name });
+            } else if (file.name.endsWith('.docx') || file.type.includes('word') || file.type.includes('officedocument')) {
+              if (!window.mammoth) throw Object.assign(new Error("Mammoth not loaded"), { code: 'LIB_MISSING', lib: 'Mammoth.js' });
+              result = await convertWordToMarkdown(file);
+            } else if (file.type === 'text/html' || file.name.endsWith('.html') || file.name.endsWith('.htm')) {
+              if (!window.TurndownService) throw Object.assign(new Error("Turndown not loaded"), { code: 'LIB_MISSING', lib: 'Turndown' });
+              result = await convertHtmlToMarkdown(file);
+            } else {
+              result = `\n\n> **Warning**: Skipped \`${file.name}\` — unsupported format. Use PDF, .docx or .html files.\n\n`;
+            }
+
+            newContent += result;
+          }
+
+          if (!batchHasPdf && fileArray.length > 0) {
+            setRawPdfData(null);
+          }
+
+          setMarkdownContent(prev => prev ? prev + "\n\n" + newContent : newContent);
+          setMobileView('editor');
+
+        } catch (err) {
+          console.error(err);
+          if (err.code === 'LIB_MISSING') {
+            setError(`Library ${err.lib} failed to load. Check your internet connection and reload the page.`);
+          } else if (err.code === 'PDF_NO_TEXT') {
+            setError(`"${err.fileName}" appears to be a scanned/image-only PDF. This tool only extracts text from text-based PDFs. Try running OCR on the file first.`);
+          } else if (err.message && err.message.includes('password')) {
+            setError("This PDF is password-protected. Please remove the password and try again.");
+          } else {
+            setError(`Could not process the file: ${err.message || 'Unknown error'}. Make sure the file is not corrupted.`);
+          }
+        } finally {
+          setIsProcessing(false);
+          setProgress(null);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+      }, [markdownContent, pdfOptions]);
+
+      const handleFileChange = useCallback((e) => {
+        if (e.target.files) processFiles(e.target.files);
+      }, [processFiles]);
+
+      const triggerUpload = useCallback(() => {
+        fileInputRef.current?.click();
+      }, []);
+
+      const handleDragOver = useCallback((e) => {
+        e.preventDefault();
+        setIsDragOver(true);
+      }, []);
+
+      const handleDragLeave = useCallback((e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+      }, []);
+
+      const handleDrop = useCallback((e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          processFiles(e.dataTransfer.files);
+        }
+      }, [processFiles]);
+
+      const handleClear = useCallback(() => {
+        if (!markdownContent) return;
+        if (!window.confirm('Clear all content? This cannot be undone.\n\nTip: your draft is saved in the browser session — if you reload the page it will be restored.')) return;
+        setMarkdownContent('');
+        setRawPdfData(null);
+        setPdfFile(null);
+        setAnnotations({});
+        setShowAnnotator(false);
+        setMobileView('upload');
+        try { sessionStorage.removeItem('ldtm_draft'); } catch (_) {}
+      }, [markdownContent]);
+
+      const handleLoadSample = useCallback(() => {
+        setMarkdownContent(SAMPLE_MARKDOWN);
+        setMobileView('editor');
+        setError(null);
+      }, []);
+
+      return (
+        <div
+          className="h-full bg-gray-950 text-gray-200 flex flex-col font-sans selection:bg-blue-500/30 selection:text-blue-100 overflow-hidden"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {isDragOver && (
+            <div className="fixed inset-0 bg-blue-600/20 backdrop-blur-sm z-50 flex items-center justify-center border-4 border-blue-500 border-dashed m-4 rounded-3xl pointer-events-none">
+              <div className="text-3xl font-bold text-white flex flex-col items-center gap-4 animate-bounce">
+                <Upload className="w-16 h-16" />
+                Drop files to convert
+              </div>
+            </div>
+          )}
+
+          <header className="bg-[#161b22] border-b border-gray-800 shrink-0 z-30 shadow-lg shadow-black/20">
+            <div className="max-w-[1800px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="bg-gradient-to-br from-blue-700 to-indigo-900 p-1.5 rounded-lg shadow-inner border border-white/10">
+                    <LogoIcon className="w-4 h-4 text-white" />
+                  </div>
+                  <h1 className="text-lg font-bold text-gray-100 tracking-tight">LocalDOCtoMarkdown</h1>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Mobile view navigation */}
+                <div className="lg:hidden flex items-center gap-1">
+                  {rawPdfData && (
+                    <button
+                      onClick={() => setMobileView('annotate')}
+                      className={`p-2 rounded-lg border text-xs font-bold transition-colors ${mobileView === 'annotate' ? 'bg-violet-700 border-violet-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-300 hover:text-white'}`}
+                      title="Anotar PDF"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </button>
+                  )}
+                  {mobileView === 'editor' && markdownContent.length > 0 ? (
+                    <button onClick={() => setMobileView('upload')} className="p-2 bg-gray-800 rounded-lg text-gray-300 hover:text-white border border-gray-700" title="Subir archivos">
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  ) : mobileView !== 'editor' && markdownContent.length > 0 ? (
+                    <button onClick={() => setMobileView('editor')} className="p-2 bg-gray-800 rounded-lg text-gray-300 hover:text-white border border-gray-700" title="Ver Editor">
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                  ) : null}
+                </div>
+
+                {/* Annotator toggle button (desktop) — only when PDF is loaded */}
+                {rawPdfData && (
+                  <button
+                    onClick={() => setShowAnnotator(v => !v)}
+                    className={`hidden lg:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
+                      showAnnotator
+                        ? 'bg-violet-700 border-violet-500 text-white'
+                        : 'bg-gray-800 border-gray-700 text-gray-300 hover:text-white hover:border-gray-500'
+                    }`}
+                    title="Anotar el PDF para mejorar la conversión"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Anotar PDF</span>
+                    {Object.keys(annotations).length > 0 && (
+                      <span className="bg-violet-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full ml-0.5">
+                        {Object.keys(annotations).length}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {/* Privacy badge */}
+                <div className="flex text-xs font-semibold text-green-300 bg-green-950/50 border border-green-800/50 px-3 py-1.5 rounded-full items-center gap-1.5" title="All processing happens in your browser. No files are uploaded to any server.">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span className="hidden sm:inline">100% Local</span>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1 max-w-[1800px] w-full mx-auto px-4 sm:px-6 py-4 sm:py-6 h-full overflow-hidden relative">
+            <div className="flex flex-col lg:flex-row gap-4 h-full">
+
+              <div className={`
+                    w-full lg:w-[280px] xl:w-[320px] flex-col gap-4 shrink-0 h-auto
+                    ${mobileView === 'editor' || mobileView === 'annotate' ? 'hidden lg:flex' : 'flex'}
+                `}>
+
+                <div className="bg-[#161b22] p-5 rounded-xl shadow-xl border border-gray-800 flex-1 lg:flex-none">
+                  <div className="flex flex-col gap-4">
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept=".pdf,.docx,.doc,.html,.htm"
+                      multiple
+                      onChange={handleFileChange}
+                    />
+
+                    <Button
+                      onClick={triggerUpload}
+                      disabled={isProcessing}
+                      className={`w-full py-8 text-lg shadow-xl transition-all border-0 text-white
+                          ${isProcessing
+                          ? 'bg-amber-600/10 border-2 border-dashed border-amber-500 text-amber-400 cursor-wait'
+                          : 'bg-gradient-to-br from-blue-700 to-indigo-900 hover:from-blue-600 hover:to-indigo-800 shadow-blue-900/40'
+                        }`}
+                      icon={isProcessing ? <Loader2 className="animate-spin w-8 h-8 mb-2" /> : <Upload className="w-8 h-8 mb-2" />}
+                    >
+                      <div className="flex flex-col items-center">
+                        <span>{isProcessing ? 'Processing...' : 'Select files or drag and drop'}</span>
+                        {!isProcessing && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="bg-red-900/60 text-red-200 border border-red-800/60 text-[10px] font-bold px-1.5 py-0.5 rounded">PDF</span>
+                            <span className="bg-blue-900/60 text-blue-200 border border-blue-800/60 text-[10px] font-bold px-1.5 py-0.5 rounded">DOCX</span>
+                            <span className="bg-orange-900/60 text-orange-200 border border-orange-800/60 text-[10px] font-bold px-1.5 py-0.5 rounded">HTML</span>
+                          </div>
+                        )}
+                      </div>
+                    </Button>
+
+                    {/* Progress bar for multi-page PDFs */}
+                    {isProcessing && progress && (
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex justify-between text-xs text-amber-400">
+                          <span className="flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Processing PDF…</span>
+                          <span className="font-mono">{progress.current}/{progress.total} pages</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-amber-500 rounded-full transition-all duration-200"
+                            style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {isProcessing && !progress && (
+                      <div className="flex items-center justify-center gap-2 text-amber-400 text-sm animate-pulse bg-amber-950/30 p-2 rounded border border-amber-900/50">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Converting your document…</span>
+                      </div>
+                    )}
+
+                    {/* Try a sample */}
+                    {!isProcessing && !markdownContent && (
+                      <button
+                        onClick={handleLoadSample}
+                        className="text-xs text-gray-500 hover:text-gray-300 underline underline-offset-2 text-center transition-colors"
+                      >
+                        No file? Try a sample document
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Privacy notice — more prominent */}
+                <div className="bg-green-950/20 p-4 rounded-xl border border-green-900/30">
+                  <div className="flex items-start gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-green-400 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <div className="text-xs text-green-300/80 leading-relaxed">
+                      <strong className="text-green-300">Your files never leave this device.</strong> All conversion happens locally in your browser — safe for confidential documents, contracts, and personal data.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* PDF ANNOTATOR PANEL — middle column, desktop only (or mobile annotate view) */}
+              {rawPdfData && pdfFile && (
+                <div className={`
+                  lg:w-[460px] xl:w-[520px] shrink-0 flex-col min-h-0 h-full
+                  ${showAnnotator ? 'lg:flex' : 'lg:hidden'}
+                  ${mobileView === 'annotate' ? 'flex' : 'hidden'}
+                `}>
+                  <PdfAnnotator
+                    rawPdfData={rawPdfData}
+                    pdfFile={pdfFile}
+                    annotations={annotations}
+                    activeTool={activeTool}
+                    onToolChange={setActiveTool}
+                    onAnnotate={(key, value) => setAnnotations(prev => {
+                      const next = { ...prev };
+                      if (value === null) { delete next[key]; } else { next[key] = value; }
+                      return next;
+                    })}
+                    onClearAll={() => setAnnotations({})}
+                  />
+                </div>
+              )}
+
+              {/* EDITOR PANEL */}
+              <div className={`
+                  flex-1 min-h-0 flex-col overflow-hidden
+                  ${mobileView === 'upload' || mobileView === 'annotate' ? 'hidden lg:flex' : 'flex'}
+                `}>
+                {error && (
+                  <div className="mb-4 bg-red-950/30 border border-red-900/50 text-red-200 px-4 py-3 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                    <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                    <div className="text-sm leading-relaxed">{error}</div>
+                    <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200 shrink-0"><X className="w-4 h-4" /></button>
+                  </div>
+                )}
+                <div className="flex-1 h-full relative rounded-xl overflow-hidden shadow-2xl">
+                  <Editor
+                    content={markdownContent}
+                    onChange={setMarkdownContent}
+                    onClear={handleClear}
+                    pdfOptions={pdfOptions}
+                    onPdfOptionChange={setPdfOptions}
+                    showPdfSettings={!!rawPdfData}
+                  />
+                </div>
+              </div>
+
+            </div>
+
+          </main>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+
+</html>

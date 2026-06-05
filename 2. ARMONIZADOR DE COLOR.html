@@ -1,0 +1,2141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Harmonizer - Armoniza tus Paletas de Color</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f1419;
+            --bg-secondary: #1a1f2e;
+            --bg-tertiary: #242936;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a6;
+            --border-color: #3c4043;
+            --accent-color: #8ab4f8;
+            --success-color: #81c995;
+            --warning-color: #fdd663;
+            --danger-color: #f28b82;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #8ab4f8 0%, #c58af9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Color Picker Section */
+        .color-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .color-input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .color-swatch {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-swatch input[type="color"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .color-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .color-hex {
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .color-values {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .color-remove {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--danger-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .color-remove:hover {
+            background: var(--danger-color);
+            color: var(--bg-primary);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8ab4f8 0%, #c58af9 100%);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(138, 180, 248, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Harmony Analysis */
+        .harmony-result {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .harmony-type {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--success-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .harmony-score {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--danger-color), var(--warning-color), var(--success-color));
+            transition: width 0.5s ease;
+        }
+
+        .score-value {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .harmony-suggestions {
+            margin-top: 1rem;
+        }
+
+        .suggestion-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .suggestion-item:hover {
+            border-color: var(--accent-color);
+            transform: translateX(4px);
+        }
+
+        .suggestion-colors {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .suggestion-color {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            border: 2px solid var(--border-color);
+        }
+
+        /* Color Palette Display */
+        .palette-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .palette-color {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .palette-color:hover {
+            transform: scale(1.05);
+        }
+
+        .palette-color-label {
+            position: absolute;
+            bottom: -1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        /* Preview Section */
+        .preview-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .preview-tab {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .preview-tab.active {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            border-color: var(--accent-color);
+        }
+
+        .preview-content {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 2rem;
+            min-height: 300px;
+        }
+
+        /* UI Preview Components */
+        .ui-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 0.5rem;
+            cursor: pointer;
+        }
+
+        .ui-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .ui-card h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .ui-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+
+        /* Website Preview */
+        .website-preview {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .preview-header {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-nav {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .preview-nav a {
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .preview-hero {
+            padding: 3rem 1rem;
+            text-align: center;
+        }
+
+        .preview-hero h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            -webkit-text-fill-color: initial;
+            background: none;
+        }
+
+        .preview-content-section {
+            padding: 2rem 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .preview-card {
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        /* Color Wheel Visualization */
+        .color-wheel-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        #colorWheel {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .color-input-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .color-swatch {
+                width: 100%;
+                height: 80px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .preview-content {
+                padding: 1rem;
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--bg-tertiary);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            text-align: center;
+            border-radius: 6px;
+            padding: 0.5rem;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            border: 1px solid var(--border-color);
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .info-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            line-height: 1.5;
+        }
+
+        /* Sliders */
+        .slider {
+            width: calc(100% - 60px);
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-tertiary);
+            outline: none;
+            margin-right: 0.5rem;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            border: none;
+            transition: transform 0.2s ease;
+        }
+
+        .slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Contrast Analysis */
+        .contrast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .contrast-pair {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .contrast-visual {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .contrast-color-box {
+            flex: 1;
+            height: 60px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .contrast-ratio {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .wcag-badges {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .wcag-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .wcag-badge.pass {
+            background: var(--success-color);
+            color: var(--bg-primary);
+        }
+
+        .wcag-badge.fail {
+            background: var(--danger-color);
+            color: var(--bg-primary);
+        }
+
+        .wcag-badge.aa {
+            background: var(--warning-color);
+            color: var(--bg-primary);
+        }
+
+        /* Export Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-content {
+            background-color: var(--bg-secondary);
+            margin: 5% auto;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .close {
+            cursor: pointer;
+            font-size: 2rem;
+            font-weight: 300;
+            color: var(--text-secondary);
+            transition: color 0.2s ease;
+        }
+
+        .close:hover {
+            color: var(--text-primary);
+        }
+
+        .code-block {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .copy-btn {
+            float: right;
+            padding: 0.5rem 1rem;
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Color Harmonizer</h1>
+            <p class="subtitle">Armoniza tus paletas de color con teoría del color avanzada</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- Left Column: Color Input -->
+            <div>
+                <div class="card">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 8v8m-4-4h8"/>
+                        </svg>
+                        Tus Colores
+                    </h2>
+                    
+                    <div id="colorInputs" class="color-inputs">
+                        <!-- Color inputs will be generated here -->
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="addColorInput()">
+                            + Añadir Color
+                        </button>
+                        <button class="btn btn-secondary" onclick="generateRandomPalette()">
+                            🎲 Paleta Aleatoria
+                        </button>
+                        <button class="btn btn-secondary" onclick="importFromImage()">
+                            📷 Desde Imagen
+                        </button>
+                    </div>
+
+                    <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="extractColorsFromImage(event)">
+
+                    <div style="margin-top: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">
+                            Ajuste Global de Saturación
+                        </label>
+                        <input type="range" min="0" max="200" value="100" class="slider" id="saturationSlider" 
+                               oninput="adjustSaturation(this.value)">
+                        <span id="saturationValue" style="color: var(--text-secondary); font-size: 0.85rem;">100%</span>
+                    </div>
+
+                    <div style="margin-top: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">
+                            Ajuste Global de Luminosidad
+                        </label>
+                        <input type="range" min="0" max="200" value="100" class="slider" id="lightnessSlider" 
+                               oninput="adjustLightness(this.value)">
+                        <span id="lightnessValue" style="color: var(--text-secondary); font-size: 0.85rem;">100%</span>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 2rem;">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Análisis de Armonía
+                    </h2>
+
+                    <button class="btn btn-primary" onclick="analyzeHarmony()" style="width: 100%; margin-bottom: 1rem;">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        Analizar y Armonizar
+                    </button>
+
+                    <div id="harmonyResult"></div>
+                </div>
+
+                <div class="card" style="margin-top: 2rem;">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                        </svg>
+                        Contraste y Accesibilidad
+                    </h2>
+
+                    <button class="btn btn-secondary" onclick="analyzeContrast()" style="width: 100%; margin-bottom: 1rem;">
+                        Analizar Contraste WCAG
+                    </button>
+
+                    <div id="contrastResult"></div>
+                </div>
+            </div>
+
+            <!-- Right Column: Preview -->
+            <div>
+                <div class="card">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <path d="M9 3v18M3 9h18M3 15h18M15 3v18"/>
+                        </svg>
+                        Paleta Armonizada
+                    </h2>
+
+                    <div id="paletteDisplay" class="palette-display">
+                        <!-- Palette colors will be displayed here -->
+                    </div>
+
+                    <div class="btn-group" style="margin-top: 1rem;">
+                        <button class="btn btn-secondary" onclick="exportPalette('css')">
+                            Exportar CSS
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportPalette('json')">
+                            Exportar JSON
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportPalette('image')">
+                            Exportar Imagen
+                        </button>
+                    </div>
+
+                    <div class="color-wheel-container">
+                        <canvas id="colorWheel" width="300" height="300"></canvas>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 2rem;">
+                    <h2 class="card-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        Vista Previa
+                    </h2>
+
+                    <div class="preview-controls">
+                        <button class="preview-tab active" onclick="changePreview('ui')">Componentes UI</button>
+                        <button class="preview-tab" onclick="changePreview('website')">Sitio Web</button>
+                        <button class="preview-tab" onclick="changePreview('branding')">Branding</button>
+                    </div>
+
+                    <div id="previewContent" class="preview-content">
+                        <!-- Preview content will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Exportar Paleta</h2>
+                <span class="close" onclick="closeExportModal()">&times;</span>
+            </div>
+            <div id="exportContent"></div>
+        </div>
+    </div>
+
+    <!-- Hidden canvas for image export -->
+    <canvas id="exportCanvas" style="display: none;"></canvas>
+
+    <script>
+        // Color Theory and Harmonization Engine
+        class ColorHarmonizer {
+            constructor() {
+                this.colors = [];
+                this.harmonizedColors = [];
+                this.harmonyType = null;
+                this.harmonyScore = 0;
+            }
+
+            // Convert RGB to HSL
+            rgbToHsl(r, g, b) {
+                r /= 255;
+                g /= 255;
+                b /= 255;
+
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                let h, s, l = (max + min) / 2;
+
+                if (max === min) {
+                    h = s = 0;
+                } else {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+                    switch (max) {
+                        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                        case g: h = ((b - r) / d + 2) / 6; break;
+                        case b: h = ((r - g) / d + 4) / 6; break;
+                    }
+                }
+
+                return { h: h * 360, s: s * 100, l: l * 100 };
+            }
+
+            // Convert HSL to RGB
+            hslToRgb(h, s, l) {
+                h /= 360;
+                s /= 100;
+                l /= 100;
+
+                let r, g, b;
+
+                if (s === 0) {
+                    r = g = b = l;
+                } else {
+                    const hue2rgb = (p, q, t) => {
+                        if (t < 0) t += 1;
+                        if (t > 1) t -= 1;
+                        if (t < 1/6) return p + (q - p) * 6 * t;
+                        if (t < 1/2) return q;
+                        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                        return p;
+                    };
+
+                    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                    const p = 2 * l - q;
+
+                    r = hue2rgb(p, q, h + 1/3);
+                    g = hue2rgb(p, q, h);
+                    b = hue2rgb(p, q, h - 1/3);
+                }
+
+                return {
+                    r: Math.round(r * 255),
+                    g: Math.round(g * 255),
+                    b: Math.round(b * 255)
+                };
+            }
+
+            // Convert hex to RGB
+            hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            }
+
+            // Convert RGB to hex
+            rgbToHex(r, g, b) {
+                return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            }
+
+            // Normalize hue to 0-360 range
+            normalizeHue(hue) {
+                while (hue < 0) hue += 360;
+                while (hue >= 360) hue -= 360;
+                return hue;
+            }
+
+            // Calculate angle difference between two hues
+            hueDifference(h1, h2) {
+                const diff = Math.abs(h1 - h2);
+                return Math.min(diff, 360 - diff);
+            }
+
+            // Detect current harmony type based on hue relationships
+            detectHarmony(hues) {
+                if (hues.length < 2) return { type: 'single', score: 100 };
+                if (hues.length === 1) return { type: 'monochromatic', score: 100 };
+
+                const sortedHues = [...hues].sort((a, b) => a - b);
+                const differences = [];
+                
+                for (let i = 0; i < sortedHues.length - 1; i++) {
+                    differences.push(this.hueDifference(sortedHues[i], sortedHues[i + 1]));
+                }
+                differences.push(this.hueDifference(sortedHues[sortedHues.length - 1], sortedHues[0]));
+
+                // Check for monochromatic (all hues within 30°)
+                const maxDiff = Math.max(...differences);
+                if (maxDiff <= 30) {
+                    return { type: 'monochromatic', score: 95 };
+                }
+
+                // Check for analogous (hues within 60°)
+                if (maxDiff <= 60 && differences.length <= 4) {
+                    return { type: 'analogous', score: 90 };
+                }
+
+                // Check for complementary (2 colors, ~180° apart)
+                if (hues.length === 2) {
+                    const diff = this.hueDifference(hues[0], hues[1]);
+                    if (Math.abs(diff - 180) <= 20) {
+                        return { type: 'complementary', score: 92 };
+                    }
+                }
+
+                // Check for triadic (3 colors, ~120° apart)
+                if (hues.length === 3) {
+                    const isTriadic = differences.every(d => Math.abs(d - 120) <= 20);
+                    if (isTriadic) {
+                        return { type: 'triadic', score: 93 };
+                    }
+                }
+
+                // Check for split-complementary
+                if (hues.length === 3) {
+                    const sorted = [...hues].sort((a, b) => a - b);
+                    const diff1 = this.hueDifference(sorted[0], sorted[1]);
+                    const diff2 = this.hueDifference(sorted[1], sorted[2]);
+                    const diff3 = this.hueDifference(sorted[2], sorted[0]);
+                    
+                    if ((Math.abs(diff1 - 150) <= 20 && Math.abs(diff2 - 150) <= 20) ||
+                        (Math.abs(diff2 - 150) <= 20 && Math.abs(diff3 - 150) <= 20) ||
+                        (Math.abs(diff1 - 150) <= 20 && Math.abs(diff3 - 150) <= 20)) {
+                        return { type: 'split-complementary', score: 88 };
+                    }
+                }
+
+                // Check for tetradic/square (4 colors, ~90° apart)
+                if (hues.length === 4) {
+                    const isTetradic = differences.every(d => Math.abs(d - 90) <= 20);
+                    if (isTetradic) {
+                        return { type: 'tetradic', score: 91 };
+                    }
+                }
+
+                // Calculate harmony score based on how well distributed the hues are
+                const variance = this.calculateVariance(differences);
+                const score = Math.max(30, 80 - variance);
+
+                return { type: 'custom', score: Math.round(score) };
+            }
+
+            calculateVariance(values) {
+                const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+                return Math.sqrt(variance);
+            }
+
+            // Generate harmonic templates based on a base hue
+            generateHarmonicTemplates(baseHue) {
+                const templates = [];
+
+                // Monochromatic
+                templates.push({
+                    type: 'monochromatic',
+                    name: 'Monocromático',
+                    description: 'Variaciones del mismo tono',
+                    hues: [baseHue]
+                });
+
+                // Analogous
+                templates.push({
+                    type: 'analogous',
+                    name: 'Análogo',
+                    description: 'Colores adyacentes en la rueda',
+                    hues: [
+                        this.normalizeHue(baseHue - 30),
+                        baseHue,
+                        this.normalizeHue(baseHue + 30)
+                    ]
+                });
+
+                // Complementary
+                templates.push({
+                    type: 'complementary',
+                    name: 'Complementario',
+                    description: 'Colores opuestos',
+                    hues: [baseHue, this.normalizeHue(baseHue + 180)]
+                });
+
+                // Triadic
+                templates.push({
+                    type: 'triadic',
+                    name: 'Tríada',
+                    description: 'Tres colores equidistantes',
+                    hues: [
+                        baseHue,
+                        this.normalizeHue(baseHue + 120),
+                        this.normalizeHue(baseHue + 240)
+                    ]
+                });
+
+                // Split-Complementary
+                templates.push({
+                    type: 'split-complementary',
+                    name: 'Complementario Dividido',
+                    description: 'Base + adyacentes al complemento',
+                    hues: [
+                        baseHue,
+                        this.normalizeHue(baseHue + 150),
+                        this.normalizeHue(baseHue + 210)
+                    ]
+                });
+
+                // Tetradic
+                templates.push({
+                    type: 'tetradic',
+                    name: 'Tetrádico',
+                    description: 'Cuatro colores equidistantes',
+                    hues: [
+                        baseHue,
+                        this.normalizeHue(baseHue + 90),
+                        this.normalizeHue(baseHue + 180),
+                        this.normalizeHue(baseHue + 270)
+                    ]
+                });
+
+                return templates;
+            }
+
+            // Harmonize colors by adjusting to nearest harmonic template
+            harmonizeColors(colors) {
+                if (colors.length === 0) return [];
+
+                // Convert all colors to HSL
+                const hslColors = colors.map(hex => {
+                    const rgb = this.hexToRgb(hex);
+                    return this.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                });
+
+                // Get base hue (most saturated color or first color)
+                const baseColor = hslColors.reduce((prev, curr) => 
+                    curr.s > prev.s ? curr : prev
+                );
+                const baseHue = baseColor.h;
+
+                // Find best matching template
+                const templates = this.generateHarmonicTemplates(baseHue);
+                let bestTemplate = templates[0];
+                let bestScore = -1;
+
+                for (const template of templates) {
+                    const score = this.scoreTemplateMatch(hslColors, template);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestTemplate = template;
+                    }
+                }
+
+                // Adjust colors to match template
+                const harmonized = hslColors.map((color, i) => {
+                    // Find closest hue in template
+                    const targetHue = this.findClosestHue(color.h, bestTemplate.hues);
+                    
+                    // Adjust hue while preserving saturation and lightness
+                    const adjustedHue = this.interpolateHue(color.h, targetHue, 0.7);
+                    
+                    const rgb = this.hslToRgb(adjustedHue, color.s, color.l);
+                    return this.rgbToHex(rgb.r, rgb.g, rgb.b);
+                });
+
+                this.harmonyType = bestTemplate;
+                this.harmonizedColors = harmonized;
+
+                return {
+                    colors: harmonized,
+                    template: bestTemplate,
+                    originalColors: colors
+                };
+            }
+
+            scoreTemplateMatch(colors, template) {
+                let totalScore = 0;
+                
+                for (const color of colors) {
+                    const closestHue = this.findClosestHue(color.h, template.hues);
+                    const distance = this.hueDifference(color.h, closestHue);
+                    totalScore += Math.max(0, 100 - distance);
+                }
+
+                return totalScore / colors.length;
+            }
+
+            findClosestHue(hue, templateHues) {
+                let closest = templateHues[0];
+                let minDiff = this.hueDifference(hue, closest);
+
+                for (const templateHue of templateHues) {
+                    const diff = this.hueDifference(hue, templateHue);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closest = templateHue;
+                    }
+                }
+
+                return closest;
+            }
+
+            interpolateHue(fromHue, toHue, factor) {
+                const diff = toHue - fromHue;
+                const shortestDiff = diff > 180 ? diff - 360 : (diff < -180 ? diff + 360 : diff);
+                return this.normalizeHue(fromHue + shortestDiff * factor);
+            }
+
+            // Generate suggestions for different harmony types
+            generateSuggestions(colors) {
+                if (colors.length === 0) return [];
+
+                const hslColors = colors.map(hex => {
+                    const rgb = this.hexToRgb(hex);
+                    return this.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                });
+
+                const baseColor = hslColors.reduce((prev, curr) => 
+                    curr.s > prev.s ? curr : prev
+                );
+                const baseHue = baseColor.h;
+
+                const templates = this.generateHarmonicTemplates(baseHue);
+                const suggestions = [];
+
+                for (const template of templates) {
+                    const harmonizedColors = template.hues.map(hue => {
+                        const rgb = this.hslToRgb(hue, baseColor.s, baseColor.l);
+                        return this.rgbToHex(rgb.r, rgb.g, rgb.b);
+                    });
+
+                    suggestions.push({
+                        template: template,
+                        colors: harmonizedColors
+                    });
+                }
+
+                return suggestions;
+            }
+        }
+
+        // Global state
+        let harmonizer = new ColorHarmonizer();
+        let currentColors = ['#3b82f6', '#8b5cf6', '#ec4899'];
+        let currentPreview = 'ui';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeColors();
+            updatePaletteDisplay();
+            drawColorWheel();
+            updatePreview();
+        });
+
+        function initializeColors() {
+            currentColors.forEach(color => addColorInput(color));
+        }
+
+        function addColorInput(color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')) {
+            const container = document.getElementById('colorInputs');
+            const index = currentColors.length;
+            currentColors.push(color);
+
+            const rgb = harmonizer.hexToRgb(color);
+            const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'color-input-group';
+            inputGroup.innerHTML = `
+                <div class="color-swatch" style="background-color: ${color};">
+                    <input type="color" value="${color}" onchange="updateColor(${index}, this.value)">
+                </div>
+                <div class="color-info">
+                    <div class="color-hex" id="hex-${index}">${color.toUpperCase()}</div>
+                    <div class="color-values" id="values-${index}">
+                        HSL(${Math.round(hsl.h)}°, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%)
+                    </div>
+                </div>
+                <button class="color-remove" onclick="removeColor(${index})" title="Eliminar color">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            `;
+
+            container.appendChild(inputGroup);
+            updatePaletteDisplay();
+            drawColorWheel();
+        }
+
+        function updateColor(index, color) {
+            currentColors[index] = color;
+            
+            const rgb = harmonizer.hexToRgb(color);
+            const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+            document.getElementById(`hex-${index}`).textContent = color.toUpperCase();
+            document.getElementById(`values-${index}`).textContent = 
+                `HSL(${Math.round(hsl.h)}°, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%)`;
+
+            updatePaletteDisplay();
+            drawColorWheel();
+            updatePreview();
+        }
+
+        function removeColor(index) {
+            currentColors.splice(index, 1);
+            document.getElementById('colorInputs').innerHTML = '';
+            currentColors.forEach((color, i) => {
+                const rgb = harmonizer.hexToRgb(color);
+                const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                
+                const container = document.getElementById('colorInputs');
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'color-input-group';
+                inputGroup.innerHTML = `
+                    <div class="color-swatch" style="background-color: ${color};">
+                        <input type="color" value="${color}" onchange="updateColor(${i}, this.value)">
+                    </div>
+                    <div class="color-info">
+                        <div class="color-hex" id="hex-${i}">${color.toUpperCase()}</div>
+                        <div class="color-values" id="values-${i}">
+                            HSL(${Math.round(hsl.h)}°, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%)
+                        </div>
+                    </div>
+                    <button class="color-remove" onclick="removeColor(${i})" title="Eliminar color">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                `;
+                container.appendChild(inputGroup);
+            });
+            updatePaletteDisplay();
+            drawColorWheel();
+            updatePreview();
+        }
+
+        function generateRandomPalette() {
+            currentColors = [];
+            document.getElementById('colorInputs').innerHTML = '';
+            
+            const numColors = 3 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < numColors; i++) {
+                const color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                addColorInput(color);
+            }
+        }
+
+        function analyzeHarmony() {
+            if (currentColors.length === 0) {
+                alert('Añade al menos un color para analizar');
+                return;
+            }
+
+            // Get hues from current colors
+            const hues = currentColors.map(hex => {
+                const rgb = harmonizer.hexToRgb(hex);
+                const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                return hsl.h;
+            });
+
+            // Detect current harmony
+            const harmonyDetection = harmonizer.detectHarmony(hues);
+
+            // Harmonize colors
+            const result = harmonizer.harmonizeColors(currentColors);
+
+            // Update display
+            displayHarmonyResult(harmonyDetection, result);
+
+            // Update current colors with harmonized versions
+            currentColors = result.colors;
+            
+            // Refresh color inputs
+            document.getElementById('colorInputs').innerHTML = '';
+            currentColors.forEach((color, i) => {
+                const rgb = harmonizer.hexToRgb(color);
+                const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                
+                const container = document.getElementById('colorInputs');
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'color-input-group';
+                inputGroup.innerHTML = `
+                    <div class="color-swatch" style="background-color: ${color};">
+                        <input type="color" value="${color}" onchange="updateColor(${i}, this.value)">
+                    </div>
+                    <div class="color-info">
+                        <div class="color-hex" id="hex-${i}">${color.toUpperCase()}</div>
+                        <div class="color-values" id="values-${i}">
+                            HSL(${Math.round(hsl.h)}°, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%)
+                        </div>
+                    </div>
+                    <button class="color-remove" onclick="removeColor(${i})" title="Eliminar color">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                `;
+                container.appendChild(inputGroup);
+            });
+
+            updatePaletteDisplay();
+            drawColorWheel();
+            updatePreview();
+        }
+
+        function displayHarmonyResult(detection, result) {
+            const container = document.getElementById('harmonyResult');
+            
+            const typeNames = {
+                'monochromatic': 'Monocromático',
+                'analogous': 'Análogo',
+                'complementary': 'Complementario',
+                'triadic': 'Tríada',
+                'split-complementary': 'Complementario Dividido',
+                'tetradic': 'Tetrádico',
+                'custom': 'Personalizado',
+                'single': 'Color Único'
+            };
+
+            const descriptions = {
+                'monochromatic': 'Variaciones del mismo tono con diferentes saturaciones y luminosidades',
+                'analogous': 'Colores adyacentes en la rueda cromática que crean armonía suave',
+                'complementary': 'Colores opuestos que crean contraste vibrante',
+                'triadic': 'Tres colores equidistantes que crean balance dinámico',
+                'split-complementary': 'Una base con dos colores adyacentes a su complemento',
+                'tetradic': 'Cuatro colores en esquema rectangular equilibrado',
+                'custom': 'Esquema personalizado basado en tus preferencias',
+                'single': 'Un solo color'
+            };
+
+            container.innerHTML = `
+                <div class="harmony-result">
+                    <div class="harmony-type">
+                        ${typeNames[detection.type] || detection.type}
+                    </div>
+                    <p class="info-text">${descriptions[detection.type] || 'Paleta personalizada'}</p>
+                    
+                    <div class="harmony-score">
+                        <span style="color: var(--text-secondary);">Puntuación de armonía:</span>
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: ${detection.score}%;"></div>
+                        </div>
+                        <span class="score-value">${detection.score}/100</span>
+                    </div>
+
+                    <div class="harmony-suggestions">
+                        <h3 style="font-size: 1rem; margin-bottom: 0.75rem; color: var(--text-secondary);">
+                            Otras sugerencias de armonía:
+                        </h3>
+                        <div id="suggestions"></div>
+                    </div>
+                </div>
+            `;
+
+            // Generate and display suggestions
+            const suggestions = harmonizer.generateSuggestions(currentColors);
+            const suggestionsContainer = document.getElementById('suggestions');
+
+            suggestions.forEach((suggestion, index) => {
+                const suggestionEl = document.createElement('div');
+                suggestionEl.className = 'suggestion-item';
+                suggestionEl.innerHTML = `
+                    <strong>${suggestion.template.name}</strong>
+                    <p class="info-text">${suggestion.template.description}</p>
+                    <div class="suggestion-colors">
+                        ${suggestion.colors.map(c => `<div class="suggestion-color" style="background-color: ${c};"></div>`).join('')}
+                    </div>
+                `;
+                suggestionEl.onclick = () => applySuggestion(suggestion.colors);
+                suggestionsContainer.appendChild(suggestionEl);
+            });
+        }
+
+        function applySuggestion(colors) {
+            currentColors = colors;
+            document.getElementById('colorInputs').innerHTML = '';
+            currentColors.forEach((color, i) => {
+                const rgb = harmonizer.hexToRgb(color);
+                const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                
+                const container = document.getElementById('colorInputs');
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'color-input-group';
+                inputGroup.innerHTML = `
+                    <div class="color-swatch" style="background-color: ${color};">
+                        <input type="color" value="${color}" onchange="updateColor(${i}, this.value)">
+                    </div>
+                    <div class="color-info">
+                        <div class="color-hex" id="hex-${i}">${color.toUpperCase()}</div>
+                        <div class="color-values" id="values-${i}">
+                            HSL(${Math.round(hsl.h)}°, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%)
+                        </div>
+                    </div>
+                    <button class="color-remove" onclick="removeColor(${i})" title="Eliminar color">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                `;
+                container.appendChild(inputGroup);
+            });
+            updatePaletteDisplay();
+            drawColorWheel();
+            updatePreview();
+        }
+
+        function updatePaletteDisplay() {
+            const container = document.getElementById('paletteDisplay');
+            container.innerHTML = '';
+
+            currentColors.forEach((color, i) => {
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'palette-color';
+                colorDiv.style.backgroundColor = color;
+                colorDiv.innerHTML = `<span class="palette-color-label">${color}</span>`;
+                colorDiv.onclick = () => {
+                    navigator.clipboard.writeText(color);
+                    alert(`Color ${color} copiado al portapapeles`);
+                };
+                container.appendChild(colorDiv);
+            });
+        }
+
+        function drawColorWheel() {
+            const canvas = document.getElementById('colorWheel');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(centerX, centerY) - 20;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw color wheel
+            for (let angle = 0; angle < 360; angle++) {
+                const startAngle = (angle - 90) * Math.PI / 180;
+                const endAngle = (angle + 1 - 90) * Math.PI / 180;
+
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+
+                const rgb = harmonizer.hslToRgb(angle, 100, 50);
+                ctx.fillStyle = harmonizer.rgbToHex(rgb.r, rgb.g, rgb.b);
+                ctx.fill();
+            }
+
+            // Draw center circle
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius * 0.3, 0, 2 * Math.PI);
+            ctx.fillStyle = '#1a1f2e';
+            ctx.fill();
+
+            // Draw current colors on wheel
+            currentColors.forEach(hex => {
+                const rgb = harmonizer.hexToRgb(hex);
+                const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                const angle = (hsl.h - 90) * Math.PI / 180;
+                const x = centerX + Math.cos(angle) * radius * 0.85;
+                const y = centerY + Math.sin(angle) * radius * 0.85;
+
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                ctx.fillStyle = hex;
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+        }
+
+        function changePreview(type) {
+            currentPreview = type;
+            
+            // Update active tab
+            document.querySelectorAll('.preview-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const container = document.getElementById('previewContent');
+
+            if (currentColors.length === 0) {
+                container.innerHTML = '<p class="info-text">Añade colores para ver la vista previa</p>';
+                return;
+            }
+
+            const primary = currentColors[0] || '#3b82f6';
+            const secondary = currentColors[1] || '#8b5cf6';
+            const accent = currentColors[2] || '#ec4899';
+            const neutral = currentColors[3] || '#64748b';
+
+            if (currentPreview === 'ui') {
+                container.innerHTML = `
+                    <div>
+                        <h3 style="margin-bottom: 1rem; color: ${primary};">Componentes de UI</h3>
+                        
+                        <div style="margin-bottom: 1.5rem;">
+                            <button class="ui-button" style="background: ${primary}; color: white;">Primario</button>
+                            <button class="ui-button" style="background: ${secondary}; color: white;">Secundario</button>
+                            <button class="ui-button" style="background: transparent; border: 2px solid ${accent}; color: ${accent};">Acento</button>
+                        </div>
+
+                        <div class="ui-card" style="border-left: 4px solid ${primary};">
+                            <h3 style="color: ${primary};">Título de Tarjeta</h3>
+                            <p style="color: #666;">Esta es una tarjeta de ejemplo que muestra cómo se verían tus colores en un componente real.</p>
+                            <button class="ui-button" style="background: ${secondary}; color: white; margin-top: 1rem;">Acción</button>
+                        </div>
+
+                        <div style="margin-top: 1rem;">
+                            <span class="ui-badge" style="background: ${primary}; color: white;">Badge 1</span>
+                            <span class="ui-badge" style="background: ${secondary}; color: white;">Badge 2</span>
+                            <span class="ui-badge" style="background: ${accent}; color: white;">Badge 3</span>
+                            <span class="ui-badge" style="background: ${neutral}; color: white;">Badge 4</span>
+                        </div>
+                    </div>
+                `;
+            } else if (currentPreview === 'website') {
+                container.innerHTML = `
+                    <div class="website-preview">
+                        <div class="preview-header" style="background: ${primary}; color: white;">
+                            <div style="font-weight: 700; font-size: 1.2rem;">Mi Sitio</div>
+                            <div class="preview-nav">
+                                <a href="#" style="color: white;">Inicio</a>
+                                <a href="#" style="color: rgba(255,255,255,0.8);">Sobre</a>
+                                <a href="#" style="color: rgba(255,255,255,0.8);">Contacto</a>
+                            </div>
+                        </div>
+                        
+                        <div class="preview-hero" style="background: linear-gradient(135deg, ${primary}, ${secondary}); color: white;">
+                            <h1>Bienvenido a Nuestro Sitio</h1>
+                            <p>Descubre cómo tu paleta de colores cobra vida</p>
+                            <button class="ui-button" style="background: white; color: ${primary}; margin-top: 1rem; padding: 0.75rem 2rem;">Comenzar</button>
+                        </div>
+
+                        <div class="preview-content-section" style="background: #f8f9fa;">
+                            <div class="preview-card" style="background: white; border-top: 3px solid ${primary};">
+                                <h3 style="color: ${primary};">Característica 1</h3>
+                                <p style="color: #666;">Descripción de característica</p>
+                            </div>
+                            <div class="preview-card" style="background: white; border-top: 3px solid ${secondary};">
+                                <h3 style="color: ${secondary};">Característica 2</h3>
+                                <p style="color: #666;">Descripción de característica</p>
+                            </div>
+                            <div class="preview-card" style="background: white; border-top: 3px solid ${accent};">
+                                <h3 style="color: ${accent};">Característica 3</h3>
+                                <p style="color: #666;">Descripción de característica</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (currentPreview === 'branding') {
+                container.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="background: white; padding: 3rem; border-radius: 8px; margin-bottom: 2rem;">
+                            <div style="display: inline-block; padding: 2rem 3rem; background: ${primary}; border-radius: 12px;">
+                                <div style="font-size: 2.5rem; font-weight: 900; color: white;">LOGO</div>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                            ${currentColors.map((color, i) => `
+                                <div style="background: ${color}; aspect-ratio: 16/9; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                    <div style="color: ${getLuminance(color) > 0.5 ? '#000' : '#fff'}; font-weight: 600;">
+                                        Color ${i + 1}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div style="margin-top: 2rem; background: white; padding: 2rem; border-radius: 8px;">
+                            <h2 style="color: ${primary}; margin-bottom: 1rem;">Tipografía</h2>
+                            <p style="font-size: 2rem; font-weight: 700; color: ${primary};">The Quick Brown Fox</p>
+                            <p style="font-size: 1.5rem; color: ${secondary};">Jumps Over The Lazy Dog</p>
+                            <p style="color: #666;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function getLuminance(hex) {
+            const rgb = harmonizer.hexToRgb(hex);
+            const r = rgb.r / 255;
+            const g = rgb.g / 255;
+            const b = rgb.b / 255;
+            return 0.299 * r + 0.587 * g + 0.114 * b;
+        }
+
+        // Import colors from image
+        function importFromImage() {
+            document.getElementById('imageInput').click();
+        }
+
+        function extractColorsFromImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Resize for performance
+                    const maxSize = 200;
+                    const scale = Math.min(maxSize / img.width, maxSize / img.height);
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // Extract dominant colors using color quantization
+                    const colors = extractDominantColors(imageData, 6);
+                    
+                    // Replace current palette
+                    currentColors = colors;
+                    document.getElementById('colorInputs').innerHTML = '';
+                    currentColors.forEach((color, i) => {
+                        const rgb = harmonizer.hexToRgb(color);
+                        const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                        
+                        const container = document.getElementById('colorInputs');
+                        const inputGroup = document.createElement('div');
+                        inputGroup.className = 'color-input-group';
+                        inputGroup.innerHTML = `
+                            <div class="color-swatch" style="background-color: ${color};">
+                                <input type="color" value="${color}" onchange="updateColor(${i}, this.value)">
+                            </div>
+                            <div class="color-info">
+                                <div class="color-hex" id="hex-${i}">${color.toUpperCase()}</div>
+                                <div class="color-values" id="values-${i}">
+                                    HSL(${Math.round(hsl.h)}°, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%)
+                                </div>
+                            </div>
+                            <button class="color-remove" onclick="removeColor(${i})" title="Eliminar color">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        `;
+                        container.appendChild(inputGroup);
+                    });
+                    
+                    updatePaletteDisplay();
+                    drawColorWheel();
+                    updatePreview();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function extractDominantColors(imageData, numColors) {
+            const pixels = [];
+            const data = imageData.data;
+            
+            // Sample pixels (every 4th pixel for performance)
+            for (let i = 0; i < data.length; i += 16) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const a = data[i + 3];
+                
+                // Skip transparent and near-white/black pixels
+                if (a > 128 && (r + g + b) > 100 && (r + g + b) < 700) {
+                    pixels.push([r, g, b]);
+                }
+            }
+
+            // K-means clustering
+            const clusters = kMeansClustering(pixels, numColors);
+            return clusters.map(cluster => {
+                const r = Math.round(cluster[0]);
+                const g = Math.round(cluster[1]);
+                const b = Math.round(cluster[2]);
+                return harmonizer.rgbToHex(r, g, b);
+            });
+        }
+
+        function kMeansClustering(pixels, k, maxIterations = 10) {
+            if (pixels.length === 0) return [];
+            
+            // Initialize centroids randomly
+            let centroids = [];
+            for (let i = 0; i < k; i++) {
+                centroids.push(pixels[Math.floor(Math.random() * pixels.length)].slice());
+            }
+
+            for (let iter = 0; iter < maxIterations; iter++) {
+                // Assign pixels to nearest centroid
+                const clusters = Array(k).fill(null).map(() => []);
+                
+                for (const pixel of pixels) {
+                    let minDist = Infinity;
+                    let clusterIndex = 0;
+                    
+                    for (let i = 0; i < k; i++) {
+                        const dist = colorDistance(pixel, centroids[i]);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            clusterIndex = i;
+                        }
+                    }
+                    
+                    clusters[clusterIndex].push(pixel);
+                }
+
+                // Update centroids
+                const newCentroids = clusters.map(cluster => {
+                    if (cluster.length === 0) return centroids[0];
+                    
+                    const sum = cluster.reduce((acc, pixel) => [
+                        acc[0] + pixel[0],
+                        acc[1] + pixel[1],
+                        acc[2] + pixel[2]
+                    ], [0, 0, 0]);
+                    
+                    return [
+                        sum[0] / cluster.length,
+                        sum[1] / cluster.length,
+                        sum[2] / cluster.length
+                    ];
+                });
+
+                centroids = newCentroids;
+            }
+
+            return centroids;
+        }
+
+        function colorDistance(c1, c2) {
+            return Math.sqrt(
+                Math.pow(c1[0] - c2[0], 2) +
+                Math.pow(c1[1] - c2[1], 2) +
+                Math.pow(c1[2] - c2[2], 2)
+            );
+        }
+
+        // Global adjustments
+        let originalColors = [];
+
+        function adjustSaturation(value) {
+            document.getElementById('saturationValue').textContent = value + '%';
+            
+            if (originalColors.length === 0) {
+                originalColors = currentColors.slice();
+            }
+
+            const factor = value / 100;
+            currentColors = originalColors.map(hex => {
+                const rgb = harmonizer.hexToRgb(hex);
+                const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                const newS = Math.min(100, hsl.s * factor);
+                const newRgb = harmonizer.hslToRgb(hsl.h, newS, hsl.l);
+                return harmonizer.rgbToHex(newRgb.r, newRgb.g, newRgb.b);
+            });
+
+            refreshColorInputs();
+        }
+
+        function adjustLightness(value) {
+            document.getElementById('lightnessValue').textContent = value + '%';
+            
+            if (originalColors.length === 0) {
+                originalColors = currentColors.slice();
+            }
+
+            const factor = value / 100;
+            currentColors = originalColors.map(hex => {
+                const rgb = harmonizer.hexToRgb(hex);
+                const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                const newL = Math.min(100, hsl.l * factor);
+                const newRgb = harmonizer.hslToRgb(hsl.h, hsl.s, newL);
+                return harmonizer.rgbToHex(newRgb.r, newRgb.g, newRgb.b);
+            });
+
+            refreshColorInputs();
+        }
+
+        function refreshColorInputs() {
+            document.getElementById('colorInputs').innerHTML = '';
+            currentColors.forEach((color, i) => {
+                const rgb = harmonizer.hexToRgb(color);
+                const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                
+                const container = document.getElementById('colorInputs');
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'color-input-group';
+                inputGroup.innerHTML = `
+                    <div class="color-swatch" style="background-color: ${color};">
+                        <input type="color" value="${color}" onchange="updateColor(${i}, this.value)">
+                    </div>
+                    <div class="color-info">
+                        <div class="color-hex" id="hex-${i}">${color.toUpperCase()}</div>
+                        <div class="color-values" id="values-${i}">
+                            HSL(${Math.round(hsl.h)}°, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%)
+                        </div>
+                    </div>
+                    <button class="color-remove" onclick="removeColor(${i})" title="Eliminar color">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                `;
+                container.appendChild(inputGroup);
+            });
+            
+            updatePaletteDisplay();
+            drawColorWheel();
+            updatePreview();
+        }
+
+        // Contrast Analysis
+        function analyzeContrast() {
+            if (currentColors.length < 2) {
+                alert('Necesitas al menos 2 colores para analizar el contraste');
+                return;
+            }
+
+            const container = document.getElementById('contrastResult');
+            let html = '<div class="contrast-grid">';
+
+            // Compare all color pairs
+            for (let i = 0; i < currentColors.length; i++) {
+                for (let j = i + 1; j < currentColors.length; j++) {
+                    const color1 = currentColors[i];
+                    const color2 = currentColors[j];
+                    const ratio = calculateContrastRatio(color1, color2);
+                    
+                    const wcagAA_normal = ratio >= 4.5;
+                    const wcagAAA_normal = ratio >= 7;
+                    const wcagAA_large = ratio >= 3;
+
+                    html += `
+                        <div class="contrast-pair">
+                            <div class="contrast-visual">
+                                <div class="contrast-color-box" style="background: ${color1}; color: ${color2};">
+                                    Aa
+                                </div>
+                                <div class="contrast-color-box" style="background: ${color2}; color: ${color1};">
+                                    Aa
+                                </div>
+                            </div>
+                            <div class="contrast-ratio">
+                                Ratio: ${ratio.toFixed(2)}:1
+                            </div>
+                            <div class="wcag-badges">
+                                <span class="wcag-badge ${wcagAA_large ? 'pass' : 'fail'}">
+                                    ${wcagAA_large ? '✓' : '✗'} AA Grande
+                                </span>
+                                <span class="wcag-badge ${wcagAA_normal ? 'pass' : 'fail'}">
+                                    ${wcagAA_normal ? '✓' : '✗'} AA Normal
+                                </span>
+                                <span class="wcag-badge ${wcagAAA_normal ? 'pass' : 'fail'}">
+                                    ${wcagAAA_normal ? '✓' : '✗'} AAA
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            html += '</div>';
+            html += '<p class="info-text" style="margin-top: 1rem;">WCAG 2.1 - AA requiere 4.5:1 para texto normal y 3:1 para texto grande. AAA requiere 7:1.</p>';
+            container.innerHTML = html;
+        }
+
+        function calculateContrastRatio(hex1, hex2) {
+            const lum1 = getRelativeLuminance(hex1);
+            const lum2 = getRelativeLuminance(hex2);
+            
+            const lighter = Math.max(lum1, lum2);
+            const darker = Math.min(lum1, lum2);
+            
+            return (lighter + 0.05) / (darker + 0.05);
+        }
+
+        function getRelativeLuminance(hex) {
+            const rgb = harmonizer.hexToRgb(hex);
+            const [r, g, b] = [rgb.r, rgb.g, rgb.b].map(val => {
+                val = val / 255;
+                return val <= 0.03928 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
+            });
+            
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        }
+
+        // Export Functions
+        function exportPalette(format) {
+            const modal = document.getElementById('exportModal');
+            const content = document.getElementById('exportContent');
+
+            if (format === 'css') {
+                const cssCode = generateCSSExport();
+                content.innerHTML = `
+                    <h3 style="margin-bottom: 1rem;">Código CSS</h3>
+                    <button class="copy-btn" onclick="copyToClipboard(this, 'css')">Copiar</button>
+                    <div class="code-block">${escapeHtml(cssCode)}</div>
+                `;
+            } else if (format === 'json') {
+                const jsonCode = generateJSONExport();
+                content.innerHTML = `
+                    <h3 style="margin-bottom: 1rem;">Código JSON</h3>
+                    <button class="copy-btn" onclick="copyToClipboard(this, 'json')">Copiar</button>
+                    <div class="code-block">${escapeHtml(jsonCode)}</div>
+                `;
+            } else if (format === 'image') {
+                generateImageExport();
+                content.innerHTML = `
+                    <h3 style="margin-bottom: 1rem;">Imagen de Paleta</h3>
+                    <p class="info-text">Haz clic derecho en la imagen y selecciona "Guardar imagen como..."</p>
+                    <div style="margin-top: 1rem; text-align: center;">
+                        <img id="paletteImage" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border-color);">
+                    </div>
+                `;
+            }
+
+            modal.style.display = 'block';
+        }
+
+        function generateCSSExport() {
+            let css = ':root {\n';
+            currentColors.forEach((color, i) => {
+                css += `  --color-${i + 1}: ${color};\n`;
+            });
+            css += '}\n\n';
+            css += '/* Example usage:\n';
+            css += '  .primary-button {\n';
+            css += '    background: var(--color-1);\n';
+            css += '    color: white;\n';
+            css += '  }\n';
+            css += '*/';
+            return css;
+        }
+
+        function generateJSONExport() {
+            const paletteData = {
+                name: "My Color Palette",
+                colors: currentColors.map((color, i) => {
+                    const rgb = harmonizer.hexToRgb(color);
+                    const hsl = harmonizer.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                    return {
+                        name: `Color ${i + 1}`,
+                        hex: color,
+                        rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
+                        hsl: `hsl(${Math.round(hsl.h)}, ${Math.round(hsl.s)}%, ${Math.round(hsl.l)}%)`
+                    };
+                }),
+                created: new Date().toISOString()
+            };
+            return JSON.stringify(paletteData, null, 2);
+        }
+
+        function generateImageExport() {
+            const canvas = document.getElementById('exportCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            const width = 1200;
+            const height = 400;
+            canvas.width = width;
+            canvas.height = height;
+
+            // Background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw color swatches
+            const swatchWidth = width / currentColors.length;
+            currentColors.forEach((color, i) => {
+                ctx.fillStyle = color;
+                ctx.fillRect(i * swatchWidth, 0, swatchWidth, height * 0.7);
+
+                // Draw color code
+                ctx.fillStyle = getLuminance(color) > 0.5 ? '#000000' : '#ffffff';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(color.toUpperCase(), (i + 0.5) * swatchWidth, height * 0.5);
+
+                // Draw RGB
+                const rgb = harmonizer.hexToRgb(color);
+                ctx.font = '16px Arial';
+                ctx.fillText(`RGB(${rgb.r}, ${rgb.g}, ${rgb.b})`, (i + 0.5) * swatchWidth, height * 0.6);
+
+                // Draw name at bottom
+                ctx.fillStyle = '#333333';
+                ctx.font = '18px Arial';
+                ctx.fillText(`Color ${i + 1}`, (i + 0.5) * swatchWidth, height * 0.85);
+            });
+
+            // Convert to image
+            const dataURL = canvas.toDataURL('image/png');
+            document.getElementById('paletteImage').src = dataURL;
+        }
+
+        function copyToClipboard(button, format) {
+            const codeBlock = button.nextElementSibling;
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '¡Copiado!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').style.display = 'none';
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/\n/g, "<br>");
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('exportModal');
+            if (event.target === modal) {
+                closeExportModal();
+            }
+        };
+    </script>
+</body>
+</html>

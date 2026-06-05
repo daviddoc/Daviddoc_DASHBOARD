@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor EPUB a Markdown</title>
+    <!-- TailwindCSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f172a',
+                        darkCard: '#1e293b',
+                        primary: '#3b82f6',
+                        primaryHover: '#2563eb'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- JSZip para descomprimir el EPUB y crear el ZIP final -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Turndown para convertir HTML a Markdown -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/turndown/7.1.2/turndown.js"></script>
+</head>
+<body class="bg-darkBg text-slate-200 font-sans min-h-screen p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto space-y-6">
+        <!-- Cabecera -->
+        <header class="text-center space-y-2 mb-8">
+            <h1 class="text-4xl font-bold text-white tracking-tight">EPUB <span class="text-primary">a Markdown</span></h1>
+            <p class="text-slate-400">Extrae el texto y las imágenes de tus libros localmente, sin servidores.</p>
+        </header>
+
+        <!-- Zona de carga -->
+        <div class="bg-darkCard rounded-xl p-6 shadow-lg border border-slate-700">
+            <h2 class="text-xl font-semibold mb-4 text-white">1. Selecciona tu libro</h2>
+            <div class="flex items-center justify-center w-full">
+                <label for="epub-file" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-600 border-dashed rounded-lg cursor-pointer bg-slate-800 hover:bg-slate-700 hover:border-primary transition-all">
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                        <svg class="w-8 h-8 mb-3 text-slate-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                        </svg>
+                        <p class="mb-2 text-sm text-slate-400"><span class="font-semibold text-primary">Haz clic para cargar</span> o arrastra y suelta tu archivo</p>
+                        <p class="text-xs text-slate-500">Solo archivos .epub</p>
+                    </div>
+                    <input id="epub-file" type="file" accept=".epub" class="hidden" />
+                </label>
+            </div>
+            <div id="file-info" class="mt-4 hidden flex items-center justify-between bg-slate-800 p-3 rounded border border-slate-600">
+                <span id="file-name" class="font-medium truncate text-primary">libro.epub</span>
+                <span id="file-status" class="text-sm text-yellow-400">Analizando...</span>
+            </div>
+        </div>
+
+        <!-- Opciones de conversión (Ocultas inicialmente) -->
+        <div id="conversion-section" class="bg-darkCard rounded-xl p-6 shadow-lg border border-slate-700 hidden">
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-white">2. Selecciona capítulos</h2>
+                    <p class="text-sm text-slate-400 mt-1">Elige qué partes del libro deseas convertir a Markdown.</p>
+                </div>
+                <button id="toggle-all" class="text-sm text-primary hover:text-white transition-colors">Deseleccionar todo</button>
+            </div>
+
+            <div id="chapters-list" class="max-h-64 overflow-y-auto space-y-2 bg-slate-800 p-4 rounded border border-slate-600 mb-6">
+                <!-- Los capítulos se generarán aquí -->
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button id="btn-convert" class="w-full bg-primary hover:bg-primaryHover text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Generar ZIP (Todo en un Markdown + Imágenes)
+                </button>
+                <button id="btn-convert-multi" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                    Generar ZIP (Archivos Individuales + Imágenes)
+                </button>
+            </div>
+        </div>
+
+        <!-- Consola de proceso -->
+        <div id="log-section" class="bg-black/50 rounded-xl p-4 font-mono text-xs text-slate-400 hidden">
+            <ul id="log-list" class="space-y-1"></ul>
+        </div>
+    </div>
+
+    <script>
+        // --- VARIABLES GLOBALES ---
+        let epubZip = null;
+        let epubChapters = [];
+        let bookTitle = "Libro";
+        let imagesToExtract = new Set();
+        const turndownService = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+
+        // Añadimos regla personalizada para que Turndown respete nuestras notas al pie
+        turndownService.addRule('footnotes', {
+            filter: function (node) {
+                return node.nodeName === 'SPAN' && node.hasAttribute('data-footnote');
+            },
+            replacement: function (content, node) {
+                return `[^${node.getAttribute('data-footnote')}]`;
+            }
+        });
+
+        // Elementos del DOM
+        const fileInput = document.getElementById('epub-file');
+        const fileInfo = document.getElementById('file-info');
+        const fileNameUI = document.getElementById('file-name');
+        const fileStatusUI = document.getElementById('file-status');
+        const conversionSection = document.getElementById('conversion-section');
+        const chaptersList = document.getElementById('chapters-list');
+        const toggleAllBtn = document.getElementById('toggle-all');
+        const btnConvert = document.getElementById('btn-convert');
+        const btnConvertMulti = document.getElementById('btn-convert-multi');
+        const logSection = document.getElementById('log-section');
+        const logList = document.getElementById('log-list');
+
+        // --- LÓGICA DE INTERFAZ ---
+        function log(message, type = 'info') {
+            logSection.classList.remove('hidden');
+            const li = document.createElement('li');
+            li.textContent = `> ${message}`;
+            if(type === 'error') li.classList.add('text-red-400');
+            if(type === 'success') li.classList.add('text-green-400');
+            logList.appendChild(li);
+            logSection.scrollTop = logSection.scrollHeight;
+        }
+
+        // --- LÓGICA DE PROCESAMIENTO EPUB ---
+
+        // Función para resolver rutas relativas dentro del ZIP
+        function resolvePath(basePath, relativePath) {
+            if (relativePath.startsWith('/')) return relativePath.substring(1);
+            const stack = basePath.split('/').slice(0, -1);
+            const parts = relativePath.split('/');
+            for (const part of parts) {
+                if (part === '.') continue;
+                if (part === '..') stack.pop();
+                else stack.push(part);
+            }
+            return stack.join('/');
+        }
+
+        // Configurar arrastrar y soltar
+        const dropZone = fileInput.closest('label');
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-primary', 'bg-slate-700');
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-primary', 'bg-slate-700');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-primary', 'bg-slate-700');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Reset UI
+            fileInfo.classList.remove('hidden');
+            fileNameUI.textContent = file.name;
+            fileStatusUI.textContent = "Abriendo EPUB...";
+            fileStatusUI.className = "text-sm text-yellow-400";
+            conversionSection.classList.add('hidden');
+            chaptersList.innerHTML = '';
+            epubChapters = [];
+            logList.innerHTML = '';
+            imagesToExtract.clear();
+
+            try {
+                log("Cargando archivo ZIP del EPUB...");
+                epubZip = await JSZip.loadAsync(file);
+
+                log("Buscando contenedor META-INF...");
+                const containerFile = epubZip.file("META-INF/container.xml");
+                if (!containerFile) throw new Error("No se encontró META-INF/container.xml. No es un EPUB válido.");
+
+                const containerXml = await containerFile.async("string");
+                const parser = new DOMParser();
+                const containerDoc = parser.parseFromString(containerXml, "text/xml");
+                const rootfile = containerDoc.querySelector("rootfile");
+                const opfPath = rootfile.getAttribute("full-path");
+                const opfDir = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : "";
+
+                log(`OPF encontrado en: ${opfPath}`);
+                const opfXml = await epubZip.file(opfPath).async("string");
+                const opfDoc = parser.parseFromString(opfXml, "text/xml");
+
+                // Extraer título
+                const titleNode = opfDoc.getElementsByTagName("dc:title")[0] || opfDoc.getElementsByTagName("title")[0];
+                bookTitle = titleNode ? titleNode.textContent.trim() : file.name.replace('.epub', '');
+
+                log(`Título del libro: ${bookTitle}`);
+
+                // Extraer Manifest (Archivos)
+                const manifest = {};
+                const items = opfDoc.getElementsByTagName("item");
+                for (let i = 0; i < items.length; i++) {
+                    const id = items[i].getAttribute("id");
+                    const href = items[i].getAttribute("href");
+                    manifest[id] = href;
+                }
+
+                // Extraer Spine (Orden de lectura)
+                const itemrefs = opfDoc.getElementsByTagName("itemref");
+                log(`Encontrados ${itemrefs.length} documentos en el índice de lectura.`);
+
+                // NUEVO: Intentar extraer el Índice (TOC) del archivo NCX para nombres de capítulos reales
+                const spine = opfDoc.getElementsByTagName("spine")[0];
+                const tocId = spine ? spine.getAttribute("toc") : null;
+                let tocMap = {};
+                if (tocId && manifest[tocId]) {
+                    const ncxPath = opfDir + manifest[tocId];
+                    const ncxFile = epubZip.file(decodeURIComponent(ncxPath));
+                    if (ncxFile) {
+                        try {
+                            const ncxContent = await ncxFile.async("string");
+                            const ncxDoc = parser.parseFromString(ncxContent, "text/xml");
+                            const navPoints = ncxDoc.getElementsByTagName("navPoint");
+                            for (let i = 0; i < navPoints.length; i++) {
+                                const contentTag = navPoints[i].getElementsByTagName("content")[0];
+                                const textTags = navPoints[i].getElementsByTagName("text");
+                                let textContent = "";
+                                // Buscar el texto dentro de navLabel
+                                for (let j=0; j<textTags.length; j++) {
+                                     if (textTags[j].parentNode.tagName.toLowerCase() === 'navlabel') {
+                                         textContent = textTags[j].textContent.trim();
+                                         break;
+                                     }
+                                }
+                                if (contentTag && textContent) {
+                                    let src = contentTag.getAttribute("src").split('#')[0];
+                                    const absoluteSrc = resolvePath(ncxPath, src);
+                                    if (!tocMap[absoluteSrc]) tocMap[absoluteSrc] = textContent;
+                                }
+                            }
+                            log("Índice NCX analizado para nombres de capítulos.");
+                        } catch(e) {
+                            console.warn("Error leyendo NCX", e);
+                        }
+                    }
+                }
+
+                for (let i = 0; i < itemrefs.length; i++) {
+                    const idref = itemrefs[i].getAttribute("idref");
+                    const href = manifest[idref];
+                    if (href) {
+                        const fullPath = opfDir + href;
+                        // MEJORA: Obtener título desde el TOC, y usar let para reemplazar luego
+                        let chapterTitle = tocMap[fullPath];
+                        const fileObj = epubZip.file(decodeURIComponent(fullPath));
+
+                        if (fileObj) {
+                            const htmlContent = await fileObj.async("string");
+                            const htmlDoc = parser.parseFromString(htmlContent, "text/html");
+
+                            // MEJORA: Detección inteligente del título si no está en el TOC
+                            if (!chapterTitle) {
+                                const hTag = htmlDoc.querySelector("h1, h2, h3");
+                                if (hTag && hTag.textContent.trim()) {
+                                    chapterTitle = hTag.textContent.trim();
+                                }
+                            }
+                            if (!chapterTitle) {
+                                const titleTag = htmlDoc.querySelector("title");
+                                if (titleTag && titleTag.textContent.trim()) {
+                                    chapterTitle = titleTag.textContent.trim();
+                                }
+                            }
+                            if (!chapterTitle) {
+                                // MEJORA: Usar el nombre del archivo en lugar de inventar "Capítulo X"
+                                let fileName = href.split('/').pop().split('.')[0];
+                                fileName = fileName.replace(/[-_]/g, ' '); // Cambiar guiones por espacios
+                                chapterTitle = fileName.charAt(0).toUpperCase() + fileName.slice(1);
+
+                                if (!chapterTitle || chapterTitle.trim().length === 0) {
+                                    chapterTitle = `Sección ${i + 1}`; // Último recurso si no hay nombre de archivo
+                                }
+                            }
+
+                            epubChapters.push({
+                                id: idref,
+                                title: chapterTitle,
+                                fullPath: fullPath,
+                                htmlContent: htmlContent
+                            });
+                        }
+                    }
+                }
+
+                renderChaptersUI();
+                fileStatusUI.textContent = "¡Listo para convertir!";
+                fileStatusUI.className = "text-sm text-green-400";
+                conversionSection.classList.remove('hidden');
+                log("Análisis completado con éxito.", "success");
+
+            } catch (error) {
+                console.error(error);
+                fileStatusUI.textContent = "Error al leer el archivo";
+                fileStatusUI.className = "text-sm text-red-400";
+                log(`Error: ${error.message}`, "error");
+            }
+        });
+
+        function renderChaptersUI() {
+            chaptersList.innerHTML = '';
+            epubChapters.forEach((chapter, index) => {
+                const label = document.createElement('label');
+                label.className = "flex items-center space-x-3 p-2 hover:bg-slate-700 rounded cursor-pointer transition-colors";
+
+                const checkbox = document.createElement('input');
+                checkbox.type = "checkbox";
+                checkbox.checked = true;
+                checkbox.className = "w-5 h-5 text-primary bg-slate-900 border-slate-600 rounded focus:ring-primary focus:ring-2 chapter-checkbox";
+                checkbox.dataset.index = index;
+
+                const span = document.createElement('span');
+                span.className = "text-slate-300 select-none truncate";
+                span.title = chapter.title;
+                span.textContent = chapter.title;
+
+                label.appendChild(checkbox);
+                label.appendChild(span);
+                chaptersList.appendChild(label);
+            });
+        }
+
+        toggleAllBtn.addEventListener('click', () => {
+            const checkboxes = document.querySelectorAll('.chapter-checkbox');
+            const isAnyChecked = Array.from(checkboxes).some(cb => cb.checked);
+
+            checkboxes.forEach(cb => cb.checked = !isAnyChecked);
+            toggleAllBtn.textContent = isAnyChecked ? "Seleccionar todo" : "Deseleccionar todo";
+        });
+
+        // --- CONVERSIÓN A MARKDOWN ---
+        async function runConversion(singleFile) {
+            const btn = singleFile ? btnConvert : btnConvertMulti;
+            const originalHtml = btn.innerHTML;
+            try {
+                btnConvert.disabled = true;
+                btnConvertMulti.disabled = true;
+                btn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Procesando...';
+                log(singleFile ? "Iniciando conversión a Markdown único..." : "Iniciando conversión a capítulos individuales...");
+                imagesToExtract.clear();
+
+                const checkboxes = document.querySelectorAll('.chapter-checkbox');
+                let finalMarkdown = singleFile ? `# ${bookTitle}\n\n` : "";
+                const parser = new DOMParser();
+
+                // NUEVO: Variables y caché para procesar notas al pie globalmente
+                let globalFootnotes = []; // Usado para archivo único
+                let noteCounter = 1;
+                const parsedDocsCache = {};
+                const individualMarkdowns = []; // {filename: '...', content: '...'} para capítulos sueltos
+                let chapterFileIndex = 1;
+
+                async function getCachedDoc(path) {
+                    if (parsedDocsCache[path]) return parsedDocsCache[path];
+                    const fileObj = epubZip.file(decodeURIComponent(path));
+                    if (!fileObj) return null;
+                    const content = await fileObj.async("string");
+                    const targetDoc = parser.parseFromString(content, "text/html");
+                    parsedDocsCache[path] = targetDoc;
+                    return targetDoc;
+                }
+
+                for (let i = 0; i < checkboxes.length; i++) {
+                    if (!checkboxes[i].checked) continue;
+
+                    const chapterIndex = checkboxes[i].dataset.index;
+                    const chapter = epubChapters[chapterIndex];
+                    log(`Procesando: ${chapter.title}`);
+
+                    const doc = parser.parseFromString(chapter.htmlContent, "text/html");
+                    let chapterFootnotes = []; // Notas de este capítulo
+
+                    // NUEVO: Búsqueda y extracción de Notas al pie
+                    const linksToFootnotes = doc.querySelectorAll('a[href]');
+                    for (let a of linksToFootnotes) {
+                        const text = a.textContent.trim();
+                        // Heurísticas para detectar una nota al pie
+                        const isSup = a.closest('sup') !== null;
+                        const isEpubRef = a.getAttribute('epub:type') === 'noteref';
+                        const hasNoteClass = a.className && typeof a.className === 'string' && (a.className.includes('note') || a.className.includes('fn'));
+                        const isNumericAndAnchor = /^\[?[0-9ivxlc*]+\]?$/i.test(text) && a.getAttribute('href').includes('#');
+
+                        if (isEpubRef || isSup || hasNoteClass || isNumericAndAnchor) {
+                            const href = a.getAttribute('href');
+                            if (href.startsWith('http') || href.startsWith('mailto')) continue;
+
+                            let targetPath = resolvePath(chapter.fullPath, href);
+                            let [filePath, targetId] = targetPath.split('#');
+
+                            let targetContentMD = "Nota sin contenido.";
+                            try {
+                                const targetDoc = await getCachedDoc(filePath);
+                                if (targetDoc && targetId) {
+                                    const targetElement = targetDoc.getElementById(targetId) || targetDoc.querySelector(`[name="${targetId}"]`);
+                                    if (targetElement) {
+                                        // Limpiar posibles enlaces de "volver atrás" (típicos en las notas de los EPUB)
+                                        const backLinks = targetElement.querySelectorAll('a[href^="#"]');
+                                        backLinks.forEach(bl => bl.remove());
+                                        // Convertir a markdown eliminando saltos de línea extra para el formato nota al pie
+                                        targetContentMD = turndownService.turndown(targetElement.innerHTML).replace(/\n+/g, ' ');
+                                    }
+                                }
+                            } catch(e) {
+                                console.warn("No se pudo extraer la nota al pie", e);
+                            }
+
+                            // Registrar la nota
+                            const currentNoteIndex = noteCounter++;
+                            if (singleFile) {
+                                globalFootnotes.push(`[^${currentNoteIndex}]: ${targetContentMD}`);
+                            } else {
+                                chapterFootnotes.push(`[^${currentNoteIndex}]: ${targetContentMD}`);
+                            }
+
+                            // Reemplazar el enlace original con el marcador de Markdown
+                            const noteMarker = doc.createElement('span');
+                            noteMarker.setAttribute('data-footnote', currentNoteIndex);
+                            noteMarker.textContent = `[^${currentNoteIndex}]`;
+                            a.parentNode.replaceChild(noteMarker, a);
+                        }
+                    }
+
+                    // 1. Procesar y mapear imágenes
+                    const imgTags = doc.querySelectorAll('img, image');
+                    imgTags.forEach(img => {
+                        let src = img.getAttribute('src') || img.getAttribute('xlink:href') || img.getAttribute('href');
+                        if (src && !src.startsWith('http') && !src.startsWith('data:')) {
+                            // Resolver la ruta real dentro del ZIP del EPUB
+                            const absPath = resolvePath(chapter.fullPath, src);
+                            // Quitar fragmentos si los hay (ej. img.jpg#foo)
+                            const cleanAbsPath = absPath.split('#')[0];
+                            imagesToExtract.add(cleanAbsPath);
+
+                            // Reemplazar src por la ruta que tendrá en nuestro nuevo ZIP
+                            const filename = cleanAbsPath.split('/').pop();
+                            const newMarkdownPath = `./images/${filename}`;
+
+                            if (img.tagName.toLowerCase() === 'img') {
+                                img.setAttribute('src', newMarkdownPath);
+                            } else {
+                                // Para etiquetas <image> dentro de <svg>
+                                img.setAttribute('href', newMarkdownPath);
+                                img.setAttribute('xlink:href', newMarkdownPath);
+                            }
+                        }
+                    });
+
+                    // 2. Extraer solo el contenido del Body (para evitar metadatos y CSS del HEAD)
+                    const bodyContent = doc.body ? doc.body.innerHTML : chapter.htmlContent;
+
+                    // 3. Convertir a Markdown
+                    let md = turndownService.turndown(bodyContent).trim();
+
+                    // MEJORA: Evitar duplicar títulos.
+                    // Si el HTML original ya tiene encabezados (h1, h2, h3), asumimos que el autor
+                    // ya incluyó el título en el texto, así que no inyectamos el nuestro forzosamente.
+                    let chapterPrefix = `\n\n---\n\n`;
+                    const hasNativeHeaders = doc.body ? doc.body.querySelector('h1, h2, h3') !== null : false;
+
+                    if (!hasNativeHeaders) {
+                        chapterPrefix += `## ${chapter.title}\n\n`;
+                    }
+
+                    if (singleFile) {
+                        finalMarkdown += chapterPrefix + md;
+                    } else {
+                        let finalChapterMd = md;
+                        if (!hasNativeHeaders) {
+                            finalChapterMd = `# ${chapter.title}\n\n` + finalChapterMd;
+                        }
+                        if (chapterFootnotes.length > 0) {
+                            finalChapterMd += `\n\n---\n\n## Notas\n\n` + chapterFootnotes.join('\n\n') + '\n';
+                        }
+                        // Crear nombre de archivo seguro para el capítulo
+                        const safeChapterTitle = chapter.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'capitulo';
+                        // Agregar el índice para mantener el orden
+                        const orderPad = String(chapterFileIndex++).padStart(3, '0');
+                        individualMarkdowns.push({
+                            filename: `${orderPad}_${safeChapterTitle}.md`,
+                            content: finalChapterMd.trim()
+                        });
+                    }
+                }
+
+                log("Generando archivo ZIP de salida...");
+                const outZip = new JSZip();
+
+                // Limpiar nombre del libro para archivos
+                const safeTitle = bookTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
+                if (singleFile) {
+                    // Añadir la sección de notas al final del documento
+                    if (globalFootnotes.length > 0) {
+                        log(`Añadiendo ${globalFootnotes.length} notas al pie descubiertas...`);
+                        finalMarkdown += `\n\n---\n\n## Notas\n\n` + globalFootnotes.join('\n\n') + '\n';
+                    }
+                    // Añadir Markdown al ZIP
+                    outZip.file(`${safeTitle}.md`, finalMarkdown.trim());
+                } else {
+                    log(`Añadiendo ${individualMarkdowns.length} archivos Markdown al ZIP...`);
+                    for (const item of individualMarkdowns) {
+                        outZip.file(item.filename, item.content);
+                    }
+                }
+
+                // Añadir Imágenes al ZIP
+                if (imagesToExtract.size > 0) {
+                    const imgFolder = outZip.folder("images");
+                    log(`Extrayendo ${imagesToExtract.size} imágenes...`);
+
+                    for (let imgPath of imagesToExtract) {
+                        const decodedPath = decodeURIComponent(imgPath);
+                        const fileData = epubZip.file(decodedPath);
+                        if (fileData) {
+                            const blob = await fileData.async("blob");
+                            const filename = decodedPath.split('/').pop();
+                            imgFolder.file(filename, blob);
+                        } else {
+                            log(`No se pudo encontrar la imagen en el EPUB: ${decodedPath}`, "error");
+                        }
+                    }
+                }
+
+                // Generar y descargar el ZIP
+                const blob = await outZip.generateAsync({ type: "blob" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = `${safeTitle}_markdown.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                log("¡Conversión y descarga completadas con éxito!", "success");
+
+            } catch (error) {
+                console.error(error);
+                log(`Error durante la conversión: ${error.message}`, "error");
+                alert("Ocurrió un error al convertir el libro. Revisa la consola para más detalles.");
+            } finally {
+                // Restaurar botones
+                btnConvert.disabled = false;
+                btnConvertMulti.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        btnConvert.addEventListener('click', () => runConversion(true));
+        btnConvertMulti.addEventListener('click', () => runConversion(false));
+    </script>
+</body>
+</html>

@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calculadora Master</title>
+    <style>
+        /* --- Estilos Generales --- */
+        :root {
+            --bg-color: #1a1d24;
+            --surface-color: #2a2d35;
+            --primary-color: #f0f0f0;
+            --secondary-color: #aaa;
+            --accent-color: #ff9500;
+            --operator-bg: #4e525f;
+            --special-color: #4e525f;
+            --error-color: #d9534f;
+            --success-color: #4cd964;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: 16px; height: 100%; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 394px;
+            height: 100%;
+            background-color: var(--surface-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* --- Estructura Principal --- */
+        #calculator-view {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        /* --- Pantalla (Display) --- */
+        .display {
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            padding: 6px 12px;
+            margin-bottom: 0;
+            text-align: right;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex-grow: 1; 
+            min-height: 80px; 
+        }
+
+        .display-equation {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            min-height: 1.1em;
+            margin-bottom: 2px;
+            pointer-events: none;
+            padding-right: 30px;
+        }
+
+        #display-result {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            background: transparent;
+            border: none;
+            outline: none;
+            width: 100%;
+            text-align: right;
+            padding: 0;
+            margin: 0;
+            padding-right: 35px;
+            caret-color: var(--accent-color);
+        }
+        
+        #display-result::placeholder { color: transparent; }
+
+        #copy-btn {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--secondary-color);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: color 0.2s, background 0.2s;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10;
+        }
+        #copy-btn:hover { color: var(--primary-color); background: rgba(255,255,255,0.1); }
+        #copy-btn svg { width: 20px; height: 20px; }
+
+        /* --- Panel de Controles --- */
+        .bottom-panel-minimal {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 6px;
+            flex-shrink: 0;
+            padding-bottom: 4px;
+        }
+
+        .controls-group-left { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+        .controls-group-right { display: flex; flex-direction: column; gap: 4px; }
+        .controls-group-left .controls-group-row { display: flex; align-items: center; gap: 4px; }
+        .controls-group-left .button-row { display: flex; gap: 4px; }
+        .bottom-panel-minimal label { color: var(--secondary-color); flex-shrink: 0; padding-left: 2px; font-size: 0.8rem; }
+
+        .bottom-panel-minimal select,
+        .bottom-panel-minimal button.secondary-btn {
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+            border: 1px solid var(--special-color);
+            border-radius: 5px;
+            padding: 8px;
+            font-size: 0.8rem;
+        }
+        .controls-group-left select { flex: 1; }
+        .controls-group-left .button-row button { flex: 1; }
+        
+        .bottom-panel-minimal button.special { 
+            background-color: var(--special-color); color: white; padding: 8px 12px; border: none; border-radius: 5px; font-weight: 600; cursor: pointer;
+        }
+        .bottom-panel-minimal button.btn-ce { background-color: var(--accent-color); color: #1a1d24; }
+        .bottom-panel-minimal button.btn-ac { background-color: var(--error-color); }
+
+        /* --- BARRA DE ACCESORIOS --- */
+        .accessory-bar {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            padding-top: 4px; 
+        }
+
+        .accessory-bar button {
+            flex: 1;
+            background-color: var(--bg-color);
+            border: 1px solid var(--operator-bg);
+            border-radius: 6px;
+            color: var(--accent-color);
+            font-size: 1.4rem;
+            font-weight: 400;
+            padding: 10px 0;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        
+        .accessory-bar button:active { background-color: var(--operator-bg); }
+        .accessory-bar button.equals-btn {
+            background-color: var(--accent-color);
+            color: #1a1d24;
+            font-weight: bold;
+            flex: 1.2;
+        }
+
+        /* Toast */
+        #copy-toast {
+            visibility: hidden; opacity: 0; position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%); background-color: #333; color: #fff;
+            padding: 10px 20px; border-radius: 5px; transition: opacity 0.3s; z-index: 10000; pointer-events: none;
+        }
+        #copy-toast.show { visibility: visible; opacity: 1; }
+
+        /* Modales */
+        .modal-overlay { display: none; position: absolute; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; padding: 10px; }
+        .modal-content { background-color: var(--surface-color); padding: 15px; border-radius: 10px; width: 100%; height: 100%; box-shadow: 0 5px 20px rgba(0,0,0,0.3); position: relative; display: flex; flex-direction: column; }
+        .modal-close-btn { position: absolute; top: 10px; right: 15px; color: var(--secondary-color); font-size: 1.5rem; cursor: pointer; z-index: 10; }
+        .modal-content h3 { color: var(--secondary-color); font-size: 1rem; margin-bottom: 10px; border-bottom: 1px solid var(--special-color); padding-bottom: 5px; }
+        .modal-scroll-content { overflow-y: auto; flex-grow: 1; min-height: 0; }
+        
+        #history-log { background: var(--bg-color); border-radius: 8px; padding: 10px; font-size: 0.85rem; min-height: 40px; }
+        #history-log div { padding: 5px 0; border-bottom: 1px dashed var(--special-color); }
+        #history-log .history-res { color: var(--primary-color); font-weight: 600; text-align: right; }
+        #clear-history { width: 100%; margin-top: 10px; padding: 10px; background: var(--special-color); border: none; border-radius: 5px; color: white; }
+
+        /* Conversor (REDDISEÑADO) */
+        .converter-header { display: flex; align-items: stretch; gap: 8px; margin-bottom: 15px; height: 45px; }
+        
+
+        
+        .converter-selector-wrapper { 
+            flex-grow: 1; 
+            display: flex; 
+            position: relative;
+        }
+        /* El select ocupa todo el alto y ancho, sin label y con diseño personalizado */
+        .converter-selector-wrapper select { 
+            width: 100%; 
+            height: 100%;
+            margin: 0;
+            padding: 0 35px 0 15px; /* Espacio para la flecha a la derecha */
+            font-size: 1.05rem;
+            font-weight: 600;
+            background-color: var(--operator-bg);
+            color: var(--primary-color);
+            border: 1px solid var(--special-color);
+            border-radius: 8px;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        .converter-selector-wrapper select:hover {
+            border-color: var(--accent-color);
+        }
+        .converter-selector-wrapper::after {
+            content: "▼";
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .converter-row input, .converter-row select { width: 100%; padding: 10px; background: var(--bg-color); border: 1px solid var(--special-color); border-radius: 8px; color: white; margin-bottom: 5px; }
+        .converter-row { display: flex; gap: 10px; margin-top: 5px; }
+        .converter-separator { text-align: center; font-size: 1.2rem; color: var(--secondary-color); }
+        
+        /* Status Bar del Conversor */
+        #currency-status {
+            font-size: 0.75rem;
+            text-align: right;
+            margin-top: 5px;
+            color: var(--secondary-color);
+        }
+        #currency-status.online { color: var(--success-color); }
+        #currency-status.offline { color: var(--accent-color); }
+
+        /* Estilos Optgroup para móviles */
+        optgroup { color: var(--accent-color); font-style: normal; font-weight: bold; background: var(--surface-color); }
+        option { color: var(--primary-color); background: var(--bg-color); }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <main>
+            <div id="calculator-view" class="view active">
+                <div class="display">
+                    <div class="display-equation" id="display-equation">&nbsp;</div>
+                    <input type="text" id="display-result" value="" inputmode="decimal" autocomplete="off" autofocus>
+                    <button id="copy-btn" title="Copiar resultado">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                    </button>
+                </div>
+
+                <div class="bottom-panel-minimal">
+                    <div class="controls-group-left">
+                        <div class="controls-group-row">
+                            <label for="rounding">Redondeo:</label>
+                            <select id="rounding">
+                                <option value="-1" selected>Sin redondeo</option>
+                                <option value="0">Entero</option>
+                                <option value="1">1 dec</option>
+                                <option value="2">2 dec</option>
+                                <option value="3">3 dec</option>
+                            </select>
+                        </div>
+                        <div class="button-row">
+                             <button id="history-open-btn" class="secondary-btn">Historial</button>
+                             <button id="converter-open-btn" class="secondary-btn">Conversor</button>
+                        </div>
+                    </div>
+                    <div class="controls-group-right">
+                        <button class="special btn-ce" data-key="CE" data-type="clear-entry">CE</button>
+                        <button class="special btn-ac" data-key="AC" data-type="clear">AC</button>
+                    </div>
+                </div>
+
+                <div class="accessory-bar">
+                    <button data-key="/" data-type="operator">÷</button>
+                    <button data-key="*" data-type="operator">×</button>
+                    <button data-key="-" data-type="operator">−</button>
+                    <button data-key="+" data-type="operator">+</button>
+                    <button data-key="=" data-type="equals" class="equals-btn">=</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="copy-toast">¡Resultado copiado!</div>
+
+    <div id="history-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close-btn" data-modal="history">&times;</span>
+            <h3>Historial</h3>
+            <div class="modal-scroll-content"><div id="history-log"></div></div>
+            <button id="clear-history">Limpiar Historial</button>
+        </div>
+    </div>
+
+    <div id="converter-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close-btn" data-modal="converter">&times;</span>
+            <h3>Conversor</h3>
+            <div class="modal-scroll-content">
+                <!-- Cabecera del Conversor -->
+                <div class="converter-header">
+                    <div class="converter-selector-wrapper">
+                        <select id="converter-type">
+                            <option value="length">Longitud</option>
+                            <option value="area">Superficie</option>
+                            <option value="volume">Volumen</option>
+                            <option value="mass">Masa</option>
+                            <option value="time">Tiempo</option>
+                            <option value="time_hm">Tiempo decimal / H:M</option>
+                            <option value="temperature">Temperatura</option>
+                            <option value="currency">Monedas</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div classs="converter-io">
+                    <!-- FIX: Type TEXT inputmode DECIMAL para soportar comas -->
+                    <div class="converter-row"><input type="text" inputmode="decimal" id="converter-input1" placeholder="Valor"><select id="converter-unit1"></select></div>
+                    <div class="converter-separator">=</div>
+                    <div class="converter-row"><input type="text" id="converter-input2" placeholder="Res" readonly><select id="converter-unit2"></select></div>
+                    <!-- Estado de la moneda -->
+                    <div id="currency-status" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const displayEquation = document.getElementById('display-equation');
+            const displayResult = document.getElementById('display-result');
+            const roundingSelect = document.getElementById('rounding');
+            const copyToast = document.getElementById('copy-toast');
+            const copyBtn = document.getElementById('copy-btn');
+
+            copyBtn.addEventListener('click', () => copyToClipboard(displayResult.value));
+
+            // Prevent focus loss
+            const accessoryBar = document.querySelector('.accessory-bar');
+            const preventFocusLoss = (e) => {
+                e.preventDefault(); 
+                const btn = e.target.closest('button');
+                if (btn) handleKeyPress(btn.dataset.key, btn.dataset.type);
+            };
+            accessoryBar.addEventListener('mousedown', preventFocusLoss);
+            accessoryBar.addEventListener('touchstart', preventFocusLoss);
+
+            displayResult.addEventListener('input', (e) => {
+                if(e.target.value === '') { handleKeyPress('AC', 'clear'); return; }
+                const char = e.data;
+                if (e.inputType === 'deleteContentBackward') { handleKeyPress('CE', 'clear-entry'); return; }
+                if (char) processVirtualKey(char);
+            });
+
+            function processVirtualKey(key) {
+                if (/[0-9]/.test(key)) handleKeyPress(key, 'number');
+                else if (key === '.' || key === ',') handleKeyPress('.', 'decimal');
+                else if (['+', '-', '*', '/'].includes(key)) handleKeyPress(key, 'operator');
+                else if (key === '=' || key === 'Enter') handleKeyPress('=', 'equals');
+            }
+
+            // UI Elements
+            const historyModal = document.getElementById('history-modal');
+            const historyOpenBtn = document.getElementById('history-open-btn');
+            const historyCloseBtn = historyModal.querySelector('.modal-close-btn');
+            const historyLog = document.getElementById('history-log');
+            const clearHistoryButton = document.getElementById('clear-history');
+            const converterModal = document.getElementById('converter-modal');
+            const converterOpenBtn = document.getElementById('converter-open-btn');
+            const converterCloseBtn = converterModal.querySelector('.modal-close-btn');
+            const currencyStatus = document.getElementById('currency-status');
+            
+            // Calculator State
+            let currentInput = '';
+            let previousInput = '';
+            let operator = null;
+            let equation = '';
+            let history = [];
+            let shouldResetInput = false;
+            let isInitialState = true;
+
+            function formatNumber(num) {
+                const parsedNum = parseFloat(num);
+                if (isNaN(parsedNum) || !isFinite(parsedNum)) return 'Error';
+                const decimals = parseInt(roundingSelect.value);
+                if (decimals === -1) {
+                    const safeNum = parseFloat(parsedNum.toFixed(10));
+                    return safeNum.toString().replace('.', ',');
+                } 
+                const roundedNum = parsedNum.toFixed(decimals);
+                if (decimals === 0 && roundedNum.endsWith('.0')) return roundedNum.replace('.0', '');
+                return roundedNum.replace('.', ',');
+            }
+
+            function parseInput(inputStr) { return parseFloat(inputStr.replace(',', '.')); }
+            function updateDisplay() {
+                if (isInitialState) displayResult.value = ''; else displayResult.value = currentInput;
+                displayEquation.textContent = equation || ' ';
+            }
+
+            const controlsPanel = document.querySelector('.bottom-panel-minimal');
+            controlsPanel.addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button || button.id.includes('btn') || button.classList.contains('secondary-btn')) return;
+                handleKeyPress(button.dataset.key, button.dataset.type);
+            });
+
+            function handleKeyPress(key, type) {
+                if (currentInput === 'Error' && type !== 'clear') clearAll();
+                switch (type) {
+                    case 'number': appendNumber(key); break;
+                    case 'decimal': appendDecimal(); break;
+                    case 'operator': chooseOperator(key); break;
+                    case 'equals': calculate(); break;
+                    case 'clear': clearAll(); break;
+                    case 'clear-entry': clearEntry(); break;
+                }
+                updateDisplay();
+            }
+
+            function appendNumber(num) {
+                isInitialState = false;
+                if (shouldResetInput) { currentInput = num; shouldResetInput = false; }
+                else if (currentInput === '0' || currentInput === '') {
+                    if (num !== '0' || currentInput === '') currentInput = num;
+                } 
+                else currentInput += num;
+            }
+            function appendDecimal() {
+                isInitialState = false;
+                if (shouldResetInput || currentInput === '') { currentInput = '0,'; shouldResetInput = false; return; }
+                if (!currentInput.includes(',')) currentInput += ',';
+            }
+            function chooseOperator(op) {
+                if (currentInput === 'Error') return;
+                if (operator && !shouldResetInput) calculate();
+                if (currentInput.endsWith(',')) currentInput = currentInput.slice(0, -1);
+                if (currentInput !== '') { previousInput = currentInput; operator = op; equation = `${previousInput} ${getOperatorSymbol(op)}`; shouldResetInput = true; } 
+                else if (previousInput !== '' && operator) { operator = op; equation = `${previousInput} ${getOperatorSymbol(op)}`; }
+            }
+            function calculate() {
+                isInitialState = false;
+                if (operator === null || previousInput === '') return;
+                let currentVal = shouldResetInput ? previousInput : currentInput;
+                if (shouldResetInput && currentInput === previousInput) currentVal = currentInput;
+                const prev = parseInput(previousInput); const curr = parseInput(currentVal);
+                if (isNaN(prev) || isNaN(curr)) { triggerError(); return; }
+                let result;
+                switch (operator) {
+                    case '+': result = prev + curr; break;
+                    case '-': result = prev - curr; break;
+                    case '*': result = prev * curr; break;
+                    case '/': result = curr === 0 ? 'Error' : prev / curr; break;
+                }
+                if (result === 'Error') triggerError();
+                else {
+                    const fullEquation = `${previousInput} ${getOperatorSymbol(operator)} ${currentVal} =`;
+                    equation = fullEquation; currentInput = formatNumber(result); addToHistory(fullEquation, currentInput);
+                }
+                operator = null; previousInput = ''; shouldResetInput = true;
+            }
+            function triggerError() { currentInput = 'Error'; equation = 'Error'; operator = null; previousInput = ''; shouldResetInput = true; }
+            function clearAll() { currentInput = ''; previousInput = ''; operator = null; equation = ''; shouldResetInput = false; isInitialState = true; }
+            function clearEntry() { currentInput = ''; shouldResetInput = false; isInitialState = false; }
+            function getOperatorSymbol(op) { const map = {'+': '+', '-': '−', '*': '×', '/': '÷'}; return map[op] || ''; }
+
+            historyOpenBtn.onclick = () => historyModal.style.display = 'flex';
+            historyCloseBtn.onclick = () => historyModal.style.display = 'none';
+            historyModal.onclick = (e) => { if(e.target === historyModal) historyModal.style.display = 'none'; };
+            function addToHistory(eq, res) { history.unshift({ equation: eq, result: res }); if (history.length > 20) history.pop(); updateHistoryDisplay(); }
+            function updateHistoryDisplay() {
+                historyLog.innerHTML = history.length ? '' : '<div><span class="history-eq">Vacío</span></div>';
+                history.forEach(item => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `<div class="history-eq">${item.equation}</div><div class="history-res">${item.result}</div>`;
+                    div.querySelector('.history-res').onclick = () => copyToClipboard(item.result);
+                    historyLog.appendChild(div);
+                });
+            }
+            clearHistoryButton.onclick = () => { history = []; updateHistoryDisplay(); };
+            function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => { copyToast.classList.add('show'); setTimeout(() => copyToast.classList.remove('show'), 1500); }); }
+
+            // --- CONVERSOR DATA (Organized by Continents) ---
+            const unitData = {
+                length: [
+                    { label: "Sistema Métrico", units: { 'Milímetro': 0.001, 'Centímetro': 0.01, 'Decímetro': 0.1, 'Metro': 1, 'Decámetro': 10, 'Hectómetro': 100, 'Kilómetro': 1000 } },
+                    { label: "Sistema Imperial", units: { 'Pulgada': 0.0254, 'Pie': 0.3048, 'Yarda': 0.9144, 'Milla': 1609.34, 'Legua': 4828.03 } }
+                ],
+                area: [
+                    { label: "Sistema Métrico", units: { 'Milímetro cuad.': 0.000001, 'Centímetro cuad.': 0.0001, 'Decímetro cuad.': 0.01, 'Metro cuad.': 1, 'Decámetro cuad.': 100, 'Hectómetro cuad.': 10000, 'Hectárea': 10000, 'Kilómetro cuad.': 1000000 } },
+                    { label: "Sistema Imperial", units: { 'Pulgada cuad.': 0.00064516, 'Pie cuad.': 0.092903, 'Yarda cuad.': 0.836127, 'Acre': 4046.86, 'Milla cuad.': 2589988.11 } }
+                ],
+                volume: [
+                    { label: "Sistema Métrico", units: { 'Mililitro': 0.001, 'Centilitro': 0.01, 'Decilitro': 0.1, 'Litro': 1, 'Decalitro': 10, 'Hectolitro': 100, 'Kilolitro': 1000 } },
+                    { label: "Sistema Imperial", units: { 'Cucharadita (US)': 0.00492892, 'Cucharada (US)': 0.0147868, 'Onza líquida (US)': 0.0295735, 'Copa (Cup US)': 0.236588, 'Pinta (US)': 0.473176, 'Galón (US)': 3.78541, 'Barril (Oil)': 158.987 } }
+                ],
+                mass: [
+                    { label: "Sistema Métrico", units: { 'Gramo': 1, 'Decagramo': 10, 'Hectogramo': 100, 'Kilogramo': 1000, 'Quintal': 100000, 'Tonelada': 1000000 } },
+                    { label: "Sistema Imperial/Otros", units: { 'Grano': 0.0647989, 'Onza': 28.3495, 'Libra': 453.592 } }
+                ],
+                time: [
+                    { label: "Tiempo", units: { 'Segundo': 1, 'Minuto': 60, 'Hora': 3600, 'Día': 86400, 'Semana': 604800, 'Mes (30 días)': 2592000, 'Año': 31536000 } }
+                ],
+                time_hm: [
+                    { label: "Formato", units: { 'Decimal (1,5)': 'DEC', 'Horas:Minutos (1:30)': 'HM' } }
+                ],
+                temperature: [
+                    { label: "Escalas", units: { 'Celsius': 'C', 'Fahrenheit': 'F', 'Kelvin': 'K' } }
+                ],
+                // Currency structure (Placeholders populated by API)
+                currency: [
+                    { label: "Europa", units: { 'Euro (EUR)': 1, 'Corona Danesa (DKK)': 0.13, 'Corona Sueca (SEK)': 0.086, 'Corona Noruega (NOK)': 0.086, 'Corona Islandesa (ISK)': 0.0066, 'Corona Checa (CZK)': 0.040, 'Libra Esterlina (GBP)': 1.18, 'Franco Suizo (CHF)': 1.05, 'Zloty Polaco (PLN)': 0.23, 'Forinto Húngaro (HUF)': 0.0025, 'Lev Rumano (RON)': 0.20, 'Lev Búlgaro (BGN)': 0.51, 'Dinar Serbio (RSD)': 0.0085, 'Rublo Ruso (RUB)': 0.0094 } },
+                    { label: "América", units: { 'Dólar (USD)': 0.92 } },
+                    { label: "Asia", units: { 'Yen (JPY)': 0.0063, 'Yuan (CNY)': 0.13 } }
+                ]
+            };
+
+
+
+            const cType = document.getElementById('converter-type');
+            const cIn1 = document.getElementById('converter-input1'); const cUnit1 = document.getElementById('converter-unit1');
+            const cIn2 = document.getElementById('converter-input2'); const cUnit2 = document.getElementById('converter-unit2');
+
+            // --- CURRENCY API LOGIC (Group Aware) ---
+            async function fetchCurrencyRates() {
+                const cache = localStorage.getItem('currency_rates');
+                const now = Date.now();
+                
+                if (cache) {
+                    const data = JSON.parse(cache);
+                    if (now - data.timestamp < 86400000) { 
+                        updateCurrencyUnits(data.rates);
+                        showCurrencyStatus("online");
+                        return;
+                    }
+                }
+
+                // Pedimos los datos de las divisas al plugin padre, ya que
+                // el iframe podría estar bloqueado para hacer peticiones fetch a web (CORS)
+                window.parent.postMessage({ type: 'fetch_currency' }, '*');
+                
+                // Mientras responde, lo damos por offline por si falla
+                showCurrencyStatus("offline");
+            }
+            
+            // Escuchamos la respuesta del plugin padre
+            window.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'currency_rates') {
+                    const rates = event.data.rates;
+                    rates['EUR'] = 1; // Base
+                    localStorage.setItem('currency_rates', JSON.stringify({
+                        timestamp: Date.now(),
+                        rates: rates
+                    }));
+                    updateCurrencyUnits(rates);
+                    showCurrencyStatus("online");
+                }
+            });
+
+            function updateCurrencyUnits(apiRates) {
+                // Mapping API Code to display name
+                const map = {
+                    'EUR': 'Euro (EUR)', 'USD': 'Dólar (USD)', 'JPY': 'Yen (JPY)', 'BGN': 'Lev Búlgaro (BGN)',
+                    'CZK': 'Corona Checa (CZK)', 'DKK': 'Corona Danesa (DKK)', 'GBP': 'Libra Esterlina (GBP)',
+                    'HUF': 'Forinto Húngaro (HUF)', 'PLN': 'Zloty Polaco (PLN)', 'RON': 'Lev Rumano (RON)',
+                    'SEK': 'Corona Sueca (SEK)', 'CHF': 'Franco Suizo (CHF)', 'ISK': 'Corona Islandesa (ISK)',
+                    'NOK': 'Corona Noruega (NOK)', 'CNY': 'Yuan (CNY)'
+                };
+
+                // Update values in unitData.currency structure based on continent groups
+                // Note: RSD and RUB are not in Frankfurter usually, so they keep default values.
+                
+                unitData.currency.forEach(group => {
+                    for (const [key, oldVal] of Object.entries(group.units)) {
+                        // Extract code from key "Euro (EUR)" -> "EUR"
+                        const code = key.match(/\((.*?)\)/)?.[1];
+                        if (code && apiRates[code]) {
+                            // Logic: 1 EUR = Rate Currency.
+                            // Convert Logic: Val * Rate1 / Rate2.
+                            // If base is EUR (1). Factor = 1/Rate.
+                            group.units[key] = 1 / apiRates[code];
+                        }
+                    }
+                });
+                
+                if (cType.value === 'currency') populateUnits();
+            }
+
+            function showCurrencyStatus(status) {
+                currencyStatus.style.display = 'block';
+                if (status === 'online') {
+                    currencyStatus.textContent = "Cotización: Actualizada (BCE)";
+                    currencyStatus.className = "online";
+                } else {
+                    currencyStatus.textContent = "Cotización: Estimada (Offline)";
+                    currencyStatus.className = "offline";
+                }
+            }
+            
+            fetchCurrencyRates();
+
+
+            converterOpenBtn.onclick = () => { converterModal.style.display = 'flex'; populateUnits(); };
+            converterCloseBtn.onclick = () => converterModal.style.display = 'none';
+            converterModal.onclick = (e) => { if(e.target === converterModal) converterModal.style.display = 'none'; };
+
+            function populateUnits() {
+                const type = cType.value;
+                const groups = unitData[type];
+
+                cUnit1.innerHTML = ''; cUnit2.innerHTML = '';
+
+                currencyStatus.style.display = (type === 'currency') ? 'block' : 'none';
+
+                groups.forEach(group => {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = group.label;
+                    for (const [name, val] of Object.entries(group.units)) {
+                        optgroup.appendChild(new Option(name, val));
+                    }
+                    const optgroup2 = optgroup.cloneNode(true);
+                    cUnit1.appendChild(optgroup);
+                    cUnit2.appendChild(optgroup2);
+                });
+
+                if (cUnit2.options.length > 1) cUnit2.selectedIndex = 1;
+                cIn1.value = ''; cIn2.value = '';
+                updateInputMode();
+            }
+
+            function updateInputMode() {
+                if (cType.value === 'time_hm') {
+                    const from = cUnit1.options[cUnit1.selectedIndex]?.value;
+                    if (from === 'HM') {
+                        cIn1.setAttribute('inputmode', 'text');
+                        cIn1.placeholder = 'Ej: 1:30';
+                    } else {
+                        cIn1.setAttribute('inputmode', 'decimal');
+                        cIn1.placeholder = 'Ej: 1,5';
+                    }
+                } else {
+                    cIn1.setAttribute('inputmode', 'decimal');
+                    cIn1.placeholder = 'Valor';
+                }
+            }
+
+            function convert() {
+                const type = cType.value;
+
+                if (type === 'time_hm') {
+                    const from = cUnit1.options[cUnit1.selectedIndex].value;
+                    const to = cUnit2.options[cUnit2.selectedIndex].value;
+                    const raw = cIn1.value.trim();
+                    if (!raw) { cIn2.value = ''; return; }
+
+                    let decHours;
+                    if (from === 'DEC') {
+                        decHours = parseFloat(raw.replace(',', '.'));
+                        if (isNaN(decHours)) { cIn2.value = ''; return; }
+                    } else {
+                        const parts = raw.split(':');
+                        if (parts.length !== 2) { cIn2.value = ''; return; }
+                        const h = parseInt(parts[0], 10);
+                        const m = parseInt(parts[1], 10);
+                        if (isNaN(h) || isNaN(m)) { cIn2.value = ''; return; }
+                        const sign = parts[0].trim().startsWith('-') ? -1 : 1;
+                        decHours = sign * (Math.abs(h) + m / 60);
+                    }
+
+                    if (to === 'DEC') {
+                        cIn2.value = parseFloat(decHours.toFixed(4)).toString().replace('.', ',');
+                    } else {
+                        const sign = decHours < 0 ? '-' : '';
+                        const abs = Math.abs(decHours);
+                        let h = Math.floor(abs);
+                        let m = Math.round((abs - h) * 60);
+                        if (m === 60) { h += 1; m = 0; }
+                        cIn2.value = `${sign}${h}:${m.toString().padStart(2, '0')}`;
+                    }
+                    return;
+                }
+
+                const val = parseFloat(cIn1.value.replace(',', '.'));
+                if(isNaN(val)) { cIn2.value = ''; return; }
+
+                let res;
+
+                if (type === 'temperature') {
+                    const from = cUnit1.options[cUnit1.selectedIndex].value; 
+                    const to = cUnit2.options[cUnit2.selectedIndex].value;
+                    let cel;
+                    if (from === 'C') cel = val;
+                    else if (from === 'F') cel = (val - 32) * 5/9;
+                    else if (from === 'K') cel = val - 273.15;
+
+                    if (to === 'C') res = cel;
+                    else if (to === 'F') res = (cel * 9/5) + 32;
+                    else if (to === 'K') res = cel + 273.15;
+                } else {
+                    const rate1 = parseFloat(cUnit1.value);
+                    const rate2 = parseFloat(cUnit2.value);
+                    const base = val * rate1;
+                    res = base / rate2;
+                }
+                
+                const decimals = (type === 'currency' || type === 'temperature') ? 2 : 4;
+                if (Math.abs(res) < 0.0001 && res !== 0) {
+                     cIn2.value = res.toExponential(4).replace('.', ',');
+                } else {
+                     cIn2.value = parseFloat(res.toFixed(decimals)).toString().replace('.', ',');
+                }
+            }
+
+            cType.onchange = () => { populateUnits(); convert(); };
+            cIn1.oninput = convert;
+            cUnit1.onchange = () => { updateInputMode(); convert(); };
+            cUnit2.onchange = convert;
+
+            // Global Keydown
+            document.addEventListener('keydown', (e) => {
+                if (historyModal.style.display === 'flex' || converterModal.style.display === 'flex') return;
+                if (document.activeElement !== displayResult) {
+                     if (/[0-9]/.test(e.key)) handleKeyPress(e.key, 'number');
+                     else if (['+', '-', '*', '/'].includes(e.key)) handleKeyPress(e.key, 'operator');
+                     else if (e.key === '.' || e.key === ',') handleKeyPress('.', 'decimal');
+                     else if (e.key === 'Backspace') handleKeyPress('CE', 'clear-entry');
+                     else if (e.key === 'Enter') { e.preventDefault(); handleKeyPress('=', 'equals'); }
+                } else if (e.key === 'Enter') { e.preventDefault(); handleKeyPress('=', 'equals'); }
+            });
+            updateDisplay();
+            // Foco al input principal para poder escribir
+            setTimeout(() => displayResult.focus(), 100);
+        });
+    </script>
+</body>
+</html>
+
+

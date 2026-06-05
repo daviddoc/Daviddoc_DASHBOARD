@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador Calendario Markdown</title>
+    <style>
+        :root {
+            /* Indica al navegador que use controles nativos oscuros (ej. selectores de fecha) */
+            color-scheme: dark; 
+            
+            /* Paleta de colores Dark Theme */
+            --bg: #0f172a;        /* Fondo general */
+            --surface: #1e293b;   /* Fondo de tarjetas y secciones */
+            --text: #f8fafc;      /* Texto principal */
+            --text-muted: #94a3b8;/* Texto secundario */
+            --border: #334155;    /* Bordes */
+            --primary: #3b82f6;   /* Botones principales */
+            --primary-hover: #60a5fa; 
+            --danger: #ef4444;    /* Botón eliminar */
+            --danger-hover: #f87171;
+            --input-bg: #020617;  /* Fondo de inputs y textarea */
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--surface);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            color: var(--text);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 24px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .section {
+            margin-bottom: 24px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background-color: var(--bg);
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .months-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
+        input[type="number"], input[type="date"], select {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--input-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        input[type="number"]:focus, input[type="date"]:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .flex-col {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        button:hover { background-color: var(--primary-hover); }
+        button.danger { background-color: var(--danger); padding: 6px 12px; font-size: 0.85rem;}
+        button.danger:hover { background-color: var(--danger-hover); }
+        button.outline { background-color: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        button.outline:hover { background-color: rgba(59, 130, 246, 0.1); }
+        
+        .btn-generate {
+            width: 100%;
+            font-size: 1.1rem;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .holidays-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0 0 0;
+        }
+
+        .holidays-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg);
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            font-size: 0.95rem;
+        }
+
+        .output-container {
+            margin-top: 30px;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 500px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            padding: 15px;
+            background-color: var(--input-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            resize: vertical;
+            white-space: pre;
+            overflow-wrap: normal;
+            overflow-x: auto;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .hidden { display: none !important; }
+        .help-text { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Generador de Calendario Markdown</h1>
+
+    <div class="section">
+        <div class="flex-row" style="margin-bottom: 20px;">
+            <div class="flex-col">
+                <label for="year">Año</label>
+                <input type="number" id="year" min="2000" max="2100" value="2026">
+            </div>
+            <div class="flex-col" style="display: flex; align-items: flex-end;">
+                <button class="outline" onclick="seleccionarTodosLosMeses(true)">Marcar Todos</button>
+                <button class="outline" onclick="seleccionarTodosLosMeses(false)" style="margin-left: 10px;">Desmarcar Todos</button>
+            </div>
+        </div>
+
+        <label>Meses a incluir</label>
+        <div class="months-grid" id="months-container">
+            <!-- Generado por JS -->
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Días Festivos</h2>
+        <p class="help-text">Los sábados y domingos se consideran festivos automáticamente. Añade aquí los extra.</p>
+        
+        <div class="flex-row">
+            <div class="flex-col">
+                <label for="holiday-type">Tipo</label>
+                <select id="holiday-type" onchange="toggleHolidayType()">
+                    <option value="single">Día único</option>
+                    <option value="range">Rango de días</option>
+                </select>
+            </div>
+            <div class="flex-col">
+                <label id="lbl-date1">Fecha</label>
+                <input type="date" id="holiday-date1">
+            </div>
+            <div class="flex-col hidden" id="col-date2">
+                <label>Fecha Fin</label>
+                <input type="date" id="holiday-date2">
+            </div>
+            <div class="flex-col" style="flex: 0 0 auto;">
+                <button onclick="addHoliday()" style="margin-bottom: 2px;">Añadir</button>
+            </div>
+        </div>
+
+        <ul class="holidays-list" id="holidays-list">
+            <!-- Lista de festivos -->
+        </ul>
+    </div>
+
+    <button class="btn-generate" onclick="generateCalendar()">Generar Calendario Markdown</button>
+
+    <div class="output-container">
+        <div class="output-header">
+            <h2>Resultado</h2>
+            <button onclick="copyToClipboard()" id="copy-btn">Copiar al Portapapeles</button>
+        </div>
+        <textarea id="output" readonly placeholder="El resultado en Markdown aparecerá aquí..."></textarea>
+    </div>
+</div>
+
+<script>
+    // Configuración y Estado
+    const monthsNamesUpper = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+    const monthsNamesTitle = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    let customHolidays = [];
+
+    // Inicializar UI
+    window.onload = () => {
+        document.getElementById('year').value = new Date().getFullYear();
+        renderMonths();
+    };
+
+    function renderMonths() {
+        const container = document.getElementById('months-container');
+        container.innerHTML = '';
+        monthsNamesTitle.forEach((m, index) => {
+            container.innerHTML += `
+                <label class="checkbox-label">
+                    <input type="checkbox" value="${index}" class="month-checkbox" checked>
+                    ${m}
+                </label>
+            `;
+        });
+    }
+
+    function seleccionarTodosLosMeses(seleccionar) {
+        document.querySelectorAll('.month-checkbox').forEach(cb => cb.checked = seleccionar);
+    }
+
+    function toggleHolidayType() {
+        const type = document.getElementById('holiday-type').value;
+        const colDate2 = document.getElementById('col-date2');
+        const lblDate1 = document.getElementById('lbl-date1');
+        
+        if (type === 'range') {
+            colDate2.classList.remove('hidden');
+            lblDate1.innerText = 'Fecha Inicio';
+        } else {
+            colDate2.classList.add('hidden');
+            lblDate1.innerText = 'Fecha';
+        }
+    }
+
+    function addHoliday() {
+        const type = document.getElementById('holiday-type').value;
+        const d1 = document.getElementById('holiday-date1').value;
+        const d2 = document.getElementById('holiday-date2').value;
+
+        if (!d1) return alert("Por favor, selecciona una fecha.");
+
+        if (type === 'single') {
+            customHolidays.push({ type: 'single', start: d1 });
+        } else {
+            if (!d2) return alert("Por favor, selecciona la fecha de fin.");
+            if (d1 > d2) return alert("La fecha de inicio no puede ser mayor a la de fin.");
+            customHolidays.push({ type: 'range', start: d1, end: d2 });
+        }
+
+        document.getElementById('holiday-date1').value = '';
+        document.getElementById('holiday-date2').value = '';
+        renderHolidays();
+    }
+
+    function removeHoliday(index) {
+        customHolidays.splice(index, 1);
+        renderHolidays();
+    }
+
+    function renderHolidays() {
+        const list = document.getElementById('holidays-list');
+        list.innerHTML = '';
+        customHolidays.forEach((h, index) => {
+            let text = h.type === 'single' ? `Día: ${h.start}` : `Rango: ${h.start} al ${h.end}`;
+            list.innerHTML += `
+                <li>
+                    <span>${text}</span>
+                    <button class="danger" onclick="removeHoliday(${index})">Eliminar</button>
+                </li>
+            `;
+        });
+    }
+
+    function isHoliday(dateObj) {
+        // Fin de semana
+        const dayOfWeek = dateObj.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) return true;
+
+        // Festivos personalizados
+        const dateStr = formatDate(dateObj);
+        for (let h of customHolidays) {
+            if (h.type === 'single') {
+                if (dateStr === h.start) return true;
+            } else {
+                if (dateStr >= h.start && dateStr <= h.end) return true;
+            }
+        }
+        return false;
+    }
+
+    function formatDate(d) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function formatCell(dayNumber, isHol) {
+        const dStr = String(dayNumber);
+        if (isHol) {
+            if (dStr.length === 1) return ` ==${dStr}= `;
+            else return ` =${dStr}= `;
+        } else {
+            if (dStr.length === 1) return `   ${dStr}  `;
+            else return `  ${dStr}  `;
+        }
+    }
+
+    function generateCalendar() {
+        const year = parseInt(document.getElementById('year').value);
+        if (!year) return alert("Añade un año válido.");
+
+        const checkboxes = document.querySelectorAll('.month-checkbox:checked');
+        const selectedMonths = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+        if (selectedMonths.length === 0) return alert("Selecciona al menos un mes.");
+
+        let output = "";
+
+        selectedMonths.forEach(month => {
+            output += `## █ ${monthsNamesUpper[month]}\n\n`;
+            
+            // Cabecera estricta
+            output += `| LUNE | MART | MIER | JUEV | VIER | SAB  | DOMI |\n`;
+            output += `|:----:|:----:|:----:|:----:|:----:|:----:|:----:|\n`;
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+
+            let startDayOfWeek = firstDay.getDay() - 1;
+            if (startDayOfWeek === -1) startDayOfWeek = 6;
+
+            let tableRow = "";
+            for (let i = 0; i < startDayOfWeek; i++) {
+                tableRow += `|      `;
+            }
+
+            let weeks = [];
+            let currentWeek = [];
+
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                let currentDate = new Date(year, month, day);
+                let isHol = isHoliday(currentDate);
+                
+                tableRow += `|${formatCell(day, isHol)}`;
+                
+                currentWeek.push({ day: day, dateStr: formatDate(currentDate), isHoliday: isHol });
+
+                if (currentDate.getDay() === 0 || day === lastDay.getDate()) {
+                    
+                    if (day === lastDay.getDate() && currentDate.getDay() !== 0) {
+                        let endDayOfWeek = currentDate.getDay() - 1;
+                        if (endDayOfWeek === -1) endDayOfWeek = 6;
+                        for (let i = endDayOfWeek + 1; i <= 6; i++) {
+                            tableRow += `|      `;
+                        }
+                    }
+                    tableRow += `|\n`;
+                    output += tableRow;
+                    tableRow = "";
+
+                    weeks.push([...currentWeek]);
+                    currentWeek = [];
+                }
+            }
+            output += `\n`;
+
+            // Tareas
+            weeks.forEach(week => {
+                const firstWDay = String(week[0].day).padStart(2, '0');
+                const lastWDay = String(week[week.length - 1].day).padStart(2, '0');
+                
+                const workingDays = week.filter(d => !d.isHoliday);
+
+                if (workingDays.length > 0) {
+                    output += `### ${monthsNamesTitle[month]} semana del ${firstWDay} - ${lastWDay}\n`;
+                    workingDays.forEach(day => {
+                        output += `----------------------------\n`;
+                        output += `- [ ] ${day.dateStr} \n`;
+                    });
+                    output += `\n`;
+                }
+            });
+            
+            output += `\n`;
+        });
+
+        document.getElementById('output').value = output.trim();
+    }
+
+    function copyToClipboard() {
+        const textarea = document.getElementById('output');
+        const btn = document.getElementById('copy-btn');
+        
+        if (!textarea.value) return;
+
+        textarea.select();
+        textarea.setSelectionRange(0, 99999);
+
+        try {
+            document.execCommand('copy');
+            const originalText = btn.innerText;
+            btn.innerText = '¡Copiado!';
+            btn.style.backgroundColor = '#16a34a';
+            
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.backgroundColor = 'var(--primary)';
+            }, 2000);
+            
+            window.getSelection().removeAllRanges();
+        } catch (err) {
+            alert('No se pudo copiar automáticamente. Por favor, selecciona el texto y copia manualmente.');
+        }
+    }
+</script>
+
+</body>
+</html>
+
+

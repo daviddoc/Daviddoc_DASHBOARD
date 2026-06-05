@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestor de Marcadores</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='%235c9aff' stroke-width='2'%3E%3Cpath d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z'/%3E%3C/svg%3E">
+    <style>
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #252525;
+            --bg-tertiary: #333333;
+            --bg-hover: #3a3a3a;
+            --text-primary: #eaeaea;
+            --text-secondary: #a0a0a0;
+            --accent: #5c9aff;
+            --accent-hover: #7db3ff;
+            --accent-red: #e94560;
+            --border: #404040;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --touch-height: 48px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER & SEARCH */
+        header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .search-container {
+            flex: 1;
+            min-width: 250px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 40px 12px 45px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(92, 154, 255, 0.2);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            display: none;
+        }
+
+        .clear-search.visible {
+            display: block;
+        }
+
+        /* BOTONES */
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-save {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-save.unsaved {
+            animation: pulse-blink 1.2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-blink {
+            0% { background: var(--accent-red); box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.7); }
+            50% { background: #8b2438; box-shadow: 0 0 0 0 rgba(233, 69, 96, 0); }
+            100% { background: var(--accent-red); box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.7); }
+        }
+
+        /* TOOLBAR */
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-small:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+        }
+
+        /* ARBOL DE CONTENIDO (Main Tree) */
+        .main-content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tree-container {
+            background: var(--bg-secondary);
+            border-radius: 15px;
+            padding: 10px;
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+
+        .tree-item {
+            user-select: none;
+        }
+
+        .tree-node {
+            display: flex;
+            align-items: center;
+            padding: 8px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            gap: 10px;
+            min-height: 40px;
+            position: relative;
+        }
+
+        .tree-node:hover {
+            background: var(--bg-hover);
+        }
+
+        .tree-node.selected {
+            background: rgba(92, 154, 255, 0.15);
+            outline: 1px solid var(--accent);
+        }
+
+        .tree-children {
+            margin-left: 22px;
+            border-left: 1px solid var(--border);
+            padding-left: 4px;
+        }
+
+        .tree-children.collapsed {
+            display: none;
+        }
+
+        .folder-icon, .bookmark-icon {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .favicon {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            border-radius: 3px;
+            object-fit: contain;
+        }
+
+        .tree-toggle {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+            color: var(--text-secondary);
+            border-radius: 4px;
+        }
+        
+        .tree-toggle:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+        }
+
+        .tree-toggle.expanded {
+            transform: rotate(90deg);
+        }
+
+        .tree-toggle.hidden {
+            visibility: hidden;
+        }
+
+        .tree-content-wrapper {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .tree-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.95rem;
+            line-height: 1.2;
+        }
+
+        .tree-url {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            opacity: 0.7;
+        }
+
+        .tree-actions {
+            display: flex;
+            gap: 4px;
+            margin-left: 5px;
+        }
+
+        .desktop-actions {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .tree-node:hover .desktop-actions {
+            opacity: 1;
+        }
+
+        .tree-action-btn {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .tree-action-btn:hover {
+            color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            width: 32px;
+            height: 32px;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            border-radius: 50%;
+        }
+        
+        .mobile-menu-btn:active {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* ESTILOS MÓVILES */
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            header { flex-direction: column; align-items: stretch; gap: 10px; }
+            .logo { font-size: 1.2rem; justify-content: center; }
+            .search-container { width: 100%; }
+            .toolbar {
+                display: flex; flex-wrap: nowrap; overflow-x: auto;
+                padding-bottom: 5px; -webkit-overflow-scrolling: touch;
+                gap: 10px; mask-image: linear-gradient(to right, black 90%, transparent 100%);
+            }
+            .toolbar::-webkit-scrollbar { display: none; }
+            .btn-small .btn-text { display: none; }
+            .btn-small { padding: 10px; flex-shrink: 0; }
+            .tree-container { padding: 5px; border: none; background: transparent; }
+            .tree-children { margin-left: 10px; border-left: 2px solid var(--border); }
+            .tree-node {
+                min-height: var(--touch-height);
+                padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+            }
+            .desktop-actions { display: none !important; }
+            .mobile-menu-btn { display: flex; }
+            .tree-toggle { width: 36px; height: 36px; }
+            .tree-url { display: none; }
+            .tree-title { font-size: 1rem; }
+        }
+
+        /* MODALES */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8); display: none;
+            align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px; backdrop-filter: blur(2px);
+        }
+        
+        @media (max-width: 768px) {
+            .modal-overlay { align-items: flex-end; padding: 0; }
+            .modal {
+                border-radius: 20px 20px 0 0 !important;
+                max-height: 85vh; margin-bottom: 0;
+                animation: slideUp 0.3s ease-out;
+            }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-secondary); border-radius: 15px; padding: 25px;
+            width: 100%; max-width: 500px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+            display: flex; flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-body { overflow-y: auto; }
+
+        .form-input {
+            width: 100%; padding: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px; color: white;
+            font-size: 1rem; margin-bottom: 15px;
+        }
+        
+        .form-label { display: block; margin-bottom: 6px; color: var(--text-secondary); }
+
+        .modal-actions {
+            display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;
+        }
+
+        /* SELECTOR DE CARPETAS (Folder Picker) */
+        .folder-picker-container {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            overflow: hidden;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .fp-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .fp-item:hover { background: var(--bg-hover); }
+        .fp-item.selected {
+            background: rgba(92, 154, 255, 0.2);
+            color: var(--accent);
+            border-left: 3px solid var(--accent);
+        }
+        
+        .fp-indent {
+            display: inline-block;
+            width: 20px;
+            flex-shrink: 0;
+            border-left: 1px solid var(--border);
+            height: 20px;
+        }
+
+        /* Context Menu */
+        .context-menu {
+            position: fixed; background: var(--bg-secondary);
+            border: 1px solid var(--border); border-radius: 12px;
+            padding: 5px; min-width: 200px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            z-index: 1001; display: none;
+        }
+        
+        .context-menu.active { display: block; }
+        
+        .context-menu-item {
+            padding: 12px 15px; display: flex; align-items: center; gap: 10px;
+            cursor: pointer; border-radius: 8px;
+        }
+        
+        .context-menu-item:hover { background: var(--bg-hover); }
+
+        .empty-state { text-align: center; padding: 40px; color: var(--text-secondary); }
+        .loading { display: flex; justify-content: center; padding: 20px; }
+        .spinner {
+            width: 30px; height: 30px; border: 3px solid var(--border);
+            border-top-color: var(--accent); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                </svg>
+                Bookmarks
+            </div>
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Buscar..." autocomplete="off">
+                    <button class="clear-search" id="clearSearch">✕</button>
+                </div>
+                <button class="btn btn-save" id="saveBtn" title="Guardar HTML">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    <span class="btn-text">Guardar</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="toolbar">
+            <button class="btn btn-small" id="addBookmarkBtn" title="Nuevo Marcador">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span class="btn-text">Marcador</span>
+            </button>
+            <button class="btn btn-small" id="addFolderBtn" title="Nueva Carpeta">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span class="btn-text">Carpeta</span>
+            </button>
+            <button class="btn btn-small" id="expandAllBtn" title="Expandir Todo">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+                <span class="btn-text">Expandir</span>
+            </button>
+            <button class="btn btn-small" id="collapseAllBtn" title="Colapsar Todo">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                <span class="btn-text">Colapsar</span>
+            </button>
+            <button class="btn btn-small" id="importBtn" title="Importar HTML">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span class="btn-text">Importar</span>
+            </button>
+        </div>
+
+        <div class="main-content">
+            <div class="tree-container" id="treeContainer">
+                <div class="loading" id="loading"><div class="spinner"></div></div>
+                <div id="bookmarkTree"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menú Contextual -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" data-action="open">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Abrir en nueva pestaña
+        </div>
+        <div class="context-menu-item" data-action="edit">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Editar
+        </div>
+        <div class="context-menu-item" data-action="addBookmark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Añadir Marcador Aquí
+        </div>
+         <div class="context-menu-item" data-action="addFolder">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            Añadir Subcarpeta
+        </div>
+        <div class="context-menu-item" data-action="delete" style="color: var(--accent-red);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Eliminar
+        </div>
+    </div>
+
+    <!-- Modal Editar/Crear -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nuevo Item</h3>
+                <button class="btn btn-small" id="modalClose">✕</button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label">Título</label>
+                <input type="text" class="form-input" id="itemTitle">
+                
+                <div id="urlGroup">
+                    <label class="form-label">URL</label>
+                    <input type="url" class="form-input" id="itemUrl">
+                </div>
+
+                <div id="folderSelectGroup">
+                    <label class="form-label">Ubicación (Carpeta)</label>
+                    <div class="folder-picker-container" id="folderPickerList">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-save" id="modalConfirm">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmar borrado -->
+    <div class="modal-overlay" id="deleteModalOverlay">
+        <div class="modal">
+            <h3>¿Estás seguro?</h3>
+            <p id="deleteMessage" style="margin: 15px 0; color: var(--text-secondary);"></p>
+            <div class="modal-actions">
+                <button class="btn btn-small" id="deleteCancelBtn">Cancelar</button>
+                <button class="btn btn-primary" id="deleteConfirmBtn" style="background: var(--accent-red);">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".html,.htm" style="display: none;">
+
+    <script>
+        // ESTADO DE LA APLICACIÓN
+        const state = {
+            bookmarks: [],
+            searchQuery: '',
+            contextItem: null,
+            selectedDestinationId: null, // Para mover ítems
+            hasUnsavedChanges: false
+        };
+
+        // ELEMENTOS DOM
+        const els = {
+            tree: document.getElementById('bookmarkTree'),
+            loading: document.getElementById('loading'),
+            search: document.getElementById('searchInput'),
+            contextMenu: document.getElementById('contextMenu'),
+            modalOverlay: document.getElementById('modalOverlay'),
+            modalTitle: document.getElementById('modalTitle'),
+            titleInput: document.getElementById('itemTitle'),
+            urlInput: document.getElementById('itemUrl'),
+            urlGroup: document.getElementById('urlGroup'),
+            folderPickerList: document.getElementById('folderPickerList'),
+            deleteOverlay: document.getElementById('deleteModalOverlay'),
+            deleteMsg: document.getElementById('deleteMessage'),
+            saveBtn: document.getElementById('saveBtn'),
+            modal: document.querySelector('.modal')
+        };
+
+        // --- CORE FUNCTIONS ---
+        function generateId() {
+            return 'bm_' + Date.now() + Math.random().toString(36).substr(2, 5);
+        }
+
+        function parseBookmarks(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            function walk(el) {
+                const items = [];
+                for (let child of el.children) {
+                    if (child.tagName === 'DT') {
+                        const h3 = child.querySelector('h3');
+                        const a = child.querySelector('a');
+                        const dl = child.querySelector('dl');
+                        if (h3) {
+                            items.push({
+                                id: generateId(), type: 'folder',
+                                title: h3.textContent.trim(),
+                                children: dl ? walk(dl) : [],
+                                expanded: false
+                            });
+                        } else if (a) {
+                            items.push({
+                                id: generateId(), type: 'bookmark',
+                                title: a.textContent.trim(),
+                                url: a.href, icon: a.getAttribute('icon')
+                            });
+                        }
+                    } else if (child.tagName === 'DL') { items.push(...walk(child)); }
+                }
+                return items;
+            }
+            const rootDl = doc.querySelector('dl');
+            return rootDl ? walk(rootDl) : [];
+        }
+
+        function exportBookmarks(items) {
+            let html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n`;
+            function build(list, indent) {
+                let s = '';
+                for (let item of list) {
+                    if (item.type === 'folder') {
+                        s += `${indent}<DT><H3>${escapeHtml(item.title)}</H3>\n`;
+                        s += `${indent}<DL><p>\n${build(item.children, indent + '    ')}${indent}</DL><p>\n`;
+                    } else {
+                        s += `${indent}<DT><A HREF="${item.url}"${item.icon ? ` ICON="${item.icon}"` : ''}>${escapeHtml(item.title)}</A>\n`;
+                    }
+                }
+                return s;
+            }
+            html += build(items, '    ');
+            html += '</DL><p>';
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // --- RENDERIZADO ---
+        function renderTree() {
+            els.tree.innerHTML = '';
+            if (state.bookmarks.length === 0) {
+                els.tree.innerHTML = '<div class="empty-state">No hay marcadores. Importa un archivo o crea uno nuevo.</div>';
+                return;
+            }
+            const fragment = document.createDocumentFragment();
+            state.bookmarks.forEach(item => fragment.appendChild(createNode(item)));
+            els.tree.appendChild(fragment);
+        }
+
+        function createNode(item) {
+            if (state.searchQuery) {
+                const match = matchesSearch(item, state.searchQuery);
+                if (!match) return document.createTextNode('');
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'tree-item';
+            wrapper.dataset.id = item.id;
+
+            const node = document.createElement('div');
+            node.className = 'tree-node';
+            
+            const toggle = document.createElement('div');
+            toggle.className = `tree-toggle ${item.type !== 'folder' ? 'hidden' : ''} ${item.expanded || state.searchQuery ? 'expanded' : ''}`;
+            toggle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>`;
+            
+            const icon = document.createElement('div');
+            if (item.type === 'folder') {
+                icon.className = 'folder-icon';
+                icon.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
+            } else {
+                icon.innerHTML = item.icon 
+                    ? `<img src="${item.icon}" class="favicon" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNhMGEwYTAiIHN0cm9rZS13aWR0aD0iMiI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48L3N2Zz4='">`
+                    : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
+            }
+
+            const content = document.createElement('div');
+            content.className = 'tree-content-wrapper';
+            content.innerHTML = `
+                <div class="tree-title">${highlight(item.title, state.searchQuery)}</div>
+                ${item.url ? `<div class="tree-url">${item.url}</div>` : ''}
+            `;
+
+            const actions = document.createElement('div');
+            actions.className = 'tree-actions';
+            
+            const desktopActions = document.createElement('div');
+            desktopActions.className = 'desktop-actions';
+            desktopActions.innerHTML = `
+                ${item.url ? `<button class="tree-action-btn" data-action="open" title="Abrir">↗</button>` : ''}
+                <button class="tree-action-btn" data-action="edit" title="Editar">✎</button>
+                <button class="tree-action-btn" data-action="delete" title="Borrar">✕</button>
+            `;
+            
+            const mobileMenu = document.createElement('button');
+            mobileMenu.className = 'mobile-menu-btn';
+            mobileMenu.innerHTML = '⋮';
+            mobileMenu.dataset.action = 'menu';
+
+            actions.appendChild(desktopActions);
+            actions.appendChild(mobileMenu);
+
+            node.append(toggle, icon, content, actions);
+            wrapper.appendChild(node);
+            node.addEventListener('click', (e) => handleNodeClick(e, item));
+
+            if (item.type === 'folder' && item.children.length > 0) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'tree-children' + (item.expanded || state.searchQuery ? '' : ' collapsed');
+                if (item.expanded || state.searchQuery) {
+                    item.children.forEach(child => childrenContainer.appendChild(createNode(child)));
+                }
+                wrapper.appendChild(childrenContainer);
+            }
+            return wrapper;
+        }
+
+        function highlight(text, query) {
+            if (!query) return text;
+            const re = new RegExp(`(${query})`, 'gi');
+            return text.replace(re, '<span style="background:var(--accent);color:white;padding:0 2px;border-radius:2px;">$1</span>');
+        }
+
+        function matchesSearch(item, query) {
+            if (item.title.toLowerCase().includes(query.toLowerCase())) return true;
+            if (item.url && item.url.toLowerCase().includes(query.toLowerCase())) return true;
+            if (item.children) return item.children.some(c => matchesSearch(c, query));
+            return false;
+        }
+
+        function handleNodeClick(e, item) {
+            const actionBtn = e.target.closest('[data-action]');
+            if (actionBtn) {
+                e.stopPropagation();
+                const action = actionBtn.dataset.action;
+                if (action === 'menu') openContextMenu(e, item);
+                if (action === 'open') window.open(item.url, '_blank');
+                if (action === 'edit') openModal('edit', item);
+                if (action === 'delete') confirmDelete(item);
+                return;
+            }
+            if (item.type === 'folder') {
+                item.expanded = !item.expanded;
+                renderTree();
+            } else if(item.url) window.open(item.url, '_blank');
+        }
+
+        function openContextMenu(e, item) {
+            e.preventDefault(); e.stopPropagation();
+            state.contextItem = item;
+            const clickX = e.clientX; const clickY = e.clientY;
+            const menuWidth = 200;
+            const x = (window.innerWidth - clickX < menuWidth) ? window.innerWidth - menuWidth - 10 : clickX;
+            els.contextMenu.style.left = `${x}px`;
+            els.contextMenu.style.top = `${clickY}px`;
+            els.contextMenu.classList.add('active');
+            const openOption = els.contextMenu.querySelector('[data-action="open"]');
+            if (openOption) openOption.style.display = item.type === 'bookmark' ? 'flex' : 'none';
+        }
+
+        // --- GESTIÓN DE DATOS ---
+        function findItem(items, id) {
+            for (let item of items) {
+                if (item.id === id) return item;
+                if (item.children) {
+                    const found = findItem(item.children, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        // Busca el array de hijos que contiene el ID buscado y devuelve el padre (o null si es root)
+        function findParentArray(items, childId) {
+            // Verificar si está en la raíz
+            if (items.some(i => i.id === childId)) return items;
+            
+            for (let item of items) {
+                if (item.children) {
+                    const found = findParentArray(item.children, childId);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        // Busca el objeto padre real por ID
+        function findParentItem(items, childId) {
+            for (let item of items) {
+                if (item.children && item.children.some(c => c.id === childId)) return item;
+                if (item.children) {
+                    const found = findParentItem(item.children, childId);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function deleteItemRecursive(items, id) {
+            const idx = items.findIndex(i => i.id === id);
+            if (idx > -1) {
+                items.splice(idx, 1);
+                return true;
+            }
+            for (let item of items) {
+                if (item.children && deleteItemRecursive(item.children, id)) return true;
+            }
+            return false;
+        }
+
+        // --- RENDERIZADO DEL SELECTOR DE CARPETAS ---
+        function renderFolderSelect(excludeId = null, currentParentId = null) {
+            els.folderPickerList.innerHTML = '';
+            
+            // Opción Raíz
+            const rootEl = document.createElement('div');
+            rootEl.className = 'fp-item' + (currentParentId === null ? ' selected' : '');
+            rootEl.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> <span>Carpeta Raíz</span>`;
+            rootEl.onclick = () => {
+                selectFolder(null);
+                updateFolderSelectionUI(rootEl);
+            };
+            els.folderPickerList.appendChild(rootEl);
+
+            // Renderizar árbol recursivo
+            function renderLevel(items, level) {
+                items.forEach(item => {
+                    // Si es carpeta y no es la que estamos moviendo (para evitar bucles)
+                    if (item.type === 'folder' && item.id !== excludeId) {
+                        const el = document.createElement('div');
+                        el.className = 'fp-item' + (item.id === currentParentId ? ' selected' : '');
+                        
+                        let indent = '';
+                        for(let i=0; i<level; i++) indent += '<span class="fp-indent"></span>';
+                        
+                        el.innerHTML = `${indent}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> <span>${item.title}</span>`;
+                        
+                        el.onclick = () => {
+                            selectFolder(item.id);
+                            updateFolderSelectionUI(el);
+                        };
+                        
+                        els.folderPickerList.appendChild(el);
+                        if (item.children) renderLevel(item.children, level + 1);
+                    }
+                });
+            }
+            renderLevel(state.bookmarks, 0);
+        }
+
+        function selectFolder(id) {
+            state.selectedDestinationId = id;
+        }
+
+        function updateFolderSelectionUI(selectedEl) {
+            Array.from(els.folderPickerList.children).forEach(c => c.classList.remove('selected'));
+            selectedEl.classList.add('selected');
+        }
+
+        // --- LÓGICA DE MODALES ---
+        function openModal(mode, item = null) {
+            els.modal.dataset.mode = mode;
+            els.modal.dataset.id = item ? item.id : '';
+
+            let title = '';
+            let url = '';
+            let isFolder = false;
+            let currentParentId = null;
+
+            if (mode === 'edit' && item) {
+                title = item.title;
+                url = item.url || '';
+                isFolder = item.type === 'folder';
+                els.modalTitle.textContent = isFolder ? 'Editar Carpeta' : 'Editar Marcador';
+                
+                // Determinar padre actual
+                const parent = findParentItem(state.bookmarks, item.id);
+                currentParentId = parent ? parent.id : null; // null significa raíz
+
+            } else if (mode === 'createFolder') {
+                els.modalTitle.textContent = 'Nueva Carpeta';
+                isFolder = true;
+                // Si venimos de un contexto (clic derecho en carpeta), ese es el padre por defecto
+                if (state.contextItem && state.contextItem.type === 'folder') {
+                    currentParentId = state.contextItem.id;
+                }
+            } else { 
+                els.modalTitle.textContent = 'Nuevo Marcador';
+                isFolder = false;
+                if (state.contextItem && state.contextItem.type === 'folder') {
+                    currentParentId = state.contextItem.id;
+                }
+            }
+
+            els.titleInput.value = title;
+            els.urlInput.value = url;
+            els.urlGroup.style.display = isFolder ? 'none' : 'block';
+            
+            // Setear destino inicial igual al padre actual
+            state.selectedDestinationId = currentParentId;
+            
+            // Renderizar selector de carpeta
+            renderFolderSelect(item ? item.id : null, currentParentId);
+
+            els.modalOverlay.classList.add('active');
+            setTimeout(() => els.titleInput.focus(), 50);
+        }
+
+        document.getElementById('modalConfirm').addEventListener('click', () => {
+            const mode = els.modal.dataset.mode;
+            const id = els.modal.dataset.id;
+            const title = els.titleInput.value.trim();
+            const url = els.urlInput.value.trim();
+            const destId = state.selectedDestinationId;
+            
+            if (!title) return alert('El título es requerido');
+
+            if (mode === 'edit') {
+                const item = findItem(state.bookmarks, id);
+                if (item) {
+                    item.title = title;
+                    if (item.type === 'bookmark') item.url = url;
+
+                    // Lógica de Movimiento
+                    const currentParent = findParentItem(state.bookmarks, id);
+                    const currentParentId = currentParent ? currentParent.id : null;
+
+                    if (destId !== currentParentId) {
+                        // 1. Quitar del padre viejo
+                        const oldList = currentParent ? currentParent.children : state.bookmarks;
+                        const idx = oldList.findIndex(i => i.id === id);
+                        if (idx > -1) oldList.splice(idx, 1);
+
+                        // 2. Añadir al nuevo padre
+                        let newParent = destId ? findItem(state.bookmarks, destId) : null;
+                        const newList = newParent ? newParent.children : state.bookmarks;
+                        newList.push(item);
+
+                        if(newParent) newParent.expanded = true;
+                    }
+                }
+            } else {
+                // Nuevo elemento
+                const isFolder = mode === 'createFolder';
+                const newItem = {
+                    id: generateId(),
+                    type: isFolder ? 'folder' : 'bookmark',
+                    title: title,
+                    url: isFolder ? null : url,
+                    children: isFolder ? [] : undefined,
+                    expanded: true
+                };
+
+                let destFolder = destId ? findItem(state.bookmarks, destId) : null;
+                const destList = destFolder ? destFolder.children : state.bookmarks;
+                destList.push(newItem);
+                if(destFolder) destFolder.expanded = true;
+            }
+            
+            state.hasUnsavedChanges = true;
+            els.saveBtn.classList.add('unsaved');
+            els.modalOverlay.classList.remove('active');
+            renderTree();
+            state.contextItem = null;
+        });
+
+        // --- EVENTOS GENERALES ---
+        document.getElementById('addBookmarkBtn').addEventListener('click', () => {
+             state.contextItem = null; openModal('createBookmark');
+        });
+        document.getElementById('addFolderBtn').addEventListener('click', () => {
+             state.contextItem = null; openModal('createFolder');
+        });
+
+        els.search.addEventListener('input', (e) => {
+            state.searchQuery = e.target.value.trim();
+            document.getElementById('clearSearch').classList.toggle('visible', !!state.searchQuery);
+            renderTree();
+        });
+        document.getElementById('clearSearch').addEventListener('click', () => {
+            els.search.value = ''; state.searchQuery = ''; renderTree();
+        });
+
+        els.contextMenu.addEventListener('click', (e) => {
+            const action = e.target.closest('[data-action]')?.dataset.action;
+            if (!action || !state.contextItem) return;
+            if (action === 'open') window.open(state.contextItem.url, '_blank');
+            if (action === 'edit') openModal('edit', state.contextItem);
+            if (action === 'delete') confirmDelete(state.contextItem);
+            if (action === 'addBookmark') openModal('createBookmark');
+            if (action === 'addFolder') openModal('createFolder');
+            els.contextMenu.classList.remove('active');
+        });
+
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('.context-menu') && !e.target.closest('.mobile-menu-btn')) {
+                els.contextMenu.classList.remove('active');
+            }
+            if (e.target === els.modalOverlay) els.modalOverlay.classList.remove('active');
+            if (e.target === els.deleteOverlay) els.deleteOverlay.classList.remove('active');
+        });
+
+        function confirmDelete(item) {
+            els.deleteMsg.textContent = `¿Eliminar "${item.title}"?`;
+            els.deleteOverlay.classList.add('active');
+            els.deleteOverlay.dataset.id = item.id;
+        }
+
+        document.getElementById('deleteConfirmBtn').addEventListener('click', () => {
+            deleteItemRecursive(state.bookmarks, els.deleteOverlay.dataset.id);
+            state.hasUnsavedChanges = true;
+            els.saveBtn.classList.add('unsaved');
+            els.deleteOverlay.classList.remove('active');
+            renderTree();
+        });
+        document.getElementById('deleteCancelBtn').addEventListener('click', () => els.deleteOverlay.classList.remove('active'));
+        document.getElementById('modalClose').addEventListener('click', () => {
+             els.modalOverlay.classList.remove('active'); state.contextItem = null;
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const html = exportBookmarks(state.bookmarks);
+            const blob = new Blob([html], {type: 'text/html'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'bookmarks.html';
+            a.click();
+            state.hasUnsavedChanges = false;
+            els.saveBtn.classList.remove('unsaved');
+        });
+
+        document.getElementById('importBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            if (e.target.files.length === 0) return;
+            try {
+                const text = await e.target.files[0].text();
+                state.bookmarks = parseBookmarks(text);
+                renderTree();
+            } catch(err) { alert('Error al leer el archivo'); }
+        });
+
+        document.getElementById('expandAllBtn').addEventListener('click', () => {
+             const expand = (items) => items.forEach(i => { i.expanded = true; if(i.children) expand(i.children); });
+             expand(state.bookmarks); renderTree();
+        });
+        document.getElementById('collapseAllBtn').addEventListener('click', () => {
+             const collapse = (items) => items.forEach(i => { i.expanded = false; if(i.children) collapse(i.children); });
+             collapse(state.bookmarks); renderTree();
+        });
+
+        (async () => {
+            try {
+                const req = await fetch('bookmarks.html');
+                if (req.ok) {
+                    const text = await req.text();
+                    state.bookmarks = parseBookmarks(text);
+                }
+            } catch(e) { console.log('Iniciando vacío'); }
+            els.loading.style.display = 'none';
+            renderTree();
+        })();
+    </script>
+</body>
+</html>
+
+
