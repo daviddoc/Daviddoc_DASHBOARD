@@ -25,55 +25,5 @@
 ## HERRAMIENTAS
 <img src="https://api.iconify.design/mdi/calculator-variant-outline.svg?color=white" width="20" height="20" alt="Calculadora" align="top">&nbsp;&nbsp;&nbsp;[CALCULADORA](https://daviddoc.github.io/TIC1_CFIEva/CALCULADORA.html)  
 <img src="https://api.iconify.design/mdi/file-delimited-outline.svg?color=white" width="20" height="20" alt="CSV" align="top">&nbsp;&nbsp;&nbsp;[CSV EDITOR](https://daviddoc.github.io/TIC1_CFIEva/CSV_EDITOR.html)  
-
-
-<img src="https://cdn.simpleicons.org/notebooklm/fff?viewbox32&size=20" alt="NotebookLM" align="top"> NotebookLM
-
- X
-
-ChatGPT
-
-<img src="https://cdn.simpleicons.org/googlegemini/fff?viewbox32&size=20" alt="Gemini" align="top"> Gemini
-
-<img src="https://cdn.simpleicons.org/html5/fff?viewbox32&size=20" alt="HTML" align="top"> HTML
-
-<img src="https://api.iconify.design/mdi/code-tags.svg?color=white" width="20" height="20" alt="Código" align="top"> Código
-
-<img src="https://api.iconify.design/mdi/file-pdf-box.svg?color=white" width="20" height="20" alt="PDF" align="top"> PDF
-
-<img src="https://api.iconify.design/mdi/file-document-outline.svg?color=white" width="20" height="20" alt="Documento" align="top"> Documento
-
-
-<img src="https://api.iconify.design/mdi/note-outline.svg?color=white" width="20" height="20" alt="Nota" align="top"> Nota  
-<img src="https://api.iconify.design/mdi/notebook-outline.svg?color=white" width="20" height="20" alt="Cuaderno" align="top"> Cuaderno  
-<img src="https://api.iconify.design/material-symbols:note-stack-outline.svg?color=white" width="20" height="20" alt="Notas" align="top"> Notas  
-<img src="https://api.iconify.design/mdi/sticker-text-outline.svg?color=white" width="20" height="20" alt="Apunte" align="top"> Apunte  
-
-<img src="https://api.iconify.design/mdi/pencil-outline.svg?color=white" width="20" height="20" alt="Escritura" align="top"> Escritura  
-<img src="https://api.iconify.design/mdi/fountain-pen-tip.svg?color=white" width="20" height="20" alt="Redacción" align="top"> Redacción  
-<img src="https://api.iconify.design/mdi/typewriter.svg?color=white" width="20" height="20" alt="Texto" align="top"> Texto  
-<img src="https://api.iconify.design/mdi/text-box-edit-outline.svg?color=white" width="20" height="20" alt="Edición" align="top"> Edición  
-
-<img src="https://api.iconify.design/mdi/database-outline.svg?color=white" width="20" height="20" alt="Base de datos" align="top"> Base de datos  
-<img src="https://api.iconify.design/mdi/database-settings-outline.svg?color=white" width="20" height="20" alt="Base de datos (configuración)" align="top"> Configuración de base de datos  
-<img src="https://api.iconify.design/mdi/database-search-outline.svg?color=white" width="20" height="20" alt="Consulta base de datos" align="top"> Consultas  
-<img src="https://api.iconify.design/mdi/database-sync-outline.svg?color=white" width="20" height="20" alt="Sincronización base de datos" align="top"> Sincronización  
-<img src="https://api.iconify.design/mdi/database-import-outline.svg?color=white" width="20" height="20" alt="Importación base de datos" align="top"> Importación  
-<img src="https://api.iconify.design/mdi/database-export-outline.svg?color=white" width="20" height="20" alt="Exportación base de datos" align="top"> Exportación  
-<img src="https://api.iconify.design/mdi/database-plus-outline.svg?color=white" width="20" height="20" alt="Añadir base de datos" align="top"> Añadir  
-<img src="https://api.iconify.design/mdi/database-minus-outline.svg?color=white" width="20" height="20" alt="Eliminar base de datos" align="top"> Eliminar  
-<img src="https://api.iconify.design/mdi/server-outline.svg?color=white" width="20" height="20" alt="Servidor" align="top"> Servidor  
-<img src="https://api.iconify.design/mdi/stack-overflow.svg?color=white" width="20" height="20" alt="Stack / datos" align="top"> Stack de datos  
-
-<img src="https://cdn.simpleicons.org/obsidian/fff?viewbox32&size=20" alt="Obsidian" align="top"> Obsidian  
-
-
-- 
-## DOCUMENTOS
-- [REFORACEN - COMPROBADOR +75 HORAS EN PF](https://daviddoc.github.io/TIC1_CFIEva/REFO-COMPROBADOR_+75_HORAS_PF.html)
-
-
-<img src="https://www.google.com/s2/favicons?domain=notebooklm.google&sz=32" alt="NotebookLM" width="32" height="32"> [Google NotebookLM](https://notebooklm.google)
-
-
+<img src="https://cdn.simpleicons.org/obsidian/fff?viewbox32&size=20" alt="Obsidian" align="top"> <img src="https://api.iconify.design/mdi/tag-outline.svg?color=white" width="20" height="20" alt="Tag" align="top">&nbsp;&nbsp;&nbsp;[OBSIDIAN - TAGS A ARCHIVOS](https://daviddoc.github.io/TIC1_CFIEva/OBSIDIAN_TAGS_A_ARCHIVOS.html)  
 <img src="https://www.google.com/s2/favicons?domain=notebooklm.google&sz=32" alt="NotebookLM" width="32" height="32" align="top"> [Google NotebookLM](https://notebooklm.google)
