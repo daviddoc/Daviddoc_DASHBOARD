@@ -15,4 +15,4 @@
 - [REFORACEN - COMPROBADOR +75 HORAS EN PF](https://daviddoc.github.io/TIC1_CFIEva/REFO-COMPROBADOR_+75_HORAS_PF.html)
 
 
-Google NotebookLM
+<img src="https://www.google.com/s2/favicons?domain=notebooklm.google&sz=32" alt="NotebookLM" width="32" height="32"> [Google NotebookLM](https://notebooklm.google)
