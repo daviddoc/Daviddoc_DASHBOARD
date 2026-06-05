@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Carga Masiva</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%225%22 y=%2282%22 width=%2290%22 height=%2218%22 rx=%224%22 fill=%22%2392278f%22/><rect x=%2238%22 y=%2230%22 width=%2224%22 height=%2245%22 fill=%22%2392278f%22/><path d=%22M10 35 L50 0 L90 35 Z%22 fill=%22%2392278f%22/></svg>">
+    <style>
+        :root {
+            /* Palette - Deep Dark & Clean */
+            --bg: #000000;
+            --surface: #16181c;
+            --surface-hover: #1e2126;
+            --border: #2f3336;
+
+            --text-main: #e7e9ea;
+            --text-dim: #71767b;
+
+            /* Brand Colors */
+            --brand: #1d9bf0;
+            --success: #00ba7c;
+            --danger: #f91880;
+            /* Magenta vivo para errores */
+            --warn: #ffd400;
+
+            /* Dimensions */
+            --header-h: 60px;
+            --radius: 16px;
+        }
+
+        /* --- RESET & BASE --- */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- 1. HEADER (Glassmorphism) --- */
+        header {
+            height: var(--header-h);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+        }
+
+        .brand {
+            font-weight: 900;
+            font-size: 18px;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand span {
+            background: linear-gradient(45deg, var(--brand), #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- 2. LAYOUT PRINCIPAL --- */
+        .main-container {
+            margin-top: var(--header-h);
+            flex: 1;
+            display: flex;
+            /* Flex handles both desktop (row) and mobile (tabs) better */
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* --- MOBILE TABS (Mobile Only) --- */
+        .mobile-tabs-nav {
+            display: none;
+            /* Hidden on desktop */
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            flex: 0 0 50px;
+            margin-top: var(--header-h);
+            /* Push down below fixed header */
+        }
+
+        .m-tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            color: var(--text-dim);
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .m-tab.active {
+            color: var(--brand);
+            border-bottom-color: var(--brand);
+            background: rgba(29, 155, 240, 0.05);
+        }
+
+
+        /* --- 3. INPUT ZONE (Shared) --- */
+        .input-panel {
+            background: var(--bg);
+            /* display controlled by media queries */
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            position: relative;
+            transition: 0.3s;
+        }
+
+        .drop-zone {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            position: relative;
+        }
+
+        .drop-zone.dragover {
+            background: rgba(29, 155, 240, 0.1);
+        }
+
+        .drop-zone.dragover textarea {
+            border-color: var(--brand);
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            background: var(--surface);
+            color: var(--text-main);
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            resize: none;
+            transition: 0.2s;
+        }
+
+        textarea:focus {
+            border-color: var(--brand);
+            border-style: solid;
+            background: #000;
+        }
+
+        textarea::placeholder {
+            color: var(--text-dim);
+        }
+
+        .input-actions {
+            padding: 15px 20px;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.1s, opacity 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-primary {
+            background: var(--text-main);
+            color: #000;
+            flex: 2;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            flex: 1;
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .btn-sm-header {
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 13px;
+            background: var(--brand);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+
+        .btn-sm-header:hover {
+            opacity: 0.9;
+        }
+
+        .btn-sm-header.hidden {
+            display: none;
+        }
+
+        /* --- 4. RESULTS DASHBOARD (Derecha en Desktop) --- */
+        .dashboard-panel {
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Tabs de Filtro */
+        .tabs-header {
+            display: flex;
+            gap: 5px;
+            padding: 15px 20px 0;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .tab {
+            padding: 10px 16px;
+            color: var(--text-dim);
+            font-weight: 600;
+            font-size: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px 8px 0 0;
+            color: var(--text-main);
+        }
+
+        .tab.active {
+            color: var(--brand);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--brand);
+            border-radius: 3px 3px 0 0;
+        }
+
+        .badge {
+            background: var(--border);
+            color: var(--text-main);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 6px;
+        }
+
+        .tab.active .badge {
+            background: var(--brand);
+            color: white;
+        }
+
+        /* Lista de Resultados */
+        .results-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 100px;
+            /* Espacio para FAB */
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-dim);
+            text-align: center;
+            padding: 40px;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .result-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .result-item:hover {
+            background: var(--surface);
+        }
+
+        .res-data {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .res-main {
+            font-family: 'SF Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .res-sub {
+            font-size: 12px;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-pill {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-valid {
+            background: rgba(0, 186, 124, 0.15);
+            color: var(--success);
+        }
+
+        .status-invalid {
+            background: rgba(249, 24, 128, 0.15);
+            color: var(--danger);
+        }
+
+        .status-duplicate {
+            background: rgba(255, 212, 0, 0.15);
+            color: var(--warn);
+        }
+
+        /* Correcciones Automáticas resaltadas */
+        .fix-highlight {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        /* --- 5. FLOATING ACTIONS (Móvil y Desktop) --- */
+        .fab-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            left: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            pointer-events: none;
+            /* Dejar pasar clics si no hay botones */
+        }
+
+        .btn-fab {
+            pointer-events: auto;
+            background: var(--brand);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 50px;
+            font-weight: 700;
+            box-shadow: 0 8px 20px rgba(29, 155, 240, 0.4);
+            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateY(100px);
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-fab.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .btn-fab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(29, 155, 240, 0.5);
+        }
+
+        /* Stats Bar (Resumen visual) */
+        .stats-bar {
+            background: var(--surface);
+            padding: 15px 20px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            border-bottom: 1px solid var(--border);
+            display: none;
+            /* Se muestra con JS */
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 20px;
+            font-weight: 800;
+            display: block;
+        }
+
+        .stat-lbl {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        /* --- TABLE --- */
+        .table-container {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+        }
+
+        .table-container .empty-state {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            text-align: center;
+            padding: 40px;
+        }
+
+        #mainTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        #mainTable thead th {
+            position: sticky;
+            top: 0;
+            background: var(--surface);
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            border-bottom: 2px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            z-index: 5;
+            transition: 0.15s;
+        }
+
+        #mainTable thead th:hover {
+            color: var(--text-main);
+            background: var(--surface-hover);
+        }
+
+        #mainTable thead th.sort-asc::after { content: ' ↑'; color: var(--brand); }
+        #mainTable thead th.sort-desc::after { content: ' ↓'; color: var(--brand); }
+
+        #mainTable tbody td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            font-family: 'SF Mono', 'Courier New', monospace;
+            cursor: cell;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        #mainTable tbody tr:hover td { background: var(--surface-hover); }
+
+        #mainTable tbody td.selected {
+            background: rgba(29, 155, 240, 0.2) !important;
+            outline: 1px solid rgba(29, 155, 240, 0.4);
+        }
+
+        #mainTable tbody td.col-valid    { color: var(--success); font-weight: 600; }
+        #mainTable tbody td.col-invalid  { color: var(--danger);  font-weight: 600; }
+        #mainTable tbody td.col-duplicate{ color: var(--warn);    font-weight: 600; }
+        #mainTable tbody td.col-export   { color: var(--brand);   font-weight: 600; }
+
+        /* --- UTILS --- */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--text-main);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+
+        /* --- RESPONSIVE LAYOUT OVERRIDES --- */
+        /* MUST BE AT THE END TO OVERRIDE SHARED STYLES */
+
+        /* DESKTOP */
+        @media (min-width: 900px) {
+            .input-panel {
+                width: 450px;
+                flex: 0 0 450px;
+                border-right: 1px solid var(--border);
+                display: flex !important;
+                position: static !important;
+            }
+
+            .dashboard-panel {
+                flex: 1;
+                display: flex !important;
+                position: static !important;
+            }
+
+            .mobile-tabs-nav {
+                display: none !important;
+            }
+        }
+
+        /* MOBILE */
+        @media (max-width: 899px) {
+            .main-container {
+                margin-top: 0;
+            }
+
+            .mobile-tabs-nav {
+                display: flex;
+            }
+
+            .header-right {
+                display: none;
+            }
+
+            /* Panels - Tab Controlled */
+            .input-panel,
+            .dashboard-panel {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: none !important;
+                /* Force hide unless active */
+                background: var(--bg);
+                z-index: 1;
+            }
+
+            .input-panel.active-panel,
+            .dashboard-panel.active-panel {
+                display: flex !important;
+            }
+
+            .input-panel {
+                /* Ensure it's not relative as per shared style */
+                border-right: none;
+            }
+
+            .input-panel textarea {
+                height: 100% !important;
+                border: none;
+                border-radius: 0;
+            }
+
+            .drop-zone {
+                padding: 0;
+                margin-bottom: 60px;
+            }
+
+            .input-actions {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                z-index: 20;
+                border-top: 1px solid var(--border);
+                background: var(--bg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="toast" class="toast">Acción completada</div>
+
+    <header>
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#grad)" stroke-width="2">
+                <defs>
+                    <linearGradient id="grad" x1="0" y1="0" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#1d9bf0" />
+                        <stop offset="100%" stop-color="#8b5cf6" />
+                    </linearGradient>
+                </defs>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span>Carga Masiva<span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="btnDownloadAnalysis" class="btn btn-sm-header hidden" onclick="downloadAnalysis()" style="background: var(--surface); border: 1px solid var(--border); color: var(--text-main);">
+                Descargar Análisis
+            </button>
+            <button id="btnDownloadHeader" class="btn btn-sm-header hidden" onclick="downloadCSV()">
+                Descargar CSV
+            </button>
+        </div>
+    </header>
+
+    <div class="mobile-tabs-nav" id="mobileTabs">
+        <div class="m-tab active" onclick="switchMobileView('input')" id="tab-input">DATOS</div>
+        <div class="m-tab" onclick="switchMobileView('results')" id="tab-results">RESULTADOS</div>
+    </div>
+
+    <div class="main-container">
+
+        <div class="input-panel active-panel" id="inputPanel">
+            <div class="drop-zone" id="dropZone">
+                <textarea id="dniInput"
+                    placeholder="Pega tu lista aquí...&#10;&#10;Soporta:&#10;• DNIs mezclados con texto&#10;• Archivos arrastrados (.txt/.csv)&#10;• Formatos sucios (con espacios, guiones)"
+                    spellcheck="false"></textarea>
+            </div>
+            <div class="input-actions" id="inputActions">
+                <button class="btn btn-ghost" onclick="clearAll()">🗑️ Limpiar</button>
+                <button class="btn btn-primary" onclick="runValidation()">⚡ Validar Lista</button>
+            </div>
+        </div>
+
+        <div class="dashboard-panel" id="resultsPanel">
+
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-item">
+                    <span class="stat-val" id="countTotal">0</span>
+                    <span class="stat-lbl">Total</span>
+                </div>
+                <div class="stat-item" style="color: var(--success)">
+                    <span class="stat-val" id="countValid">0</span>
+                    <span class="stat-lbl">Válidos</span>
+                </div>
+                <div class="stat-item" style="color: var(--danger)">
+                    <span class="stat-val" id="countInvalid">0</span>
+                    <span class="stat-lbl">Inválidos</span>
+                </div>
+                <div class="stat-item" style="color: var(--warn)">
+                    <span class="stat-val" id="countDuplicate">0</span>
+                    <span class="stat-lbl">Duplicados</span>
+                </div>
+                <div class="stat-item" style="color: var(--brand)">
+                    <span class="stat-val" id="countExport">0</span>
+                    <span class="stat-lbl">Exportables</span>
+                </div>
+            </div>
+
+            <div class="table-container" id="tableContainer">
+                <div class="empty-state" id="tableEmpty">
+                    <div class="empty-icon">📂</div>
+                    <h3>Esperando datos</h3>
+                    <p>Pega texto, arrastra un archivo o escribe manualmente.</p>
+                </div>
+                <table id="mainTable" class="hidden">
+                    <thead>
+                        <tr>
+                            <th data-col="original"  onclick="sortBy('original')">Original</th>
+                            <th data-col="valid"     onclick="sortBy('valid')">Válidos</th>
+                            <th data-col="invalid"   onclick="sortBy('invalid')">Inválidos</th>
+                            <th data-col="duplicate" onclick="sortBy('duplicate')">Duplicados</th>
+                            <th data-col="export"    onclick="sortBy('export')">Exportables</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+
+
+
+            <textarea id="cleanList" class="hidden"></textarea>
+        </div>
+    </div>
+
+    <script>
+        // --- LÓGICA CORE (NO TOCADA, SOLO OPTIMIZADA EN USO) ---
+        function cleanDNI(dni) {
+            return dni.trim().toUpperCase().replace(/[\s-]/g, '');
+        }
+
+        function validateDNI(dni) {
+            const cleaned = cleanDNI(dni);
+            const dniRegex = /^(\d{8})([A-Z])$/;
+            const nieRegex = /^([XYZ])(\d{7})([A-Z])$/;
+            let match = cleaned.match(dniRegex);
+            let numbers, letter;
+
+            if (match) {
+                numbers = match[1];
+                letter = match[2];
+            } else {
+                match = cleaned.match(nieRegex);
+                if (!match) return false;
+                const niePrefix = match[1];
+                const nieNumbers = match[2];
+                letter = match[3];
+                const nieMap = { 'X': '0', 'Y': '1', 'Z': '2' };
+                numbers = nieMap[niePrefix] + nieNumbers;
+            }
+            const validLetters = 'TRWAGMYFPDXBNJZSQVHLCKE';
+            return letter === validLetters[parseInt(numbers) % 23];
+        }
+
+        function correctDNI(dni) {
+            const cleaned = cleanDNI(dni);
+            // Intentar DNI
+            let numbersMatch = cleaned.match(/(\d{8})/);
+            if (numbersMatch) {
+                const numbers = numbersMatch[1];
+                const validLetters = 'TRWAGMYFPDXBNJZSQVHLCKE';
+                return numbers + validLetters[parseInt(numbers) % 23];
+            }
+            // Intentar NIE
+            const nieMatch = cleaned.match(/([XYZ])(\d{7})/);
+            if (nieMatch) {
+                const niePrefix = nieMatch[1];
+                const nieNumbers = nieMatch[2];
+                const nieMap = { 'X': '0', 'Y': '1', 'Z': '2' };
+                const numbers = nieMap[niePrefix] + nieNumbers;
+                const validLetters = 'TRWAGMYFPDXBNJZSQVHLCKE';
+                return niePrefix + nieNumbers + validLetters[parseInt(numbers) % 23];
+            }
+            return null;
+        }
+
+        // --- UX / UI LOGIC ---
+
+        let currentResults = [];
+        let sortCol = null, sortDir = 1;
+        let selStart = null, selEnd = null, isSelecting = false;
+
+        // 1. Detección Inteligente de Texto (Mejora de flujo)
+        function extractPotentialIDs(text) {
+            // Regex que busca patrones parecidos a DNI/NIE incluso dentro de texto sucio
+            // Busca secuencias de 8 numeros o X/Y/Z seguido de numeros
+            const broadRegex = /([XYZ]?\s*(?:\d\s*){7,8}-?\s*[A-Z]?)/gi;
+            const matches = text.match(broadRegex);
+            return matches ? matches : text.split('\n');
+        }
+
+        function runValidation() {
+            const inputVal = document.getElementById('dniInput').value;
+            if (!inputVal.trim()) { showToast("⚠️ El campo está vacío"); return; }
+
+            // Usamos lógica de extracción más inteligente si hay mucho texto basura
+            // Si parece una lista limpia, usamos split por linea. Si no, regex.
+            let lines = inputVal.split('\n').filter(l => l.trim().length > 0);
+
+            // Si las lineas son muy largas, asumimos que es texto mezclado y usamos regex extractor
+            if (lines.some(l => l.length > 20)) {
+                const extracted = extractPotentialIDs(inputVal);
+                if (extracted) lines = extracted;
+            }
+
+            currentResults = [];
+            let validCount = 0;
+            let invalidCount = 0;
+            let duplicateCount = 0;
+            let cleanCSVLines = [];
+
+            // Set for duplicate detection (store cleaned IDs)
+            let seenIDs = new Set();
+
+            lines.forEach(line => {
+                const original = line.trim();
+                // Limpieza básica para eliminar comas o puntos finales comunes en copy-paste
+                const sanitized = original.replace(/[.,;:]$/, '');
+
+                const cleaned = cleanDNI(sanitized);
+                // Evitar procesar lineas vacías o muy cortas tras limpieza
+                if (cleaned.length < 5) return;
+
+                const isValid = validateDNI(sanitized);
+                const corrected = isValid ? cleaned : correctDNI(sanitized);
+
+                // Duplicate Logic
+                let isDuplicate = false;
+                const idToCheck = isValid ? cleaned : (corrected || cleaned); // Check against the final ID we would use
+
+                if (isValid || corrected) {
+                    if (seenIDs.has(idToCheck)) {
+                        isDuplicate = true;
+                        duplicateCount++;
+                    } else {
+                        seenIDs.add(idToCheck);
+                    }
+                }
+
+                if (isDuplicate) {
+                    // Treated as invalid for CSV export purposes but shown specifically
+                } else if (isValid) {
+                    validCount++;
+                    cleanCSVLines.push(`${cleaned},,1`);
+                } else {
+                    invalidCount++;
+                    if (corrected && !isDuplicate) { // If it was corrected and not duplicate (logic above handles not adding to seen if not valid/corrected really, but checking again)
+                        // logic above adds to seen if corrected.
+                        // Corrected items are technically "Valid" for export? The original code put them in cleanCSVLines if corrected
+                        cleanCSVLines.push(`${corrected},,1`);
+                        // Adjustment: The original code counted 'corrected' as invalid in the stats (implied by else invalidCount++)?
+                        // Actually: original code: if (isValid) validCount++ else invalidCount++
+                        // But it exported corrected ones.
+                        // Let's keep logic: Valid means PURE valid. Invalid includes corrected ones in stats?
+                        // Wait, normally corrected should be treated as success. 
+                        // Original code: if (isValid) validCount++ else invalidCount++.
+                        // So corrected were counted as invalid in stats but exported.
+                    }
+                }
+
+                // Refined Stats Logic for clear UI
+                // Let's consider Corrected as "Valid" for the user? Or keep strict?
+                // Strict is better for "Errors". 
+
+                currentResults.push({ original: sanitized, cleaned, isValid, corrected, isDuplicate });
+            });
+
+            // Actualizar UI
+            document.getElementById('cleanList').value = cleanCSVLines.join('\n');
+            updateStats(currentResults.length, validCount, invalidCount, duplicateCount, cleanCSVLines.length);
+            renderTable();
+
+            // UI Feedback
+            document.getElementById('statsBar').style.display = 'flex';
+            document.getElementById('tableEmpty').classList.add('hidden');
+            document.getElementById('mainTable').classList.remove('hidden');
+
+            if (cleanCSVLines.length > 0) {
+                document.getElementById('btnDownloadHeader').classList.remove('hidden');
+            } else {
+                document.getElementById('btnDownloadHeader').classList.add('hidden');
+            }
+            if (currentResults.length > 0) {
+                document.getElementById('btnDownloadAnalysis').classList.remove('hidden');
+            } else {
+                document.getElementById('btnDownloadAnalysis').classList.add('hidden');
+            }
+
+            if (window.innerWidth < 900) {
+                document.getElementById('resultsPanel').classList.add('has-results');
+            }
+
+            // Mobile: Auto-switch to results tab
+            if (window.innerWidth < 900) {
+                switchMobileView('results');
+            }
+
+
+        }
+
+        function getColValue(r, col) {
+            if (col === 'original')   return r.original;
+            if (col === 'valid')      return (r.isValid && !r.isDuplicate) ? r.cleaned : '';
+            if (col === 'invalid')    return (!r.isValid && !r.isDuplicate) ? r.original : '';
+            if (col === 'duplicate')  return r.isDuplicate ? (r.cleaned || r.original) : '';
+            if (col === 'export')     return !r.isDuplicate ? (r.isValid ? r.cleaned : (r.corrected || '')) : '';
+            return '';
+        }
+
+        function sortBy(col) {
+            if (col === 'original') {
+                if (sortCol !== 'original')    { sortCol = 'original'; sortDir = 1; }
+                else if (sortDir === 1)         { sortDir = -1; }
+                else                            { sortCol = null; sortDir = 1; }
+            } else {
+                if (sortCol === col) sortDir = -sortDir; else { sortCol = col; sortDir = 1; }
+            }
+            document.querySelectorAll('#mainTable thead th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (sortCol && th.dataset.col === sortCol) th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+            });
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            selStart = null; selEnd = null;
+
+            let data = [...currentResults];
+            if (sortCol) {
+                data.sort((a, b) => {
+                    const va = getColValue(a, sortCol), vb = getColValue(b, sortCol);
+                    if (!va && vb) return 1;
+                    if (va && !vb) return -1;
+                    return va.localeCompare(vb) * sortDir;
+                });
+            }
+
+            data.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="col-original">${r.original}</td>
+                    <td class="col-valid">${(r.isValid && !r.isDuplicate) ? r.cleaned : ''}</td>
+                    <td class="col-invalid">${(!r.isValid && !r.isDuplicate) ? r.original : ''}</td>
+                    <td class="col-duplicate">${r.isDuplicate ? (r.cleaned || r.original) : ''}</td>
+                    <td class="col-export">${!r.isDuplicate ? (r.isValid ? r.cleaned : (r.corrected || '')) : ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateStats(total, valid, invalid, duplicate, exportCount) {
+            document.getElementById('countTotal').innerText = total;
+            document.getElementById('countValid').innerText = valid;
+            document.getElementById('countInvalid').innerText = invalid;
+            document.getElementById('countDuplicate').innerText = duplicate;
+            document.getElementById('countExport').innerText = exportCount;
+        }
+
+        // Mobile View Switching
+        function switchMobileView(view) {
+            // Update tabs
+            document.querySelectorAll('.m-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${view}`).classList.add('active');
+
+            // Update panels
+            document.querySelectorAll('.input-panel, .dashboard-panel').forEach(p => p.classList.remove('active-panel'));
+            if (view === 'input') document.getElementById('inputPanel').classList.add('active-panel');
+            else document.getElementById('resultsPanel').classList.add('active-panel');
+        }
+
+        function clearAll() {
+            document.getElementById('dniInput').value = '';
+            document.getElementById('cleanList').value = '';
+            document.getElementById('tableBody').innerHTML = '';
+            document.getElementById('mainTable').classList.add('hidden');
+            document.getElementById('tableEmpty').classList.remove('hidden');
+            document.getElementById('statsBar').style.display = 'none';
+            sortCol = null; sortDir = 1;
+            document.querySelectorAll('#mainTable thead th').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+            document.getElementById('btnDownloadHeader').classList.add('hidden');
+            document.getElementById('btnDownloadAnalysis').classList.add('hidden');
+
+            // Reset mobile view if small screen
+            if (window.innerWidth < 900) switchMobileView('input');
+
+            currentResults = [];
+
+            showToast("Papelera vaciada");
+        }
+
+        // --- Drag and Drop ---
+        const dropZone = document.getElementById('dropZone');
+        const textarea = document.getElementById('dniInput');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        });
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('text') || file.name.endsWith('.csv')) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        textarea.value = e.target.result;
+                        showToast("Archivo cargado con éxito");
+                        runValidation(); // Auto-run
+                    }
+                    reader.readAsText(file);
+                } else {
+                    showToast("❌ Solo archivos de texto o CSV");
+                }
+            }
+        }
+
+        // --- Funciones originales conservadas ---
+        function downloadCSV() {
+            const cleanList = document.getElementById('cleanList').value;
+            if (!cleanList.trim()) { showToast('⚠️ No hay datos válidos'); return; }
+
+            const blob = new Blob([cleanList], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            const now = new Date();
+            const filename = `Carga_MASIVA_${now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '.')}.csv`;
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("📥 Descargando CSV...");
+        }
+
+        function downloadAnalysis() {
+            const table = document.getElementById('mainTable');
+            if (!table || table.classList.contains('hidden')) { showToast('⚠️ No hay datos para exportar'); return; }
+
+            const lines = [];
+            // Cabeceras
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.replace(/\s*[↑↓]$/, '').trim());
+            lines.push(headers.join(','));
+            // Filas
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const cols = Array.from(tr.cells).map(td => {
+                    const v = td.innerText.trim();
+                    return v.includes(',') ? `"${v}"` : v;
+                });
+                lines.push(cols.join(','));
+            });
+
+            const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            const now = new Date();
+            const filename = `Análisis_${now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '.')}.csv`;
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('📊 Descargando análisis...');
+        }
+
+        // --- Selección de celdas y copia ---
+        (function setupTableSelection() {
+            function coords(td) {
+                return { row: td.parentElement.sectionRowIndex, col: td.cellIndex };
+            }
+            function clearSel() {
+                document.querySelectorAll('#tableBody td.selected').forEach(td => td.classList.remove('selected'));
+            }
+            function applySel() {
+                if (!selStart || !selEnd) return;
+                const r0 = Math.min(selStart.row, selEnd.row), r1 = Math.max(selStart.row, selEnd.row);
+                const c0 = Math.min(selStart.col, selEnd.col), c1 = Math.max(selStart.col, selEnd.col);
+                document.querySelectorAll('#tableBody tr').forEach((tr, ri) => {
+                    Array.from(tr.cells).forEach((td, ci) => {
+                        td.classList.toggle('selected', ri >= r0 && ri <= r1 && ci >= c0 && ci <= c1);
+                    });
+                });
+            }
+
+            const tbody = document.getElementById('tableBody');
+
+            tbody.addEventListener('mousedown', e => {
+                if (e.target.tagName !== 'TD') return;
+                isSelecting = true;
+                selStart = coords(e.target);
+                if (!e.shiftKey) { clearSel(); selEnd = { ...selStart }; }
+                else { selEnd = coords(e.target); }
+                applySel();
+                e.preventDefault();
+            });
+
+            tbody.addEventListener('mousemove', e => {
+                if (!isSelecting || e.target.tagName !== 'TD') return;
+                selEnd = coords(e.target);
+                clearSel();
+                applySel();
+            });
+
+            document.addEventListener('mouseup', () => { isSelecting = false; });
+
+            document.addEventListener('keydown', e => {
+                if (!((e.ctrlKey || e.metaKey) && e.key === 'c')) return;
+                const selected = document.querySelectorAll('#tableBody td.selected');
+                if (!selected.length) return;
+                const r0 = Math.min(selStart.row, selEnd.row), r1 = Math.max(selStart.row, selEnd.row);
+                const c0 = Math.min(selStart.col, selEnd.col), c1 = Math.max(selStart.col, selEnd.col);
+                const rows = [];
+                document.querySelectorAll('#tableBody tr').forEach((tr, ri) => {
+                    if (ri < r0 || ri > r1) return;
+                    const cols = [];
+                    Array.from(tr.cells).forEach((td, ci) => {
+                        if (ci >= c0 && ci <= c1) cols.push(td.innerText);
+                    });
+                    rows.push(cols.join('\t'));
+                });
+                navigator.clipboard.writeText(rows.join('\n'));
+                showToast('📋 Copiado al portapapeles');
+                e.preventDefault();
+            });
+        })();
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+    </script>
+</body>
+
+</html>
