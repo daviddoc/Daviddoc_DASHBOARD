@@ -12,7 +12,7 @@
 
 ## DIFUSIÓN
 <img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top"> <img src="https://cdn.simpleicons.org/openai/fff?viewbox32&size=20" alt="ChatGPT" align="top"> [X.COM - CHATGPT Creador de posts](https://chatgpt.com/g/g-68041bd0c49c8191bc9aaa20e216ac62-x-com-cfie)  
-<img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top"> <img src="https://cdn.simpleicons.org/googlegemini/fff?viewbox32&size=20" alt="Gemini" align="top">[X.COM - GEMINI Creador de posts](https://gemini.google.com/gem/de574ba07bec?usp=sharing)  
+<img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top"> <img src="https://cdn.simpleicons.org/googlegemini/fff?viewbox32&size=20" alt="Gemini" align="top"> [X.COM - GEMINI Creador de posts](https://gemini.google.com/gem/de574ba07bec?usp=sharing)  
 <img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top"> <img src="https://cdn.simpleicons.org/notebooklm/fff?size=20" alt="Web App" align="top"> [X.COM - NOTEBOOKLM Creador de posts](https://notebooklm.google.com/notebook/b19b9a2f-9d0f-4474-aa2e-5d934f81c547?authuser=1)
 <img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top">
 
