@@ -16,6 +16,17 @@
 <img src="https://api.iconify.design/mdi/typewriter.svg?color=white" width="20" height="20" alt="Texto" align="top"> Texto  
 <img src="https://api.iconify.design/mdi/text-box-edit-outline.svg?color=white" width="20" height="20" alt="Edición" align="top"> Edición  
 
+<img src="https://api.iconify.design/mdi/database-outline.svg?color=white" width="20" height="20" alt="Base de datos" align="top"> Base de datos  
+<img src="https://api.iconify.design/mdi/database-settings-outline.svg?color=white" width="20" height="20" alt="Base de datos (configuración)" align="top"> Configuración de base de datos  
+<img src="https://api.iconify.design/mdi/database-search-outline.svg?color=white" width="20" height="20" alt="Consulta base de datos" align="top"> Consultas  
+<img src="https://api.iconify.design/mdi/database-sync-outline.svg?color=white" width="20" height="20" alt="Sincronización base de datos" align="top"> Sincronización  
+<img src="https://api.iconify.design/mdi/database-import-outline.svg?color=white" width="20" height="20" alt="Importación base de datos" align="top"> Importación  
+<img src="https://api.iconify.design/mdi/database-export-outline.svg?color=white" width="20" height="20" alt="Exportación base de datos" align="top"> Exportación  
+<img src="https://api.iconify.design/mdi/database-plus-outline.svg?color=white" width="20" height="20" alt="Añadir base de datos" align="top"> Añadir  
+<img src="https://api.iconify.design/mdi/database-minus-outline.svg?color=white" width="20" height="20" alt="Eliminar base de datos" align="top"> Eliminar  
+<img src="https://api.iconify.design/mdi/server-outline.svg?color=white" width="20" height="20" alt="Servidor" align="top"> Servidor  
+<img src="https://api.iconify.design/mdi/stack-overflow.svg?color=white" width="20" height="20" alt="Stack / datos" align="top"> Stack de datos  
+
 <img src="https://cdn.simpleicons.org/obsidian/fff?viewbox32&size=20" alt="Obsidian" align="top"> Obsidian  
 
 <img src="https://api.iconify.design/mdi/note-outline.svg?color=white" width="20" height="20" alt="Nota" align="top"> [NOTAS - ACTIVIDADES.md](https://daviddoc.github.io/TIC1_CFIEva/NOTAS.html)
