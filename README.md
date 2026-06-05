@@ -3,8 +3,9 @@
 <img src="https://www.google.com/s2/favicons?domain=notebooklm.google&sz=32" alt="NotebookLM" width="32" height="32" align="top"> [ACTAS Y CARGOS](https://notebooklm.google.com/notebook/ca0bfb9a-7cff-4585-af29-4cc0065abcb4)  
 <img src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg" alt="PDF" width="32" height="32" align="top"> [ACTA MARKDOWN A PDF](https://daviddoc.github.io/TIC1_CFIEva/ACTAS-MARKDOWN_A_WORD.html)  
 
-<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/globe.svg" alt="Sitio Web" width="24" height="24" align="middle" style="filter: invert(1);"> [Acceder a la Web](TU_ENLACE_AQUÍ)
-<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/browser.svg" alt="Web App" width="24" height="24" align="middle" style="filter: invert(1);"> [Mi Aplicación Web](TU_ENLACE_AQUÍ)
+<img src="https://cdn.simpleicons.org/googlechrome/fff" alt="Web App" width="24" height="24" align="middle"> [Mi Aplicación Web](TU_ENLACE_AQUÍ)
+<img src="https://cdn.simpleicons.org/internetarchive/fff" alt="Sitio Web" width="24" height="24" align="middle"> [Acceder a la Web](TU_ENLACE_AQUÍ)
+
 
 
 ## CONSULTA 
