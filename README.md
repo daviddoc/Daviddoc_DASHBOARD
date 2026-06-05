@@ -6,6 +6,7 @@
 <img src="https://cdn.simpleicons.org/googlechrome/fff" alt="Web App" width="24" height="24" align="middle"> [Mi Aplicación Web](TU_ENLACE_AQUÍ)
 <img src="https://cdn.simpleicons.org/internetarchive/fff" alt="Sitio Web" width="24" height="24" align="middle"> [Acceder a la Web](TU_ENLACE_AQUÍ)
 
+<img src="https://cdn.simpleicons.org/notebooklm/fff?viewbox=auto&size=20" alt="Web App" align="middle"> [Mi Aplicación Web](TU_ENLACE_AQUÍ)
 <img src="https://cdn.simpleicons.org/javascript?viewbox=auto&size=20" />
 <img src="https://cdn.simpleicons.org/python?viewbox=auto&size=20" />
 <img src="https://cdn.simpleicons.org/kotlin?viewbox=auto&size=20" />
