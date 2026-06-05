@@ -22,8 +22,8 @@
 <img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top">
 
 ## DOCUMENTOS
-<img src="https://api.iconify.design/mdi/book-open-page-variant-outline.svg?color=white" width="20" height="20" alt="EPUB" align="top"> <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top"> Markdown  
-<img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top"> Markdown  
+<img src="https://api.iconify.design/mdi/book-open-page-variant-outline.svg?color=white" width="20" height="20" alt="EPUB" align="top"> ➡️ <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top"> Markdown  
+<img src="https://api.iconify.design/mdi:file-pdf-box.svg?color=white&height=20" alt="HTML" align="top">  <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top"> Markdown  
 <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top"> Markdown  
 
 - [REFORACEN - COMPROBADOR +75 HORAS EN PF](https://daviddoc.github.io/TIC1_CFIEva/REFO-COMPROBADOR_+75_HORAS_PF.html)
