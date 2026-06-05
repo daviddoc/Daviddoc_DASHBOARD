@@ -6,16 +6,7 @@
 <img src="https://cdn.simpleicons.org/googlechrome/fff" alt="Web App" width="24" height="24" align="middle"> [Mi Aplicación Web](TU_ENLACE_AQUÍ)
 <img src="https://cdn.simpleicons.org/internetarchive/fff" alt="Sitio Web" width="24" height="24" align="middle"> [Acceder a la Web](TU_ENLACE_AQUÍ)
 
-<img src="https://cdn.simpleicons.org/notebooklm/fff?viewbox=auto&size=20" alt="Web App" align="top"> [Mi Aplicación Web](TU_ENLACE_AQUÍ)
-<img src="https://cdn.simpleicons.org/javascript?viewbox=auto&size=20" />
-<img src="https://cdn.simpleicons.org/python?viewbox=auto&size=20" />
-<img src="https://cdn.simpleicons.org/kotlin?viewbox=auto&size=20" />
-<img src="https://cdn.simpleicons.org/dart?viewbox=auto&size=20" />
-<img src="https://cdn.simpleicons.org/r?viewbox=auto&size=20" />
-<img src="https://cdn.simpleicons.org/swift?viewbox=auto&size=20" />
-<img src="https://cdn.simpleicons.org/julia?viewbox=auto&size=20" />
-<img src="https://cdn.simpleicons.org/haskell?viewbox=auto&size=20" />
-<img src="https://cdn.simpleicons.org/clojure?viewbox=auto&size=20" />
+<img src="https://cdn.simpleicons.org/pdf/fff" alt="PDF" width="24" height="24" align="middle"> [Descargar documento PDF](TU_ENLACE_AQUÍ)
 
 ## CONSULTA 
 [![Google NotebookLM](https://www.google.com/s2/favicons?domain=notebooklm.google)](https://notebooklm.google) [CATALOGADOR DE ACTIVIDADES FORMATIVAS](https://notebooklm.google.com/notebook/dede0051-2039-491c-bde4-9838acd37032)  
