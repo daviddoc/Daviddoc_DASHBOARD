@@ -1,13 +1,5 @@
 # ACTAS
-
-<span style="background-color:#FFFFFFF; padding:2px; border-radius:4px;">
-  <img src="https://cdn.simpleicons.org/notebooklm/000?size=20" alt="NotebookLM" align="top">
-</span>
-&nbsp;&nbsp;&nbsp;
-[ACTAS Y CARGOS](https://notebooklm.google.com/notebook/ca0bfb9a-7cff-4585-af29-4cc0065abcb4)
-
-
-<img src="https://cdn.simpleicons.org/notebooklm/000?size=20" alt="Web App" align="top">&nbsp;&nbsp;&nbsp;[ACTAS Y CARGOS](https://notebooklm.google.com/notebook/ca0bfb9a-7cff-4585-af29-4cc0065abcb4)  
+<img src="https://cdn.simpleicons.org/notebooklm/fff?size=20" alt="Web App" align="top">&nbsp;&nbsp;&nbsp;[ACTAS Y CARGOS](https://notebooklm.google.com/notebook/ca0bfb9a-7cff-4585-af29-4cc0065abcb4)  
 <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top"> <img src="https://api.iconify.design/mdi:file-pdf-box.svg?color=white&height=20" alt="HTML" align="top">&nbsp;&nbsp;&nbsp;[ACTA MARKDOWN A PDF](https://daviddoc.github.io/TIC1_CFIEva/ACTAS-MARKDOWN_A_WORD.html)  
 
 # CONSULTA 
@@ -23,7 +15,7 @@
 <img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top"> <img src="https://cdn.simpleicons.org/googlegemini/fff?viewbox32&size=20" alt="Gemini" align="top">&nbsp;&nbsp;&nbsp;[X.COM - GEMINI Creador de posts](https://gemini.google.com/gem/de574ba07bec?usp=sharing)  
 <img src="https://cdn.simpleicons.org/x/fff?viewbox32&size=20" alt="X" align="top"> <img src="https://cdn.simpleicons.org/notebooklm/fff?size=20" alt="Web App" align="top">&nbsp;&nbsp;&nbsp;[X.COM - NOTEBOOKLM Creador de posts](https://notebooklm.google.com/notebook/b19b9a2f-9d0f-4474-aa2e-5d934f81c547?authuser=1)  
 
-## DOCUMENTOS
+# DOCUMENTOS
 <img src="https://api.iconify.design/mdi/book-open-page-variant-outline.svg?color=white" width="20" height="20" alt="EPUB" align="top"> <img src="https://api.iconify.design/mdi/arrow-right.svg?color=white" width="20" height="20" alt="Flecha derecha" align="top"> <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top">&nbsp;&nbsp;&nbsp;[EPUB A MARKDOWN](https://daviddoc.github.io/TIC1_CFIEva/EPUB_A_MARKDOWN.html)  
 <img src="https://cdn.simpleicons.org/html5/fff?viewbox32&size=20" alt="HTML" align="top"> <img src="https://api.iconify.design/mdi:file-pdf-box.svg?color=white&height=20" alt="HTML" align="top"> <img src="https://api.iconify.design/mdi/microsoft-word.svg?color=white" width="20" height="20" alt="Word" align="top"> <img src="https://api.iconify.design/mdi/arrow-right.svg?color=white" width="20" height="20" alt="Flecha derecha" align="top"> <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top">&nbsp;&nbsp;&nbsp;[HTML, PDF Y WORD A MARKDOWN](https://daviddoc.github.io/TIC1_CFIEva/PDF-DOCX-HTML_A_MARKDOWN.html)  
 <img src="https://api.iconify.design/mdi/scanner.svg?color=white" width="20" height="20" alt="Escaneo" align="top"> <img src="https://api.iconify.design/mdi:file-pdf-box.svg?color=white&height=20" alt="HTML" align="top">&nbsp;&nbsp;&nbsp;[PDF - LOOK SCANNED](https://daviddoc.github.io/TIC1_CFIEva/PDF-LOOK_SCANNED.html) 
