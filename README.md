@@ -1,4 +1,11 @@
-# [![ACTAS Y CARGOS](https://img.shields.io/badge/ACTAS_Y_CARGOS-NotebookLM-yellow)](https://notebooklm.google.com/notebook/ca0bfb9a-7cff-4585-af29-4cc0065abcb4)
+# ACTAS
+
+<span style="background-color:#FFD54F; padding:2px; border-radius:4px;">
+  <img src="https://cdn.simpleicons.org/notebooklm/000?size=20" alt="NotebookLM" align="top">
+</span>
+&nbsp;&nbsp;&nbsp;
+[ACTAS Y CARGOS](https://notebooklm.google.com/notebook/ca0bfb9a-7cff-4585-af29-4cc0065abcb4)
+
 
 <img src="https://cdn.simpleicons.org/notebooklm/000?size=20" alt="Web App" align="top">&nbsp;&nbsp;&nbsp;[ACTAS Y CARGOS](https://notebooklm.google.com/notebook/ca0bfb9a-7cff-4585-af29-4cc0065abcb4)  
 <img src="https://cdn.simpleicons.org/markdown/fff?viewbox32&size=20" alt="Markdown" align="top"> <img src="https://api.iconify.design/mdi:file-pdf-box.svg?color=white&height=20" alt="HTML" align="top">&nbsp;&nbsp;&nbsp;[ACTA MARKDOWN A PDF](https://daviddoc.github.io/TIC1_CFIEva/ACTAS-MARKDOWN_A_WORD.html)  
