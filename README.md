@@ -1,6 +1,6 @@
 # ACTAS
 
-<span style="background-color:#FFD54F; padding:2px; border-radius:4px;">
+<span style="background-color:#FFFFFFF; padding:2px; border-radius:4px;">
   <img src="https://cdn.simpleicons.org/notebooklm/000?size=20" alt="NotebookLM" align="top">
 </span>
 &nbsp;&nbsp;&nbsp;
