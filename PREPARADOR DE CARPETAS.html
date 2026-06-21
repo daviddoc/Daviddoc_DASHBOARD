@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creador de estructura de carpetas · CFIE</title>
+<style>
+  :root{
+    --panel:#fff; --muted:#64748b; --line:#e2e8f0; --brand:#1d4ed8; --brand-d:#1e40af;
+    --soft:#f8fafc; --chip:#eef2ff; --ok:#16a34a; --warn:#b45309; --err:#dc2626;
+    --centro:#2563eb; --modal:#16a34a; --titulo:#b45309;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a;background:#eef2f7;line-height:1.45}
+  header.app{background:linear-gradient(135deg,var(--brand-d),var(--brand));color:#fff;padding:22px 20px}
+  header.app h1{margin:0 0 4px;font-size:20px}
+  header.app p{margin:0;opacity:.9;font-size:14px}
+  main{max-width:1080px;margin:0 auto;padding:18px 16px 70px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .card h2{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:8px}
+  .step{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:13px;font-weight:700;flex:0 0 auto}
+  .hint{color:var(--muted);font-size:13px;margin:2px 0 14px}
+  label{font-size:13px;font-weight:600;display:block;margin-bottom:5px}
+  input[type=text],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;background:#fff}
+  textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+  #pasteInput{min-height:120px;white-space:pre;overflow:auto}
+  .row{display:flex;gap:14px;flex-wrap:wrap}
+  .row>div{flex:1 1 200px}
+  .btn{appearance:none;border:1px solid var(--brand);background:var(--brand);color:#fff;padding:9px 16px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer}
+  .btn:hover{background:var(--brand-d)}
+  .btn.secondary{background:#fff;color:var(--brand)}
+  .btn.secondary:hover{background:var(--soft)}
+  .btn.ghost{background:transparent;border-color:var(--line);color:#334155}
+  .btn.small{padding:4px 9px;font-size:12.5px}
+  .btn.danger{background:#fff;color:var(--err);border-color:#fecaca;padding:3px 8px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .dropzone{border:2px dashed #cbd5e1;border-radius:10px;padding:16px;text-align:center;color:var(--muted);background:var(--soft);cursor:pointer;transition:.15s}
+  .dropzone.drag{border-color:var(--brand);background:#eff6ff;color:var(--brand)}
+  table.preview{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;display:block;overflow:auto;max-height:220px}
+  table.preview th,table.preview td{border:1px solid var(--line);padding:4px 7px;text-align:left;white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+  table.preview thead th{background:#f1f5f9;position:sticky;top:0}
+  th.col-centro,td.col-centro{background:#eff6ff}
+  th.col-modal,td.col-modal{background:#f0fdf4}
+  th.col-titulo,td.col-titulo{background:#fffbeb}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .chip{background:var(--chip);border:1px solid #dbe1ff;border-radius:999px;padding:4px 10px;font-size:12.5px;display:inline-flex;align-items:center;gap:8px}
+  .chip button{border:0;background:transparent;color:#475569;cursor:pointer;font-size:14px;line-height:1;padding:0}
+  .pool-chip{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:4px 10px;font-size:12.5px;cursor:grab;display:inline-flex;align-items:center;gap:6px;user-select:none}
+  .pool-chip:active{cursor:grabbing}
+  .palette{position:sticky;top:0;z-index:5;background:#f1f5f9;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:14px}
+  .palette .lab{font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .modCard{border:1px solid var(--line);border-radius:10px;padding:14px;margin:10px 0;background:var(--soft)}
+  .modCard .top{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+  .modCard .top input{flex:1}
+  .subh{font-size:14px;font-weight:700;margin:16px 0 6px}
+  /* tree editor */
+  .node{margin:3px 0 3px 0}
+  .children{margin-left:18px;border-left:2px solid #e2e8f0;padding-left:10px}
+  .node-head{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:7px}
+  .node-head.drop-hi{background:#dbeafe;outline:2px dashed var(--brand)}
+  .node-name{flex:0 1 320px;padding:4px 8px;font-size:13px}
+  .folder-root{font-weight:700;color:#0f172a}
+  .fileslot{display:flex;flex-wrap:wrap;gap:6px;margin:3px 0 3px 24px}
+  .assigned{background:#fef9c3;border:1px solid #fde68a;border-radius:7px;padding:2px 8px;font-size:12px;display:inline-flex;align-items:center;gap:6px}
+  .assigned.missing{background:#fee2e2;border-color:#fecaca;color:#991b1b}
+  .assigned button{border:0;background:transparent;cursor:pointer;font-size:13px;line-height:1;color:#92400e;padding:0}
+  select.addfile{font-size:11.5px;padding:2px 6px;width:auto;border-radius:7px;color:var(--muted)}
+  .addsub{margin:2px 0 6px 24px}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+  .stat{background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:8px 14px;min-width:104px}
+  .stat b{display:block;font-size:20px}
+  .stat span{font-size:12px;color:var(--muted)}
+  .notice{border-radius:9px;padding:10px 12px;font-size:13px;margin-top:10px}
+  .notice.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+  .notice.err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}
+  .tree{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;max-height:440px;overflow:auto;background:#0b1220;color:#dbe7ff;border-radius:10px;padding:14px}
+  .tree ul{list-style:none;margin:0;padding-left:18px}
+  .tree>ul{padding-left:0}
+  .tree li{padding:1px 0}
+  .tree .c-centro{color:#93c5fd;font-weight:700}
+  .tree .c-act{color:#86efac}
+  .tree .dir{color:#7dd3fc}
+  .tree .file{color:#fde68a}
+  .tree .missing{color:#fca5a5}
+  details summary{cursor:pointer;font-weight:600;font-size:14px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .toast{position:fixed;right:16px;bottom:16px;background:#0f172a;color:#fff;padding:10px 14px;border-radius:9px;font-size:13.5px;opacity:0;transform:translateY(8px);transition:.2s;z-index:50}
+  .toast.show{opacity:1;transform:none}
+  code.k{background:#eef2ff;border:1px solid #dbe1ff;border-radius:5px;padding:1px 5px;font-size:12.5px}
+  .muted{color:var(--muted);font-size:12.5px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+  .legend span b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px}
+</style>
+</head>
+<body>
+<header class="app">
+  <h1>📁 Creador de estructura de carpetas · CFIE</h1>
+  <p>Pega los datos de las actividades, define la estructura de carpetas y asigna tus archivos. Genera un ZIP con todo. Nada sale de tu navegador.</p>
+</header>
+
+<main>
+
+  <!-- PASO 1: DATOS -->
+  <section class="card">
+    <h2><span class="step">1</span> Pegar los datos de las actividades</h2>
+    <p class="hint">Pega el texto tal cual (separado por tabuladores, como al copiar de Excel). Se detectan solos <strong>Centro</strong>, <strong>Modalidad</strong> y <strong>Título</strong>. Cada centro será una carpeta principal y cada fila, una actividad dentro de él.</p>
+    <textarea id="pasteInput" placeholder="Pega aquí los datos… (una actividad por línea)"></textarea>
+    <div class="toolbar" style="margin-top:8px">
+      <button class="btn ghost small" id="btnExample">Cargar datos de ejemplo</button>
+      <label style="font-weight:500;display:flex;align-items:center;gap:6px;margin:0"><input type="checkbox" id="skipFirst"> La primera fila es de encabezados (ignorar)</label>
+    </div>
+    <div id="dataArea" style="display:none">
+      <div id="dataPreview"></div>
+      <div class="legend">
+        <span><b style="background:var(--centro)"></b>Centro</span>
+        <span><b style="background:var(--modal)"></b>Modalidad</span>
+        <span><b style="background:var(--titulo)"></b>Título</span>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div><label>Columna · Centro (carpeta principal)</label><select id="mapCentro"></select></div>
+        <div><label>Columna · Modalidad</label><select id="mapModalidad"></select></div>
+        <div><label>Columna · Título de la actividad</label><select id="mapTitulo"></select></div>
+      </div>
+      <div id="dataStats" class="muted" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+  <!-- PASO 2: ARCHIVOS -->
+  <section class="card">
+    <h2><span class="step">2</span> Subir los archivos</h2>
+    <p class="hint">Sube todos los documentos que quieras repartir. Luego, en el paso 3, los asignas a las carpetas arrastrándolos o con el desplegable «+ asignar archivo».</p>
+    <div id="dropFiles" class="dropzone"><strong>Arrastra aquí tus archivos</strong> o haz clic para seleccionarlos (varios a la vez)
+      <input id="fileInput" type="file" multiple hidden>
+    </div>
+    <div id="filePool" class="chips" style="margin-top:12px"></div>
+  </section>
+
+  <!-- PASO 3: ESTRUCTURA -->
+  <section class="card">
+    <h2><span class="step">3</span> Definir la estructura y asignar archivos</h2>
+    <p class="hint">Crea las subcarpetas y arrastra archivos del almacén a cada una. La <strong>estructura general</strong> se repite en todos los centros; las de <strong>modalidad</strong> van dentro de cada actividad.</p>
+
+    <div class="palette">
+      <div class="lab">📎 Almacén de archivos · arrástralos a una carpeta</div>
+      <div id="palette" class="chips" style="margin-top:0"></div>
+    </div>
+
+    <div class="subh">🏫 Estructura general del centro <span class="muted">(igual para todos los centros)</span></div>
+    <div id="generalTree"></div>
+
+    <div class="subh">🎓 Estructura por modalidad <span class="muted">(dentro de cada carpeta de actividad)</span></div>
+    <p class="muted" style="margin:2px 0 8px">En <em>Valores del CSV</em> indica cómo se escribe esa modalidad en tus datos (admite varios, separados por comas).</p>
+    <div id="modalities"></div>
+    <button class="btn secondary small" id="btnAddMod">+ Añadir modalidad</button>
+  </section>
+
+  <!-- PASO 4: GENERAR -->
+  <section class="card">
+    <h2><span class="step">4</span> Vista previa y generación</h2>
+    <div class="row" style="margin-bottom:8px">
+      <div style="flex:0 0 300px"><label>Carpeta raíz contenedora (opcional)</label><input id="rootFolder" type="text" placeholder="p. ej. Actividades 2026-2027"></div>
+      <div style="flex:0 0 320px"><label>Nombre de cada actividad</label><input id="activityPattern" type="text" value="{modalidad} {titulo}"></div>
+    </div>
+    <div id="stats" class="stats"></div>
+    <div id="warnings"></div>
+    <div id="tree" class="tree">La vista previa aparecerá aquí cuando pegues los datos.</div>
+    <div class="toolbar" style="margin-top:16px">
+      <button class="btn" id="btnZip">⬇️ Generar y descargar ZIP</button>
+      <button class="btn secondary" id="btnExport">Exportar configuración</button>
+      <button class="btn secondary" id="btnImport">Importar configuración</button>
+      <button class="btn ghost" id="btnReset">Restablecer estructura</button>
+      <input id="fileCfg" type="file" accept="application/json,.json" hidden>
+    </div>
+    <p class="muted" style="margin-top:10px">La configuración (estructura + archivos) se guarda en este navegador. Usa <strong>Exportar configuración</strong> para conservarla en un archivo o pasarla a otra persona.</p>
+  </section>
+
+  <details class="card">
+    <summary>ℹ️ Cómo funciona</summary>
+    <div style="margin-top:10px;font-size:14px">
+      <p>Cada <strong>centro</strong> distinto de tus datos se convierte en una carpeta. Dentro se crea la <strong>estructura general</strong> y una carpeta por cada <strong>actividad</strong> (nombre = modalidad + título), con la estructura propia de su modalidad.</p>
+      <p>Los archivos del almacén se copian en las carpetas donde los asignes. Un mismo archivo puede ir en varias carpetas.</p>
+      <p>El resultado es un <strong>ZIP</strong> (se genera sin librerías externas). Descomprímelo donde quieras y tendrás las carpetas reales. Funciona en cualquier navegador.</p>
+    </div>
+  </details>
+  <p class="muted" style="text-align:center">Aplicación autocontenida · sin dependencias · tus datos no salen de tu equipo.</p>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+"use strict";
+
+/* ===================== ESTADO ===================== */
+const STORAGE_KEY = "cfie-estructura-v2";
+function uid(){ return "id"+Math.random().toString(36).slice(2,9); }
+function mkNode(name, children, files){ return { id:uid(), name:name||"", children:children||[], files:files||[] }; }
+
+function defGeneral(){ return mkNode("", [ mkNode("00_Documentación del centro"), mkNode("01_Comunicaciones") ]); }
+function defCurso(){ return mkNode("", [ mkNode("01_Documentación"), mkNode("02_Asistencia"), mkNode("03_Materiales"), mkNode("04_Ponentes"), mkNode("05_Evaluación"), mkNode("06_Certificación") ]); }
+function defSeminario(){ return mkNode("", [ mkNode("01_Documentación"), mkNode("02_Asistencia"), mkNode("03_Actas de sesiones"), mkNode("04_Materiales elaborados"), mkNode("05_Evaluación"), mkNode("06_Certificación") ]); }
+function defGT(){ return mkNode("", [ mkNode("01_Documentación"), mkNode("02_Reuniones"), mkNode("03_Materiales elaborados"), mkNode("04_Evaluación"), mkNode("05_Certificación") ]); }
+function defaultModalities(){ return [
+  { id:uid(), name:"Curso", aliases:["curso","cursos"], structure:defCurso() },
+  { id:uid(), name:"Seminario", aliases:["seminario","seminarios"], structure:defSeminario() },
+  { id:uid(), name:"Grupo de trabajo", aliases:["grupo de trabajo","grupos de trabajo","gt"], structure:defGT() },
+]; }
+
+const state = {
+  input: { rawText:"", rows:[], ncols:0, skipFirst:false, userMapped:false, mapping:{ centroCol:null, modalidadCol:null, tituloCol:null } },
+  filePool: [],
+  generalStructure: defGeneral(),
+  modalities: defaultModalities(),
+  rootFolder: "",
+  activityPattern: "{modalidad} {titulo}"
+};
+
+/* ===================== UTILIDADES ===================== */
+function $(s){ return document.querySelector(s); }
+function el(tag, props, ...kids){
+  const e=document.createElement(tag); props=props||{};
+  for(const k in props){
+    const v=props[k];
+    if(k==="class") e.className=v;
+    else if(k==="html") e.innerHTML=v;
+    else if(k==="draggable") e.draggable=v;
+    else if(k.slice(0,2)==="on" && typeof v==="function") e.addEventListener(k.slice(2).toLowerCase(), v);
+    else if(v!=null && v!==false) e.setAttribute(k, v);
+  }
+  for(const kid of kids){ if(kid==null||kid===false) continue; e.append(kid.nodeType?kid:document.createTextNode(kid)); }
+  return e;
+}
+function norm(s){ return (s==null?"":String(s)).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim(); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function humanSize(n){ if(n<1024)return n+" B"; if(n<1048576)return (n/1024).toFixed(1)+" KB"; return (n/1048576).toFixed(1)+" MB"; }
+function sanitizeSeg(s){ return String(s).replace(/[\\/:*?"<>|]/g,"_").replace(/[\x00-\x1f]/g,"").replace(/\s+/g," ").trim().replace(/[. ]+$/,""); }
+function sanitizePath(p){ return String(p).split("/").map(sanitizeSeg).filter(Boolean).join("/"); }
+let toastT; function flash(msg,type){ const t=$("#toast"); t.textContent=msg; t.style.background=type==="err"?"#991b1b":type==="warn"?"#92400e":"#0f172a"; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),3200); }
+function poolById(id){ return state.filePool.find(f=>f.id===id); }
+function findModality(value){ const v=norm(value); if(!v) return null; return state.modalities.find(m=>[m.name,...(m.aliases||[])].some(a=>{ const na=norm(a); return na && (v===na||v.includes(na)||na.includes(v)); })); }
+
+/* ===================== ENTRADA (texto pegado) ===================== */
+function parsePasted(text){
+  return text.split(/\r?\n/).filter(l=>l.trim()!=="").map(line=>{
+    let cells;
+    if(line.indexOf("\t")>=0) cells=line.split("\t");
+    else if(line.indexOf(";")>=0) cells=line.split(";");
+    else cells=line.split(/ {2,}/);
+    return cells.map(c=>c.trim());
+  });
+}
+function colSample(c){ for(const r of state.input.rows){ if((r[c]||"").trim()) return r[c].trim(); } return ""; }
+function autoDetect(){
+  const rows=state.input.rows, n=state.input.ncols; if(!rows.length){ return; }
+  const fill=new Array(n).fill(0);
+  for(const r of rows) for(let c=0;c<n;c++) if((r[c]||"").trim()) fill[c]++;
+  let bestC=-1,best=-1;
+  for(let c=0;c<n;c++){ let s=0; for(const r of rows) if(findModality(r[c])) s++; if(s>best){ best=s; bestC=c; } }
+  const mc = best>0 ? bestC : null;
+  let centro=null, titulo=null;
+  if(mc!=null){
+    for(let c=mc-1;c>=0;c--){ if(fill[c]>=rows.length*0.5){ centro=c; break; } }
+    if(centro==null) for(let c=mc-1;c>=0;c--){ if(fill[c]>0){ centro=c; break; } }
+    for(let c=mc+1;c<n;c++){ if(fill[c]>=rows.length*0.5){ titulo=c; break; } }
+    if(titulo==null) for(let c=mc+1;c<n;c++){ if(fill[c]>0){ titulo=c; break; } }
+  }
+  state.input.mapping={ centroCol:centro, modalidadCol:mc, tituloCol:titulo };
+}
+function parseInput(){
+  state.input.rawText=$("#pasteInput").value;
+  state.input.rows=parsePasted(state.input.rawText);
+  state.input.ncols=state.input.rows.reduce((m,r)=>Math.max(m,r.length),0);
+  if(!state.input.userMapped) autoDetect();
+  $("#dataArea").style.display = state.input.rows.length ? "block" : "none";
+  renderDataPreview(); renderMapping(); renderDataStats();
+  scheduleSave(); schedulePreview();
+}
+function renderDataPreview(){
+  const rows=state.input.rows, n=state.input.ncols, mp=state.input.mapping;
+  const cls=c=> c===mp.centroCol?"col-centro":c===mp.modalidadCol?"col-modal":c===mp.tituloCol?"col-titulo":"";
+  let html='<table class="preview"><thead><tr>';
+  for(let c=0;c<n;c++) html+='<th class="'+cls(c)+'">Col '+(c+1)+"</th>";
+  html+="</tr></thead><tbody>";
+  for(const r of rows.slice(0,6)){ html+="<tr>"; for(let c=0;c<n;c++) html+='<td class="'+cls(c)+'">'+escapeHtml(r[c]||"")+"</td>"; html+="</tr>"; }
+  html+="</tbody></table>";
+  if(rows.length>6) html+='<p class="muted">Mostrando 6 de '+rows.length+" filas.</p>";
+  $("#dataPreview").innerHTML=html;
+}
+function renderMapping(){
+  const n=state.input.ncols, mp=state.input.mapping;
+  const fill=(sel,val)=>{ const e=$(sel); e.innerHTML=""; e.appendChild(el("option",{value:""},"—")); for(let c=0;c<n;c++){ const o=el("option",{value:c}, "Col "+(c+1)+": "+(colSample(c).slice(0,32)||"(vacía)")); if(c===val) o.selected=true; e.appendChild(o);} };
+  fill("#mapCentro",mp.centroCol); fill("#mapModalidad",mp.modalidadCol); fill("#mapTitulo",mp.tituloCol);
+}
+function renderDataStats(){
+  const r=computeEntries();
+  $("#dataStats").textContent = r.error ? "" : ("Detectado: "+r.stats.centros+" centro(s) y "+r.stats.actividades+" actividad(es).");
+}
+
+/* ===================== ARCHIVOS ===================== */
+function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>{ const s=r.result; res(s.slice(s.indexOf(",")+1)); }; r.onerror=rej; r.readAsDataURL(file); }); }
+async function addFiles(list){
+  for(const f of list){
+    const b64=await fileToBase64(f);
+    const ex=state.filePool.find(x=>norm(x.name)===norm(f.name));
+    if(ex){ ex.b64=b64; ex.size=f.size; } else state.filePool.push({ id:uid(), name:f.name, size:f.size, b64 });
+  }
+  renderPool(); renderPalette(); renderStructures(); scheduleSave(); schedulePreview();
+  flash(list.length+" archivo(s) añadidos.");
+}
+function removeFile(id){
+  state.filePool=state.filePool.filter(f=>f.id!==id);
+  const strip=node=>{ node.files=node.files.filter(x=>x!==id); node.children.forEach(strip); };
+  strip(state.generalStructure); state.modalities.forEach(m=>strip(m.structure));
+  renderPool(); renderPalette(); renderStructures(); scheduleSave(); schedulePreview();
+}
+function renderPool(){
+  const c=$("#filePool"); c.innerHTML="";
+  if(!state.filePool.length){ c.innerHTML='<span class="muted">Aún no has subido archivos.</span>'; return; }
+  state.filePool.forEach(f=>{ const chip=el("span",{class:"chip"},"📄 "+f.name+" ", el("span",{class:"muted"},humanSize(f.size)), el("button",{title:"Quitar",onClick:()=>removeFile(f.id)},"✕")); c.appendChild(chip); });
+}
+function renderPalette(){
+  const c=$("#palette"); c.innerHTML="";
+  if(!state.filePool.length){ c.innerHTML='<span class="muted">Sube archivos en el paso 2 para poder asignarlos.</span>'; return; }
+  state.filePool.forEach(f=>{
+    const chip=el("span",{class:"pool-chip",draggable:true,title:"Arrastra a una carpeta"},"📄 "+f.name);
+    chip.addEventListener("dragstart",e=>{ e.dataTransfer.setData("text/plain",f.id); e.dataTransfer.effectAllowed="copy"; });
+    c.appendChild(chip);
+  });
+}
+
+/* ===================== EDITOR DE ÁRBOL ===================== */
+function assign(node,fid){ if(fid && !node.files.includes(fid)){ node.files.push(fid); scheduleSave(); schedulePreview(); return true; } return false; }
+function renderStructures(){
+  renderStructure($("#generalTree"), state.generalStructure, "Carpeta del centro");
+  renderModalities();
+}
+function renderStructure(container, root, rootLabel){ container.innerHTML=""; container.appendChild(buildNode(root,null,-1,rootLabel,container,root)); }
+function buildNode(node, parentArr, idx, rootLabel, container, root){
+  const wrap=el("div",{class:"node"});
+  const head=el("div",{class:"node-head"});
+  head.addEventListener("dragover",e=>{ e.preventDefault(); head.classList.add("drop-hi"); });
+  head.addEventListener("dragleave",()=>head.classList.remove("drop-hi"));
+  head.addEventListener("drop",e=>{ e.preventDefault(); head.classList.remove("drop-hi"); if(assign(node,e.dataTransfer.getData("text/plain"))) renderStructure(container,root,rootLabel); });
+  if(parentArr===null){ head.appendChild(el("span",{class:"folder-root"},"📁 "+rootLabel+" ")); head.appendChild(el("span",{class:"muted"},"· suelta archivos aquí para la raíz")); }
+  else {
+    const inp=el("input",{type:"text",class:"node-name",value:node.name});
+    inp.addEventListener("input",()=>{ node.name=inp.value; scheduleSave(); schedulePreview(); });
+    head.appendChild(el("span",{},"📁")); head.appendChild(inp);
+    head.appendChild(el("button",{class:"btn danger",title:"Eliminar carpeta",onClick:()=>{ parentArr.splice(idx,1); scheduleSave(); renderStructure(container,root,rootLabel); schedulePreview(); }},"✕"));
+  }
+  wrap.appendChild(head);
+  const fl=el("div",{class:"fileslot"});
+  node.files.forEach((fid,i)=>{ const f=poolById(fid); const chip=el("span",{class:"assigned"+(f?"":" missing")}, "📄 "+(f?f.name:"(eliminado)")); chip.appendChild(el("button",{title:"Quitar",onClick:()=>{ node.files.splice(i,1); scheduleSave(); renderStructure(container,root,rootLabel); schedulePreview(); }},"✕")); fl.appendChild(chip); });
+  if(state.filePool.length){ const sel=el("select",{class:"addfile"}); sel.appendChild(el("option",{value:""},"+ asignar archivo…")); state.filePool.forEach(f=>sel.appendChild(el("option",{value:f.id},f.name))); sel.addEventListener("change",()=>{ if(assign(node,sel.value)) renderStructure(container,root,rootLabel); }); fl.appendChild(sel); }
+  wrap.appendChild(fl);
+  const kids=el("div",{class:"children"});
+  node.children.forEach((c,i)=>kids.appendChild(buildNode(c,node.children,i,rootLabel,container,root)));
+  wrap.appendChild(kids);
+  wrap.appendChild(el("button",{class:"btn ghost small addsub",onClick:()=>{ node.children.push(mkNode("Nueva carpeta")); scheduleSave(); renderStructure(container,root,rootLabel); schedulePreview(); }},"+ subcarpeta"));
+  return wrap;
+}
+function renderModalities(){
+  const cont=$("#modalities"); cont.innerHTML="";
+  state.modalities.forEach((m,idx)=>{
+    const card=el("div",{class:"modCard"});
+    const top=el("div",{class:"top"});
+    const nm=el("input",{type:"text",value:m.name,placeholder:"Nombre de la modalidad"}); nm.addEventListener("input",()=>{ m.name=nm.value; scheduleSave(); schedulePreview(); });
+    top.appendChild(nm);
+    top.appendChild(el("button",{class:"btn danger",onClick:()=>{ state.modalities.splice(idx,1); scheduleSave(); renderModalities(); schedulePreview(); }},"Eliminar"));
+    card.appendChild(top);
+    card.appendChild(el("label",{},"Valores del CSV que cuentan como esta modalidad"));
+    const al=el("input",{type:"text",value:(m.aliases||[]).join(", "),placeholder:"curso, cursos"}); al.addEventListener("input",()=>{ m.aliases=al.value.split(",").map(s=>s.trim()).filter(Boolean); scheduleSave(); schedulePreview(); });
+    card.appendChild(al);
+    const tree=el("div",{style:"margin-top:8px"}); card.appendChild(tree); cont.appendChild(card);
+    renderStructure(tree, m.structure, "Carpeta de la actividad");
+  });
+}
+
+/* ===================== CÁLCULO ===================== */
+function computeEntries(){
+  const rows=state.input.rows;
+  if(!rows||!rows.length) return { error:"Pega primero los datos en el paso 1." };
+  const mp=state.input.mapping;
+  if(mp.centroCol==null||mp.modalidadCol==null) return { error:"Indica al menos las columnas de Centro y Modalidad." };
+  const data = state.input.skipFirst ? rows.slice(1) : rows;
+  const root = sanitizePath(state.rootFolder||"");
+  const order=[], groups=new Map(); const warnings=[]; let skipped=0;
+  for(const r of data){
+    const centro=(r[mp.centroCol]||"").trim();
+    if(!centro){ skipped++; continue; }
+    if(!groups.has(centro)){ groups.set(centro,[]); order.push(centro); }
+    groups.get(centro).push(r);
+  }
+  const dirSet=new Set(), fileEntries=[], usedPaths=new Set(), missingMod=new Set(); let dangling=0, activities=0;
+  const uniq=p=>{ let q=p,i=2; while(usedPaths.has(q.toLowerCase())){ const dot=p.lastIndexOf("."); q=dot>0? p.slice(0,dot)+" ("+i+")"+p.slice(dot) : p+" ("+i+")"; i++; } usedPaths.add(q.toLowerCase()); return q; };
+  const addAnc=full=>{ const parts=full.split("/"); for(let i=1;i<parts.length;i++) dirSet.add(parts.slice(0,i).join("/")+"/"); };
+  function emit(node, base){
+    for(const fid of node.files){ const f=poolById(fid); if(!f){ dangling++; continue; } const p=uniq(base+"/"+sanitizeSeg(f.name)); fileEntries.push({ name:p, data:b64ToBytes(f.b64) }); }
+    for(const child of node.children){ const cn=sanitizeSeg(child.name); if(!cn) continue; const cp=base+"/"+cn; dirSet.add(cp+"/"); emit(child,cp); }
+  }
+  for(const centro of order){
+    const cPath = root ? root+"/"+sanitizeSeg(centro) : sanitizeSeg(centro);
+    if(!cPath) continue;
+    dirSet.add(cPath+"/"); addAnc(cPath+"/x");
+    emit(state.generalStructure, cPath);
+    for(const r of groups.get(centro)){
+      activities++;
+      const modal=(r[mp.modalidadCol]||"").trim();
+      const titulo=mp.tituloCol!=null?(r[mp.tituloCol]||"").trim():"";
+      const actName=sanitizeSeg((state.activityPattern||"{modalidad} {titulo}").replace(/\{modalidad\}/g,modal).replace(/\{titulo\}/g,titulo).trim());
+      if(!actName) continue;
+      const aPath=cPath+"/"+actName; dirSet.add(aPath+"/");
+      const mod=findModality(modal);
+      if(mod) emit(mod.structure, aPath); else missingMod.add(modal||"(vacío)");
+    }
+  }
+  if(skipped) warnings.push({type:"warn",msg:skipped+" fila(s) sin centro, omitidas."});
+  if(missingMod.size) warnings.push({type:"warn",msg:"Modalidad no reconocida (la actividad se crea sin subcarpetas): "+[...missingMod].join(", ")+". Revisa los «Valores del CSV» en el paso 3."});
+  if(dangling) warnings.push({type:"warn",msg:dangling+" archivo(s) asignados que ya no están en el almacén."});
+  const dirs=[...dirSet].sort();
+  const entries=[ ...dirs.map(d=>({name:d,data:new Uint8Array(0)})), ...fileEntries ];
+  const paths=[ ...dirs, ...fileEntries.map(e=>e.name) ];
+  return { entries, paths, warnings, stats:{ centros:order.length, actividades:activities, carpetas:dirs.length, archivos:fileEntries.length }, centersOrder:order, root };
+}
+
+/* ===================== VISTA PREVIA ===================== */
+function buildTree(paths){
+  const root={};
+  for(const p of paths){ const isDir=p.endsWith("/"); const parts=p.replace(/\/$/,"").split("/"); let node=root; parts.forEach((seg,i)=>{ const last=i===parts.length-1; if(!node[seg]) node[seg]={ __dir:!(last&&!isDir), children:{} }; else if(!(last&&!isDir)) node[seg].__dir=true; node=node[seg].children; }); }
+  return root;
+}
+function renderTreeHtml(node, depth){
+  const keys=Object.keys(node).sort((a,b)=>{ const da=node[a].__dir,db=node[b].__dir; if(da!==db) return da?-1:1; return a.localeCompare(b,"es"); });
+  let html="<ul>";
+  for(const k of keys){ const n=node[k]; if(n.__dir){ const cls= depth===0?"c-centro": depth===1?"c-act":"dir"; html+='<li><span class="'+cls+'">📁 '+escapeHtml(k)+"</span>"+renderTreeHtml(n.children,depth+1)+"</li>"; } else html+='<li><span class="file">📄 '+escapeHtml(k)+"</span></li>"; }
+  return html+"</ul>";
+}
+let previewT; function schedulePreview(){ clearTimeout(previewT); previewT=setTimeout(renderPreview,250); }
+function renderPreview(){
+  const res=computeEntries(); const stats=$("#stats"), warn=$("#warnings"), tree=$("#tree");
+  renderDataStats();
+  if(res.error){ stats.innerHTML=""; warn.innerHTML=""; tree.innerHTML=escapeHtml(res.error); $("#btnZip").disabled=true; return; }
+  $("#btnZip").disabled=false;
+  stats.innerHTML=[["Centros",res.stats.centros],["Actividades",res.stats.actividades],["Carpetas",res.stats.carpetas],["Archivos",res.stats.archivos]].map(([l,v])=>'<div class="stat"><b>'+v+"</b><span>"+l+"</span></div>").join("");
+  warn.innerHTML=res.warnings.map(w=>'<div class="notice '+w.type+'">'+escapeHtml(w.msg)+"</div>").join("");
+  const N=3; let paths=res.paths, note="";
+  if(res.centersOrder.length>N){
+    const allow=res.centersOrder.slice(0,N).map(c=> res.root?res.root+"/"+sanitizeSeg(c):sanitizeSeg(c));
+    paths=res.paths.filter(p=> (res.root? p.startsWith(res.root+"/")||p===res.root+"/" : true) && allow.some(a=> p===a+"/"||p.startsWith(a+"/")));
+    if(res.root){ paths.unshift(res.root+"/"); }
+    note='<p class="muted" style="color:#94a3b8">Vista previa de los primeros '+N+" centros. El ZIP incluirá todos.</p>";
+  }
+  tree.innerHTML=renderTreeHtml(buildTree(paths),0)+note;
+}
+
+/* ===================== ZIP (stored, sin librerías) ===================== */
+const CRC_TABLE=(()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); t[n]=c>>>0; } return t; })();
+function crc32(b){ let c=0xFFFFFFFF; for(let i=0;i<b.length;i++) c=CRC_TABLE[(c^b[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function b64ToBytes(b64){ const bin=atob(b64); const a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return a; }
+function dosDT(d){ return { time:(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1), date:((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate() }; }
+function makeZip(entries){
+  const enc=new TextEncoder(); const chunks=[],central=[]; let offset=0; const {time,date}=dosDT(new Date());
+  for(const e of entries){
+    const isDir=e.name.endsWith("/"); const data=isDir?new Uint8Array(0):(e.data||new Uint8Array(0));
+    const nameB=enc.encode(e.name); const crc=isDir?0:crc32(data);
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true); lh.setUint16(4,20,true); lh.setUint16(6,0x0800,true); lh.setUint16(8,0,true);
+    lh.setUint16(10,time,true); lh.setUint16(12,date,true); lh.setUint32(14,crc,true);
+    lh.setUint32(18,data.length,true); lh.setUint32(22,data.length,true); lh.setUint16(26,nameB.length,true); lh.setUint16(28,0,true);
+    chunks.push(new Uint8Array(lh.buffer),nameB); if(data.length) chunks.push(data);
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true); ch.setUint16(4,20,true); ch.setUint16(6,20,true); ch.setUint16(8,0x0800,true); ch.setUint16(10,0,true);
+    ch.setUint16(12,time,true); ch.setUint16(14,date,true); ch.setUint32(16,crc,true);
+    ch.setUint32(20,data.length,true); ch.setUint32(24,data.length,true); ch.setUint16(28,nameB.length,true);
+    ch.setUint16(30,0,true); ch.setUint16(32,0,true); ch.setUint16(34,0,true); ch.setUint16(36,0,true);
+    ch.setUint32(38,isDir?0x10:0,true); ch.setUint32(42,offset,true);
+    central.push(new Uint8Array(ch.buffer),nameB); offset+=30+nameB.length+data.length;
+  }
+  let cs=0; for(const c of central) cs+=c.length;
+  const eo=new DataView(new ArrayBuffer(22));
+  eo.setUint32(0,0x06054b50,true); eo.setUint16(8,entries.length,true); eo.setUint16(10,entries.length,true); eo.setUint32(12,cs,true); eo.setUint32(16,offset,true);
+  return new Blob([...chunks,...central,new Uint8Array(eo.buffer)],{type:"application/zip"});
+}
+function download(blob,name){ const url=URL.createObjectURL(blob); const a=el("a",{href:url,download:name}); document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },1000); }
+function generateZip(){ const res=computeEntries(); if(res.error){ flash(res.error,"err"); return; } if(!res.entries.length){ flash("No hay nada que generar.","warn"); return; } download(makeZip(res.entries),"estructura-carpetas.zip"); flash("ZIP generado: "+res.stats.carpetas+" carpetas, "+res.stats.archivos+" archivos."); }
+
+/* ===================== PERSISTENCIA ===================== */
+function serialize(){ return { input:{ rawText:state.input.rawText, skipFirst:state.input.skipFirst, userMapped:state.input.userMapped, mapping:state.input.mapping }, filePool:state.filePool, generalStructure:state.generalStructure, modalities:state.modalities, rootFolder:state.rootFolder, activityPattern:state.activityPattern }; }
+let saveT; function scheduleSave(){ clearTimeout(saveT); saveT=setTimeout(saveConfig,400); }
+function saveConfig(){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(serialize())); }catch(e){ try{ const s=serialize(); s.filePool=[]; localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); flash("Guardado sin archivos (límite del navegador). Usa Exportar configuración.","warn"); }catch(_){} } }
+function applyConfig(cfg){
+  if(cfg.input){ state.input.rawText=cfg.input.rawText||""; state.input.skipFirst=!!cfg.input.skipFirst; state.input.userMapped=!!cfg.input.userMapped; if(cfg.input.mapping) state.input.mapping=cfg.input.mapping; }
+  if(cfg.filePool) state.filePool=cfg.filePool;
+  if(cfg.generalStructure) state.generalStructure=cfg.generalStructure;
+  if(cfg.modalities) state.modalities=cfg.modalities;
+  if(cfg.rootFolder!=null) state.rootFolder=cfg.rootFolder;
+  if(cfg.activityPattern) state.activityPattern=cfg.activityPattern;
+}
+function loadConfig(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return false; applyConfig(JSON.parse(raw)); return true; }catch(e){ return false; } }
+function exportConfig(){ download(new Blob([JSON.stringify(serialize(),null,2)],{type:"application/json"}),"configuracion-estructura.json"); }
+function importConfig(file){ const r=new FileReader(); r.onload=()=>{ try{ applyConfig(JSON.parse(r.result)); syncUI(); scheduleSave(); flash("Configuración importada."); }catch(e){ flash("Archivo no válido.","err"); } }; r.readAsText(file); }
+
+/* ===================== EJEMPLO ===================== */
+const SAMPLE=[
+ "OLMEDO CAMINO, DAVID\tCEIP VIRGEN DE SACEDÓN\tSeminario\tLAS TIC Y LA INTELIGENCIA ARTIFICIAL AL SERVICIO DE LA CONVIVENCIA ESCOLAR\t2026/2027",
+ "OLMEDO CAMINO, DAVID\tCEIP VIRGEN DE SACEDÓN\tCurso\tDISPOSITIVOS DIGITALES, METODOLOGÍAS ACTIVAS Y SUS APLICACIONES A LA CONVIVENCIA ESCOLAR\t2026/2027",
+ "OLMEDO CAMINO, DAVID\tCEPA LA VICTORIA\tSeminario\tCREACIÓN PRÁCTICA DE AULAS VIRTUALES EN MOODLE Y USO BÁSICO DE TEAMS\t2026/2027",
+ "OLMEDO CAMINO, DAVID\tCEPA LA VICTORIA\tCurso\tCOMUNICACIÓN EDUCATIVA Y ORGANIZACIÓN BÁSICA MEDIANTE AULA VIRTUAL (MOODLE) Y MICROSOFT TEAMS\t2026/2027",
+ "OLMEDO CAMINO, DAVID\tIESO DE PEDRAJAS DE SAN ESTEBAN\tSeminario\tLA INTELIGENCIA ARTIFICIAL COMO HERRAMIENTA Y RECURSO EDUCATIVO\t2026/2027"
+].join("\n");
+
+/* ===================== UI / ARRANQUE ===================== */
+function wireDrop(zoneId,inputId,cb){ const z=$("#"+zoneId),i=$("#"+inputId); z.addEventListener("click",()=>i.click()); z.addEventListener("dragover",e=>{ e.preventDefault(); z.classList.add("drag"); }); z.addEventListener("dragleave",()=>z.classList.remove("drag")); z.addEventListener("drop",e=>{ e.preventDefault(); z.classList.remove("drag"); if(e.dataTransfer.files.length) cb(e.dataTransfer.files); }); i.addEventListener("change",()=>{ if(i.files.length){ cb(i.files); i.value=""; } }); }
+function syncUI(){ $("#pasteInput").value=state.input.rawText; $("#skipFirst").checked=state.input.skipFirst; $("#rootFolder").value=state.rootFolder; $("#activityPattern").value=state.activityPattern; parseInput(); renderPool(); renderPalette(); renderStructures(); }
+function init(){
+  if(!loadConfig()){ state.generalStructure=defGeneral(); state.modalities=defaultModalities(); }
+  syncUI();
+  $("#pasteInput").addEventListener("input",()=>{ state.input.userMapped=false; parseInput(); });
+  $("#skipFirst").addEventListener("change",()=>{ state.input.skipFirst=$("#skipFirst").checked; scheduleSave(); schedulePreview(); renderDataStats(); });
+  $("#btnExample").addEventListener("click",()=>{ $("#pasteInput").value=SAMPLE; state.input.userMapped=false; parseInput(); flash("Datos de ejemplo cargados."); });
+  for(const [sel,key] of [["#mapCentro","centroCol"],["#mapModalidad","modalidadCol"],["#mapTitulo","tituloCol"]]) $(sel).addEventListener("change",e=>{ state.input.mapping[key]= e.target.value===""?null:+e.target.value; state.input.userMapped=true; renderDataPreview(); scheduleSave(); schedulePreview(); });
+  wireDrop("dropFiles","fileInput",addFiles);
+  $("#btnAddMod").addEventListener("click",()=>{ state.modalities.push({ id:uid(), name:"Nueva modalidad", aliases:[], structure:mkNode("",[mkNode("01_Documentación")]) }); scheduleSave(); renderModalities(); schedulePreview(); });
+  $("#rootFolder").addEventListener("input",e=>{ state.rootFolder=e.target.value; scheduleSave(); schedulePreview(); });
+  $("#activityPattern").addEventListener("input",e=>{ state.activityPattern=e.target.value; scheduleSave(); schedulePreview(); });
+  $("#btnZip").addEventListener("click",generateZip);
+  $("#btnExport").addEventListener("click",exportConfig);
+  $("#btnImport").addEventListener("click",()=>$("#fileCfg").click());
+  $("#fileCfg").addEventListener("change",e=>{ if(e.target.files[0]){ importConfig(e.target.files[0]); e.target.value=""; } });
+  $("#btnReset").addEventListener("click",()=>{ if(confirm("¿Restablecer la estructura general y las modalidades por defecto? (Los archivos subidos se conservan.)")){ state.generalStructure=defGeneral(); state.modalities=defaultModalities(); scheduleSave(); renderStructures(); schedulePreview(); } });
+}
+document.addEventListener("DOMContentLoaded",init);
+</script>
+</body>
+</html>
