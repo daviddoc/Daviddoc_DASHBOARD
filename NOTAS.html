@@ -1633,7 +1633,8 @@ const moduleCertificador = (() => {
     nameOrder: 'surname-first', // 'surname-first' o 'name-first'
     sortDirection: null, // null, 'asc', 'desc'
     rowApproval: {}, // { nif: true/false }  — para checkboxes de aprobación
-    hiddenCols: {} // { colKey: true/false } — para ocultar columnas
+    hiddenCols: {}, // { colKey: true/false } — para ocultar columnas
+    savedTable: ''
   };
 
   let _root = null;
@@ -1716,6 +1717,18 @@ const moduleCertificador = (() => {
           </div>
         </div>
       </details>
+
+      <details class="card" id="cert-saved-table-panel" open>
+        <summary>4. Tabla guardada</summary>
+        <div class="card-body">
+          <p class="muted small" style="margin-top:0;">Pega aquí una tabla Markdown guardada (salida de este módulo). Se importará el estado de asistencia y módulos.</p>
+          <textarea id="cert-input-saved-table" placeholder="| Nº | APELLIDOS | CERTI | PRESE | APL | 26 ene | …&#10;|…" style="height:130px; font-family: monospace; font-size: 0.78rem;"></textarea>
+          <div class="row between" style="margin-top:0.5rem;">
+            <button class="btn btn-secondary tiny" id="cert-btn-apply-saved-table">↩ Aplicar tabla</button>
+            <span id="cert-saved-table-status" class="small" style="color: var(--text-muted);"></span>
+          </div>
+        </div>
+      </details>
     </div>
 
     <div class="subpanel" data-panel="checklist">
@@ -1777,6 +1790,7 @@ const moduleCertificador = (() => {
       if (!state.rowApproval) state.rowApproval = {};
       if (!state.hiddenCols) state.hiddenCols = {};
       if (state.sortDirection === undefined) state.sortDirection = null;
+      if (state.savedTable === undefined) state.savedTable = '';
     }
   }
   function saveState() { Store.set(NS, 'state', state); }
@@ -2543,6 +2557,101 @@ const moduleCertificador = (() => {
     }
   }
 
+  // ── IMPORTAR TABLA GUARDADA ──
+  function parseSavedTable() {
+    const raw = state.savedTable.trim();
+    const status = $('#cert-saved-table-status');
+    if (!raw) { if (status) status.textContent = 'Sin datos.'; return; }
+
+    const lines = raw.split('\n');
+
+    // Parsear una fila de tabla Markdown: devuelve array de celdas sin bordes
+    const parseCells = line => {
+      let s = line.trim();
+      if (s.startsWith('|')) s = s.slice(1);
+      if (s.endsWith('|')) s = s.slice(0, -1);
+      return s.split('|').map(c => c.trim());
+    };
+
+    // Filtrar filas reales: deben empezar con '|' y no ser separadores (-, ─, ━, ‾)
+    const tableLines = lines.filter(l => {
+      const t = l.trim();
+      return t.startsWith('|') && !/^\|[\s\-─━‾|]+\|?$/.test(t);
+    });
+
+    if (tableLines.length < 2) {
+      if (status) status.textContent = 'No se encontró tabla válida.';
+      return;
+    }
+
+    // parseCells quita los '|' de borde, por lo que el resultado es:
+    // cells[0]='Nº', cells[1]='APELLIDOS', cells[2]='CERTI', cells[3]='PRESE',
+    // cells[4..4+nMod-1]=módulos, cells[4+nMod..]=sesiones
+    let headerRowIdx = tableLines.findIndex(l => {
+      const cells = parseCells(l);
+      return cells[0] && cells[0].trim() === 'Nº';
+    });
+    if (headerRowIdx < 0) {
+      if (status) status.textContent = 'No se encontró fila de cabecera (Nº / APELLIDOS).';
+      return;
+    }
+
+    const activeModules = state.modules.filter(m => m.type !== 'calculated' && m.required);
+    const nMod = activeModules.length;
+
+    // cells[0]=Nº, [1]=APELLIDOS, [2]=CERTI, [3]=PRESE, [4..]=módulos, [4+nMod..]=sesiones
+    const modStart = 4;
+    const sessStart = 4 + nMod;
+
+    const dataLines = tableLines.slice(headerRowIdx + 1).filter(l => {
+      const cells = parseCells(l);
+      return cells[0] && /^\d+$/.test(cells[0].trim());
+    });
+
+    if (!dataLines.length) {
+      if (status) status.textContent = 'No se encontraron filas de participantes.';
+      return;
+    }
+
+    let imported = 0, skipped = 0;
+
+    dataLines.forEach(line => {
+      const cells = parseCells(line);
+      // cells[0]=nº, cells[1]=nombre completo
+      const nameFull = (cells[1] || '').trim();
+      if (!nameFull) return;
+
+      const normalize = s => s.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+      const normName = normalize(nameFull);
+      const p = state.participants.find(x =>
+        normalize(x.full) === normName ||
+        normalize(x.surname + ' ' + x.name) === normName ||
+        normalize(x.surname) === normName
+      );
+      if (!p) { skipped++; return; }
+
+      activeModules.forEach((m, i) => {
+        const cellVal = (cells[modStart + i] || '').trim();
+        if (!state.moduleCompletion[p.nif]) state.moduleCompletion[p.nif] = {};
+        state.moduleCompletion[p.nif][m.id] = cellVal === '▒▒▒';
+      });
+
+      state.sessions.forEach((s, i) => {
+        const cellVal = (cells[sessStart + i] || '').trim();
+        if (!state.attendance[p.nif]) state.attendance[p.nif] = {};
+        state.attendance[p.nif][s.id] = cellVal === '██████';
+      });
+
+      imported++;
+    });
+
+    saveState();
+    if (status) status.textContent = `${imported} participantes actualizados${skipped ? `, ${skipped} no encontrados` : ''}.`;
+    if (_activeSubtab === 'checklist') renderChecklist();
+    else if (_activeSubtab === 'export') generateMarkdown();
+    UI.toast(`Tabla aplicada: ${imported} participantes actualizados`);
+  }
+
   // ── EXPORT (Markdown idéntico al original) ──
   function generateMarkdown() {
     const label = $('#cert-course-label')?.value || state.courseLabel || '';
@@ -2800,6 +2909,7 @@ const moduleCertificador = (() => {
           if (!importedState.hiddenCols) importedState.hiddenCols = {};
           if (importedState.sortDirection === undefined) importedState.sortDirection = null;
           if (!importedState.nameOrder) importedState.nameOrder = 'surname-first';
+          if (importedState.savedTable === undefined) importedState.savedTable = '';
 
           // Reemplazar estado
           state = importedState;
@@ -2842,7 +2952,8 @@ const moduleCertificador = (() => {
         nameOrder: 'surname-first',
         sortDirection: null,
         rowApproval: {},
-        hiddenCols: {}
+        hiddenCols: {},
+        savedTable: ''
       };
       mount(_root); // Re-render
       UI.toast('Datos del Certificador limpiados', 'info');
@@ -2918,6 +3029,7 @@ const moduleCertificador = (() => {
     $('#cert-input-data').value = state.rawInput || '';
     $('#cert-input-course').value = state.rawCourse || '';
     $('#cert-course-label').value = state.courseLabel || '';
+    $('#cert-input-saved-table').value = state.savedTable || '';
     if (state.modules.length > 1 || state.sessions.length > 0) {
       $('#cert-extracted-info').style.display = 'block';
     }
@@ -2945,6 +3057,8 @@ const moduleCertificador = (() => {
     $('#cert-share-sessions').addEventListener('click', shareSessions);
     $('#cert-share-label').addEventListener('click', shareLabel);
     $$('[data-import-shared]').forEach(b => b.addEventListener('click', () => importShared(b.dataset.importShared)));
+    $('#cert-input-saved-table').addEventListener('input', e => { state.savedTable = e.target.value; saveState(); });
+    $('#cert-btn-apply-saved-table').addEventListener('click', parseSavedTable);
 
     $('#cert-checklist-table').addEventListener('keydown', handleGridNav);
     $('#cert-toggle-name-order').addEventListener('click', toggleNameOrder);
@@ -3770,6 +3884,20 @@ const moduleRefo = (() => {
 
 ## EVALUACIÓN ASESOR
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+* Cumplimiento objetivos                     |
+* Aprovechamiento formación                  |
+* Desarrollo competencias                    |
+* Implicación del profesorado                |
+* Implicación equipo interno                 |
+* Implicación equipo externo                 |
+* Coordinación equipo interno - externo      |
+* Aplicación de la formación al aula/trabajo |
+* Compromiso de aplicación al aula/trabajo   |
+* Expectativas de continuidad                |
+* Cumplimiento de los objetivos aplicación   |
+* Satisfacción trabajo como equipo externo   |
+
 \`\`\`counter: 1000
 
 \`\`\`
@@ -4401,7 +4529,7 @@ const modulePFC = (() => {
                 <th>ID</th>
                 <th>DATOS CENTRO (HTML)</th>
                 <th>INSPECTOR/A</th>
-                <th>MEMORIA PLAN</th>
+                <th>ACTIVIDADES</th>
                 <th>⬇ ZIP</th>
               </tr>
             </thead>
@@ -4420,7 +4548,7 @@ const modulePFC = (() => {
   function loadState() {
     const stored = Store.get(NS, 'rows', null);
     if (Array.isArray(stored)) {
-      rows = stored.map(r => ({ ...r, pdfFile: null })); // No persistimos archivo, sólo metadata
+      rows = stored.map(r => ({ ...r }));
     }
   }
   function saveState() {
@@ -4428,7 +4556,7 @@ const modulePFC = (() => {
       centro: r.centro, planCode: r.planCode, duracion: r.duracion, anios: r.anios,
       inicio: r.inicio, fin: r.fin, id: r.id || '', centroHtml: r.centroHtml || '',
       centroData: r.centroData || null, inspectorText: r.inspectorText || '',
-      pdfName: r.pdfName || '', pdfData: r.pdfData || null
+      actividadesText: r.actividadesText || '', actividadesData: r.actividadesData || null
     })));
   }
 
@@ -4546,82 +4674,64 @@ const modulePFC = (() => {
     return out;
   }
 
-  // ── PDF parse ──
-  async function extractPDFData(file) {
-    if (!window.pdfjsLib) throw new Error('PDF.js no cargado');
-    const buf = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-    let text = '';
-    for (let p = 1; p <= pdf.numPages; p++) {
-      const page = await pdf.getPage(p);
-      const tc = await page.getTextContent();
-      text += tc.items.map(i => i.str + (i.hasEOL ? '\n' : ' ')).join('') + '\n';
-    }
-    return parsePDFText(text, file.name);
-  }
-
-  function parsePDFText(text, filename) {
-    const data = { filename, director: { nombre: '', mail: '' }, coordinador: { nombre: '', mail: '' }, itinerarios: [] };
+  // ── Parse text from textarea ──
+  function parseActividadesText(text) {
+    const data = { itinerarios: [] };
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    const isAllCaps = s => /^[A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ,\s\.]+$/.test(s) && s.split(/\s+/).length >= 2;
-    const isEmail = s => /[\w.+%-]+@[\w.-]+\.\w{2,}/.test(s);
-    const SKIP_LABEL = /^(teléfono|fax|correo|direcci|localidad|código|nombre|tipo|titular|datos|e-mail|número|total|plazas|horas|presupuesto|enseñanza|itinerario|seminario|curso|grupo|jornada|taller|duración|inicio|fin|curso:|de la|cuadro|datos|identificación)/i;
+    let currentYear = null;
+    const itMap = new Map(); // nombre itinerario -> Map(año -> actividades[])
 
-    function findPerson(startIdx) {
-      for (let j = startIdx + 1; j < Math.min(startIdx + 12, lines.length); j++) {
-        const L = lines[j];
-        if (SKIP_LABEL.test(L) || isEmail(L)) continue;
-        if (isAllCaps(L)) {
-          let mail = '';
-          for (let k = j; k < Math.min(j + 4, lines.length); k++) {
-            const em = lines[k].match(/[\w.+%-]+@[\w.-]+\.\w{2,}/);
-            if (em) { mail = em[0]; break; }
-          }
-          if (/^(COMUNICACIÓN|METODOLOG|TECNIFIC|CONVIVENC|DIGITAL|LIDERAZGO|INCLUSIÓN|INNOVA|FORMAC)/i.test(L)) continue;
-          return { nombre: L, mail };
+    for (const line of lines) {
+      // Detectar línea de año: "Curso: 2025/2026"
+      const yearMatch = line.match(/^Curso:\s*(\d{4}\/\d{4})\s*$/i);
+      if (yearMatch) {
+        currentYear = fmt2425(yearMatch[1]);
+        continue;
+      }
+      // Detectar líneas de cabecera (tabla header) — saltar
+      if (/^Actividad\s+Estado\s+Itinerario/i.test(line)) continue;
+
+      // Detectar actividad: "Tipo: NOMBRE     [Estado]     ITINERARIO"
+      // Separadores: tabs o 2+ espacios
+      const actMatch = line.match(/^(Seminario|Curso|Grupo de Trabajo|Jornada|Taller):\s*(.+)/i);
+      if (actMatch && currentYear) {
+        const tipo = actMatch[1];
+        const rest = actMatch[2];
+        // Separar por tab o 2+ espacios seguidos de [
+        const parts = rest.split(/\t+|\s{2,}/);
+        // Último campo no vacío que no sea [Estado] es el itinerario
+        let nombre = '';
+        let itinerario = '';
+        for (let j = parts.length - 1; j >= 0; j--) {
+          const p = parts[j].trim();
+          if (!p || /^\[.*\]$/.test(p)) continue;
+          if (!itinerario && j > 0) { itinerario = p; continue; }
+          if (!nombre) { nombre = p; break; }
         }
-      }
-      return { nombre: '', mail: '' };
-    }
+        // Si sólo hay un campo útil, es el nombre
+        if (!nombre && itinerario) { nombre = itinerario; itinerario = ''; }
+        // Normalizar separadores " - " a ": " en el nombre
+        nombre = nombre.replace(/\s+-\s+/g, ': ').trim();
+        if (!itinerario) continue;
+        itinerario = itinerario.replace(/\s+-\s+/g, ': ').trim();
 
-    for (let i = 0; i < lines.length; i++) {
-      if (/Coordinador\/a/i.test(lines[i]) && !data.coordinador.nombre) {
-        const f = findPerson(i); if (f.nombre) data.coordinador = f;
-      }
-      if (/Director\/a/i.test(lines[i]) && !data.director.nombre) {
-        const f = findPerson(i); if (f.nombre) data.director = f;
-      }
-    }
-
-    const flat = lines.join(' ');
-    const cursoPos = [];
-    const cursoRe = /CURSO:\s*(\d{4}\/\d{4})/gi;
-    let cm; while ((cm = cursoRe.exec(flat)) !== null) cursoPos.push({ año: cm[1], pos: cm.index });
-
-    const itPos = [];
-    const itRe = /ITINERARIO:\s*([A-ZÁÉÍÓÚÜÑ][^\n\r]{3,60}?)(?=\s*(?:Plazas|ITINERARIO:|$))/gi;
-    let itm; while ((itm = itRe.exec(flat)) !== null) itPos.push({ nombre: itm[1].replace(/\s+/g, ' ').trim(), pos: itm.index });
-
-    const itMap = new Map();
-    for (let i = 0; i < itPos.length; i++) {
-      const { nombre, pos } = itPos[i];
-      const end = itPos[i + 1]?.pos ?? flat.length;
-      const section = flat.slice(pos, end);
-      if (!itMap.has(nombre)) itMap.set(nombre, []);
-      const actRe = /(Seminario|Curso|Grupo de Trabajo|Jornada|Taller):\s*([^\d€\n\r]{5,120}?)(?=\s+\d|\s*$)/gi;
-      let am;
-      while ((am = actRe.exec(section)) !== null) {
-        const absPos = pos + am.index;
-        let año = cursoPos[0]?.año || '';
-        for (const cp of cursoPos) { if (cp.pos <= absPos) año = cp.año; }
-        const añoFmt = fmt2425(año);
-        const list = itMap.get(nombre);
-        let ce = list.find(c => c.año === añoFmt);
-        if (!ce) { ce = { año: añoFmt, actividades: [] }; list.push(ce); }
-        ce.actividades.push({ tipo: am[1], nombre: am[2].replace(/\s+/g, ' ').trim() });
+        if (!itMap.has(itinerario)) itMap.set(itinerario, new Map());
+        const yearMap = itMap.get(itinerario);
+        if (!yearMap.has(currentYear)) yearMap.set(currentYear, []);
+        yearMap.get(currentYear).push({ tipo, nombre });
       }
     }
-    data.itinerarios = Array.from(itMap.entries()).map(([nombre, cursos]) => ({ nombre, cursos }));
+
+    // Convertir a estructura usada por generateFile2
+    const sortedIt = Array.from(itMap.keys()).sort();
+    data.itinerarios = sortedIt.map(nombre => {
+      const yearMap = itMap.get(nombre);
+      const cursos = Array.from(yearMap.keys()).sort().map(año => ({
+        año,
+        actividades: yearMap.get(año)
+      }));
+      return { nombre, cursos };
+    });
     return data;
   }
 
@@ -4630,7 +4740,7 @@ const modulePFC = (() => {
   // ── Generate Markdown files ──
   function generateFile1(row) {
     const c = row.centroData || {};
-    const p = row.pdfData || {};
+    const p = {};
     let mapLink = '';
     if (c.lat && c.lng) mapLink = `https://maps.google.com/?q=${c.lat},${c.lng}`;
     else if (c.direccion) mapLink = `https://maps.google.com/?q=${encodeURIComponent(c.direccion)}`;
@@ -4670,7 +4780,7 @@ const modulePFC = (() => {
   }
 
   function generateFile2(row) {
-    const p = row.pdfData || {};
+    const p = row.actividadesData || {};
     const c = row.centroData || {};
     const iCurso = fmt4444(row.inicio), fCurso = fmt4444(row.fin);
     const centroCompleto = c.nombreCompleto || row.centro || '';
@@ -4678,7 +4788,7 @@ const modulePFC = (() => {
     let md = `---\n`;
     md += `Centro: ${centroCompleto}\n`;
     md += `Código Plan: ${row.planCode}\n`;
-    md += `Coordinador: ${p.coordinador?.nombre || ''}\n`;
+    md += `Coordinador: \n`;
     md += `Duración: ${row.duracion}\n`;
     md += `Curso Inicio: ${iCurso}\n`;
     md += `Curso Fin: ${fCurso}\n`;
@@ -4717,30 +4827,30 @@ const modulePFC = (() => {
     s += ` - Viabilidad pedagógica     3.0 | \n - It. prioritarios sis. ed. 1.0 | \n - Itinerarios TIC           1.0 | \n`;
     s += ` - It. comp. cient-didáctica 1.0 | \n - Ponentes centro           1.0 | \n - Casi todo el claustro     1.0 | \n`;
     s += ` - Centro de ámbito rural    0.5 | \n - Centro CODICE TIC         0.5 | \n - Alumnos prácticas         0.0 | \n`;
-    s += ` - Trayectoria en formación  0.5 | \nTotal: \n\n`;
-    s += `### LISTA DE COTEJO\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n#### INFORME INICIAL\n1. Circunstancias actuales del centro. \n2. Justificación de las necesidades que intenta cubrir el Plan.\n3. Valoración del diario del Plan. \n### OTROS ASPECTOS A VALORAR\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n \n\`\`\`counter: 3000\n\n\`\`\`\n\n`;
+    s += ` - Trayectoria en formación  0.5 | \n   -----------------------------------\n   Total: \n\n`;
+    s += `### LISTA DE COTEJO\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n 01. Circunstancias actuales del centro. \n 2. Justificación de las necesidades que intenta cubrir el Plan.\n 3. Valoración del diseño del Plan. \n\n### OTROS ASPECTOS A VALORAR\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n \n\`\`\`counter: 3000\n\n\`\`\`\n\n`;
     s += `## #━INFORME━SEGUIMIENTO\n▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█\n\n`;
     s += `### VALORACIÓN\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    s += `- [ ] Cumplimiento objetivos \n- [ ] No suspende actividades\n- [ ] Cambia nº participantes\n`;
-    s += `- [ ] Contenidos previstos\n- [ ] Se cumple temporalización\n- [ ] Hay seguimiento interno \n- [ ] Se ajusta a presupuesto \n\n`;
-    s += `### LISTA DE COTEJO\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n#### INFORME DE SEGUIMIENTO\n1. Valoración global del desarrollo del plan\n2. Actividades suspendidas: cuales y motivo\n3. Actividades en desarrollo: evaluación según planificación\n4. Actividades finalizadas: valoraciones y posible continuidad\n5. Mejoras y opciones de progresión detectadas\n\n### PROPUESTAS DE MEJORA\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\`\`\`counter: 3000\n \n\`\`\`\n\n`;
+    s += ` - [ ] Cumplimiento objetivos \n - [ ] No suspende actividades\n - [ ] Cambia nº participantes\n`;
+    s += ` - [ ] Contenidos previstos\n - [ ] Se cumple temporalización\n - [ ] Hay seguimiento interno \n - [ ] Se ajusta a presupuesto \n\n`;
+    s += `### LISTA DE COTEJO\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n 1. Valoración global del desarrollo del plan\n 2. Actividades suspendidas: cuales y motivo\n 3. Actividades en desarrollo: evaluación según planificación\n 4. Actividades finalizadas: valoraciones y posible continuidad\n 5. Mejoras y opciones de progresión detectadas\n\n### PROPUESTAS DE MEJORA\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\`\`\`counter: 3000\n \n\`\`\`\n\n`;
     s += `### ADAPTACIONES Y CAMBIOS\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\`\`\`counter: 3000\n \n\`\`\`\n\n`;
     s += `## #━MEMORIA━COORDINADOR\n▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█\n\n`;
     s += `### VALORACIÓN COORDINADOR@  \n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    s += `- Cumplimiento objetivos   | \n- Aprovechamiento          | \n- Desarrollo competencias  | \n`;
-    s += `- Implicación profesorado  | \n- Implicación eq. interno  | \n- Implicación eq. externo  | \n`;
-    s += `- Coordinación int-ext     | \n- Aplicación al aula       | \n- Compromiso aplicación    | \n`;
-    s += `- Expectativas continuidad | \n- Satisfacción eq. interno | \nTotal: \n\n`;
+    s += ` - Cumplimiento objetivos                     10 | \n - Aprovechamiento formación                  10 | \n - Desarrollo competencias                    10 | \n`;
+    s += ` - Implicación del profesorado                10 | \n - Implicación equipo interno                 10 | \n - Implicación equipo externo                 10 | \n`;
+    s += ` - Coordinación equipo interno - externo      10 | \n - Aplicación de la formación al aula/trabajo 10 | \n - Compromiso de aplicación al aula/trabajo   10 | \n`;
+    s += ` - Expectativas de continuidad                10 | \n - Cumplimiento de los objetivos aplicación   10 | \n - Satisfacción trabajo como equipo externo   10 | \n   --------------------------------------------------\n   Total: \n\n`;
     s += `### SEGUIMIENTO Y EVALUACIÓN INTERNO\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\`\`\`counter: 3000\n \n\`\`\`\n\n`;
     s += `### VAL. CUALITATIVA Y PROPUESTAS\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\`\`\`counter: 3000\n \n\`\`\`\n\n`;
-    s += `### LISTA DE COTEJO\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n##### Apartado 1. Datos de identificación del centro\n* Todos los campos están cumplimentados.\n* Todos los datos son correctos.\n##### Apartado 3. Seguimiento y evaluación realizados por el equipo interno (coordinadores/as de las actividades, del Plan y equipo directivo) de cada actividad formativa\n* Se incluye un compendio / resumen por actividad de las valoraciones hechas en el Apartado 5 de las memorias de cada seminario / grupo de trabajo, y se incluye una valoración de los cursos celebrados.\n* Si se ha suspendido alguna actividad, se incluye y se señala el motivo.\n##### Apartado 4. Valoración cualitativa. Justificación de la valoración global del Plan según el punto 2\n* Se justifican una parte de las valoraciones asignadas en el apartado 4, haciendo especial mención a aquellas significativamente altas y bajas. Para evaluar el funcionamiento del Plan, es de especial interés valorar el porqué de la puntuación en los apartados "Aplicación de la formación en el aula", "Aprovechamiento de la formación" e "Implicación del profesorado".\n* Se incluye cualquier circunstancia que haya influido positiva o negativamente en el desarrollo del Plan y la consecución de los objetivos.\n##### Apartado 5. Conclusiones y propuestas de continuidad y mejora\n* Se aportan conclusiones sobre el funcionamiento global del Plan.\n* Si hay valoraciones bajas o negativas (Apartados 2 y 3), se incluyen propuestas de mejora para solventarlas.\n* Se explicita si se va a continuar con los itinerarios iniciados, dentro del mismo Plan o de futuros Planes, o se dan por agotados.\n\n`;
+    s += `### LISTA DE COTEJO\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n##### Apartado 1. Datos de identificación del centro\n * Todos los campos están cumplimentados.\n * Todos los datos son correctos.\n##### Apartado 3. Seguimiento y evaluación realizados por el equipo interno (coordinadores/as de las actividades, del Plan y equipo directivo) de cada actividad formativa\n * Se incluye un compendio / resumen por actividad de las valoraciones hechas en el Apartado 5 de las memorias de cada seminario / grupo de trabajo, y se incluye una valoración de los cursos celebrados.\n * Si se ha suspendido alguna actividad, se incluye y se señala el motivo.\n##### Apartado 4. Valoración cualitativa. Justificación de la valoración global del Plan según el punto 2\n * Se justifican una parte de las valoraciones asignadas en el apartado 4, haciendo especial mención a aquellas significativamente altas y bajas. Para evaluar el funcionamiento del Plan, es de especial interés valorar el porqué de la puntuación en los apartados "Aplicación de la formación en el aula", "Aprovechamiento de la formación" e "Implicación del profesorado".\n * Se incluye cualquier circunstancia que haya influido positiva o negativamente en el desarrollo del Plan y la consecución de los objetivos.\n##### Apartado 5. Conclusiones y propuestas de continuidad y mejora\n * Se aportan conclusiones sobre el funcionamiento global del Plan.\n * Si hay valoraciones bajas o negativas (Apartados 2 y 3), se incluyen propuestas de mejora para solventarlas.\n * Se explicita si se va a continuar con los itinerarios iniciados, dentro del mismo Plan o de futuros Planes, o se dan por agotados.\n\n`;
     s += `## #━INFORME━FINAL\n▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄█\n\n`;
     s += `### VALORACIÓN ASESOR\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    s += `- Cumplimiento objetivos    | \n- Aprovechamiento           | \n- Desarrollo competencias   | \n`;
-    s += `- Implicación profesores    | \n- Implicación eq. interno   | \n- Implicación eq. externo   | \n`;
-    s += `- Coordinación int-ext      | \n- Aplicación al aula        | \n- Compromiso aplicación     | \n`;
-    s += `- Expectativas continuidad  | \n- Objetivos aplicación aula | \n- Satisfacción eq. externo  | \n- Valoración memoria coord. | \n\n`;
-    s += `### LISTA DE COTEJO\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n#### INFORME FINAL\n1. Valoración global del desarrollo del plan.\n\t* Ha sido útil y suficiente, ha resultado excesivo, se hubiera necesitado algún otro itinerario / actividad...\n * Se ha cumplido con la planificación.\n * Se han alcanzado los objetivos previstos.\n * Se han cubierto/no se han cubierto las expectivas.\n * Problemas encontrados y cómo se han solventado...\n * Ha repercutido / no ha repercutido en el alumnado.\n * Cómo ha funcionado la coordinación del equipo interno/externo.\n\t* ¿Hay diferencias significativas entre la memoria del coordinador y la valoración del asesor?\n2. Actividades suspendidas: cuales y motivo.\n3. Actividades realizadas: valoraciones, utilidad y posible continuidad.\n4. Mejoras y opciones de continuidad y progresión detectadas.\n5. Coordinación interna, y coordinación centro-asesor.\n\n### JUSTIFICACIÓN ASESOR\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\`\`\`counter: 3000\n \n\`\`\`\n\n`;
+    s += ` - Cumplimiento objetivos                     10 | \n - Aprovechamiento formación                  10 | \n - Desarrollo competencias                    10 | \n`;
+    s += ` - Implicación del profesorado                10 | \n - Implicación equipo interno                 10 | \n - Implicación equipo externo                 10 | \n`;
+    s += ` - Coordinación equipo interno - externo      10 | \n - Aplicación de la formación al aula/trabajo 10 | \n - Compromiso de aplicación al aula/trabajo   10 | \n`;
+    s += ` - Expectativas de continuidad                10 | \n - Cumplimiento de los objetivos aplicación   10 | \n - Satisfacción trabajo como equipo externo   10 | \n - Valoración memoria del equipo              10 | \n   --------------------------------------------------\n   Total: \n\n`;
+    s += `### LISTA DE COTEJO\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n 1. Valoración global del desarrollo del plan.\n    * Ha sido útil y suficiente, ha resultado excesivo, se hubiera necesitado algún otro itinerario / actividad...\n    * Se ha cumplido con la planificación.\n    * Se han alcanzado los objetivos previstos.\n    * Se han cubierto/no se han cubierto las expectivas.\n    * Problemas encontrados y cómo se han solventado...\n    * Ha repercutido / no ha repercutido en el alumnado.\n    * Cómo ha funcionado la coordinación del equipo interno/externo.\n    * ¿Hay diferencias significativas entre la memoria del coordinador y la valoración del asesor?\n 2. Actividades suspendidas: cuales y motivo.\n 3. Actividades realizadas: valoraciones, utilidad y posible continuidad.\n 4. Mejoras y opciones de continuidad y progresión detectadas.\n 5. Coordinación interna, y coordinación centro-asesor.\n\n### JUSTIFICACIÓN ASESOR\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\`\`\`counter: 3000\n \n\`\`\`\n\n`;
     return s;
   }
 
@@ -4776,13 +4886,9 @@ const modulePFC = (() => {
           <textarea class="pfc-in" rows="2" placeholder="Nombre inspector@&#10;email@" data-i="${i}" data-f="inspectorText" style="min-height:50px; font-size:11px;">${Utils.esc(row.inspectorText || '')}</textarea>
         </td>
         <td>
-          <div style="display:flex; flex-direction:column; gap:2px; min-width:130px;">
-            <label style="margin:0;">
-              <input type="file" accept=".pdf" data-i="${i}" class="pfc-pdf-input" style="display:none;">
-              <span class="btn btn-secondary tiny" style="cursor:pointer;">${row.pdfName ? '📄 ' + shortName(row.pdfName) : 'Seleccionar PDF'}</span>
-            </label>
-            ${row.pdfName ? `<div class="tiny faint" style="word-break:break-all;">${Utils.esc(row.pdfName)}</div>` : ''}
-            <div class="tiny" id="pfc-fb-p-${i}"></div>
+          <div style="display:flex; flex-direction:column; gap:4px; min-width:200px;">
+            <textarea class="pfc-in" rows="4" placeholder="Pega aquí la tabla de actividades copiada de Reforacen…" data-i="${i}" data-f="actividadesText" style="min-height:80px; font-size:11px;">${Utils.esc(row.actividadesText || '')}</textarea>
+            <div class="tiny" id="pfc-fb-p-${i}" style="color:${row.actividadesData ? 'var(--success-hi)' : 'var(--text-faint)'};">${row.actividadesData ? '✓ ' + row.actividadesData.itinerarios.length + ' itinerario/s' : ''}</div>
           </div>
         </td>
         <td><button class="btn btn-secondary tiny" data-dl-i="${i}" ${canDl(row) ? '' : 'disabled'}>ZIP</button></td>
@@ -4819,22 +4925,23 @@ const modulePFC = (() => {
       }
     });
 
-    $$('.pfc-pdf-input').forEach(inp => {
-      inp.addEventListener('change', async () => {
-        const i = +inp.dataset.i, file = inp.files[0]; if (!file) return;
-        rows[i].pdfName = file.name;
-        const labelSpan = inp.parentElement.querySelector('span');
-        if (labelSpan) labelSpan.textContent = '📄 ' + shortName(file.name);
-        fb(`pfc-fb-p-${i}`, '⏳ Procesando PDF…', true);
-        try {
-          rows[i].pdfData = await extractPDFData(file);
-          const p = rows[i].pdfData;
-          const ok = p.coordinador.nombre || p.director.nombre || p.itinerarios.length > 0;
-          fb(`pfc-fb-p-${i}`, ok ? `✓ ${p.itinerarios.length} itinerario/s` : '⚠ PDF leído, datos limitados', !!ok);
-          saveState();
-        } catch (e) { fb(`pfc-fb-p-${i}`, '✗ ' + e.message, false); }
+    $$('.pfc-in[data-f="actividadesText"]').forEach(ta => {
+      const parseAndSave = () => {
+        const i = +ta.dataset.i;
+        rows[i].actividadesText = ta.value;
+        if (ta.value.trim()) {
+          rows[i].actividadesData = parseActividadesText(ta.value);
+          const n = rows[i].actividadesData.itinerarios.length;
+          fb(`pfc-fb-p-${i}`, n ? `✓ ${n} itinerario/s` : '⚠ No se detectaron itinerarios', !!n);
+        } else {
+          rows[i].actividadesData = null;
+          fb(`pfc-fb-p-${i}`, '', true);
+        }
+        saveState();
         updDl(i);
-      });
+      };
+      ta.addEventListener('paste', () => setTimeout(parseAndSave, 60));
+      ta.addEventListener('change', parseAndSave);
     });
 
     $$('[data-dl-i]').forEach(btn => btn.addEventListener('click', () => doDownload(+btn.dataset.dlI)));
@@ -4878,7 +4985,7 @@ const modulePFC = (() => {
     rows = [];
     parsed.forEach(p => {
       rows.push({
-        id: '', centroHtml: '', centroData: null, inspectorText: '', pdfName: '', pdfData: null,
+        id: '', centroHtml: '', centroData: null, inspectorText: '', actividadesText: '', actividadesData: null,
         ...prev[p.planCode], ...p
       });
     });
