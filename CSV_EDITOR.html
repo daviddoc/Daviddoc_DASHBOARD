@@ -2,1491 +2,2835 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CSV Editor</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232f81f7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='18' height='18' rx='2'/><line x1='3' y1='9' x2='21' y2='9'/><line x1='3' y1='15' x2='21' y2='15'/><line x1='9' y1='3' x2='9' y2='21'/><line x1='15' y1='3' x2='15' y2='21'/></svg>">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg0:#0d1117;--bg1:#161b22;--bg2:#21262d;--bg3:#30363d;
-  --border:#30363d;--border2:#444c56;
-  --text0:#e6edf3;--text1:#c9d1d9;--text2:#8b949e;
-  --accent:#2f81f7;--accent-h:#58a6ff;
-  --green:#238636;--green-h:#2ea043;
-  --red:#da3633;--red-h:#f85149;
-  --sel-bg:#1c3a5e;--sel-border:#2f81f7;
-  --header-bg:#1c2128;--cell-bg:#0d1117;--row-hover:#161b22;
+  --bg:#f6f8fa; --panel:#ffffff; --panel2:#eef1f4; --panel3:#e3e8ee;
+  --border:#d0d7de; --border2:#b6c0ca;
+  --text:#1f2328; --text2:#59636e; --text3:#818b98;
+  --accent:#0969da; --accent-h:#0757b3; --on-accent:#fff;
+  --sel:rgba(9,105,218,.10); --sel-strong:rgba(9,105,218,.22);
+  --mark:#fff2a8; --mark-cur:#ffd34d; --mark-text:#3a2d00;
+  --warn-bg:rgba(212,160,23,.16); --warn:#9a6700;
+  --danger:#d1242f; --ok:#1a7f37; --amber-bg:#fff8e5; --amber-bd:#e5cf8a;
+  --shadow:0 6px 24px rgba(20,30,40,.16);
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg0);color:var(--text1);height:100dvh;display:flex;flex-direction:column;overflow:hidden;user-select:none}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme=light]){
+    --bg:#0d1117; --panel:#161b22; --panel2:#21262d; --panel3:#2b323b;
+    --border:#30363d; --border2:#444c56;
+    --text:#e6edf3; --text2:#9aa4af; --text3:#6e7a86;
+    --accent:#4493f8; --accent-h:#6cabfa; --on-accent:#06111f;
+    --sel:rgba(68,147,248,.14); --sel-strong:rgba(68,147,248,.30);
+    --mark:#7a5901; --mark-cur:#b98300; --mark-text:#fff3d0;
+    --warn-bg:rgba(210,153,34,.14); --warn:#d4a017;
+    --danger:#f85149; --ok:#3fb950; --amber-bg:#2d2510; --amber-bd:#5c4a1a;
+    --shadow:0 8px 28px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme=dark]{
+  --bg:#0d1117; --panel:#161b22; --panel2:#21262d; --panel3:#2b323b;
+  --border:#30363d; --border2:#444c56;
+  --text:#e6edf3; --text2:#9aa4af; --text3:#6e7a86;
+  --accent:#4493f8; --accent-h:#6cabfa; --on-accent:#06111f;
+  --sel:rgba(68,147,248,.14); --sel-strong:rgba(68,147,248,.30);
+  --mark:#7a5901; --mark-cur:#b98300; --mark-text:#fff3d0;
+  --warn-bg:rgba(210,153,34,.14); --warn:#d4a017;
+  --danger:#f85149; --ok:#3fb950; --amber-bg:#2d2510; --amber-bd:#5c4a1a;
+  --shadow:0 8px 28px rgba(0,0,0,.5);
+}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  background:var(--bg); color:var(--text);
+  height:100dvh; display:flex; flex-direction:column; overflow:hidden;
+}
+button{font:inherit; color:inherit; background:none; border:none; cursor:pointer}
+button:disabled{opacity:.45; cursor:default}
+input,select,textarea{font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--border); border-radius:6px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+.sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
 
-/* HEADER */
-.header{background:var(--bg1);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:10px}
-.brand-icon{color:var(--accent);display:flex;align-items:center}
-.brand-name{font-size:1.05rem;font-weight:700;color:var(--text0);letter-spacing:-.3px}
-.brand-name em{color:var(--accent);font-style:normal}
-.sel-badge{font-size:.75rem;color:var(--text2);padding:2px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;white-space:nowrap}
-.hdr-actions{display:flex;gap:5px;flex-wrap:wrap}
+/* ===== Botones genéricos ===== */
+.btn{display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border:1px solid var(--border);
+  border-radius:6px; background:var(--panel2); font-size:.82rem; font-weight:500; white-space:nowrap; line-height:1.3}
+.btn:hover:not(:disabled){background:var(--panel3); border-color:var(--border2)}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:var(--on-accent)}
+.btn.primary:hover:not(:disabled){background:var(--accent-h)}
+.btn.danger{color:var(--danger)}
+.btn.danger:hover:not(:disabled){border-color:var(--danger)}
+.btn.icon{padding:5px 8px}
+.seg{display:inline-flex; border:1px solid var(--border); border-radius:6px; overflow:hidden}
+.seg button{padding:4px 9px; font-size:.78rem; background:var(--panel2); border-left:1px solid var(--border)}
+.seg button:first-child{border-left:none}
+.seg button[aria-pressed=true]{background:var(--accent); color:var(--on-accent)}
 
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border:1px solid var(--border);background:var(--bg2);color:var(--text1);border-radius:6px;cursor:pointer;font-size:.82rem;font-family:inherit;font-weight:500;transition:background .12s,border-color .12s;white-space:nowrap;user-select:none}
-.btn:hover{background:var(--bg3);border-color:var(--border2)}
-.btn svg{flex-shrink:0}
-.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
-.btn.primary:hover{background:var(--green-h)}
-.btn.danger{background:var(--red);border-color:var(--red);color:#fff}
-.btn.danger:hover{background:var(--red-h)}
-.btn.accent{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.accent:hover{background:var(--accent-h)}
-@media(max-width:600px){.btn-label{display:none}.btn{padding:7px 8px}}
+/* ===== Header ===== */
+.hdr{display:flex; align-items:center; gap:12px; padding:7px 14px; background:var(--panel);
+  border-bottom:1px solid var(--border); flex-wrap:wrap; flex-shrink:0}
+.brand{display:flex; align-items:center; gap:8px; font-weight:700; font-size:1rem; letter-spacing:-.2px}
+.brand svg{color:var(--accent)}
+.brand em{color:var(--accent); font-style:normal}
+.fnamewrap{display:flex; align-items:center; gap:8px; min-width:0}
+#fileName{font-size:.85rem; color:var(--text2); padding:3px 8px; border-radius:5px; max-width:230px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:text}
+#fileName:hover{background:var(--panel2)}
+#fileNameEdit{font-size:.85rem; padding:2px 7px; width:220px}
+.save-ind{display:inline-flex; align-items:center; gap:5px; font-size:.74rem; color:var(--text3); white-space:nowrap; cursor:default}
+.save-ind .dot{width:8px; height:8px; border-radius:50%; background:var(--text3); flex-shrink:0}
+.save-ind.saved .dot{background:var(--ok)}
+.save-ind.dirty .dot{background:var(--warn)}
+.save-ind.na .dot{background:var(--danger)}
+#selBadge,#filterInfo{font-size:.75rem; color:var(--text2); padding:3px 9px; background:var(--panel2);
+  border:1px solid var(--border); border-radius:20px; white-space:nowrap}
+#filterInfo{color:var(--accent); border-color:var(--accent)}
+.hdr-actions{display:flex; gap:6px; flex-wrap:wrap; margin-left:auto; align-items:center}
 
-/* FORMULA BAR */
-.fbar{background:var(--bg1);border-bottom:1px solid var(--border);padding:4px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
-.name-box{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:3px 8px;min-width:64px;text-align:center;font-size:.8rem;font-family:'Consolas','Courier New',monospace;color:var(--accent);font-weight:700}
-.fbar-sep{width:1px;height:18px;background:var(--border)}
-.fx-label{color:var(--accent);font-style:italic;font-size:.85rem;font-family:Georgia,serif;flex-shrink:0}
-.fbar-val{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:3px 9px;font-size:.82rem;color:var(--text1);font-family:'Consolas','Courier New',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* ===== Barra de recuperación ===== */
+#recoverBar{display:flex; align-items:center; gap:12px; padding:8px 16px; font-size:.85rem;
+  background:var(--amber-bg); border-bottom:1px solid var(--amber-bd)}
+#recoverBar[hidden]{display:none}
 
-/* TOOLBAR */
-.toolbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:5px 12px;display:flex;align-items:center;gap:3px;flex-wrap:wrap;flex-shrink:0}
-.tsep{width:1px;height:22px;background:var(--border);margin:0 5px}
-.cbx{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.81rem;color:var(--text1);user-select:none}
-.cbx input{width:14px;height:14px;cursor:pointer;accent-color:var(--accent)}
+/* ===== Barra de celda activa ===== */
+.cellbar{display:flex; align-items:center; gap:8px; padding:5px 14px; background:var(--panel);
+  border-bottom:1px solid var(--border); flex-shrink:0}
+#cellRef{font-family:ui-monospace,Consolas,monospace; font-size:.82rem; font-weight:600; min-width:64px;
+  text-align:center; padding:4px 6px; background:var(--panel2); border:1px solid var(--border); border-radius:5px}
+#cellTypeIcon{font-size:.72rem; font-weight:600; color:var(--text2); min-width:44px; text-align:center;
+  padding:4px 5px; background:var(--panel2); border:1px solid var(--border); border-radius:5px; cursor:default}
+#cellTypeIcon.forced{color:var(--accent); border-color:var(--accent)}
+#fxInput{flex:1; padding:4px 10px; font-size:.86rem; min-width:80px}
 
-/* MAIN */
-.main{display:flex;flex:1;overflow:hidden;min-height:0}
+/* ===== Toolbar ===== */
+.toolbar{display:flex; align-items:center; gap:6px; padding:6px 14px; background:var(--panel);
+  border-bottom:1px solid var(--border); flex-wrap:wrap; flex-shrink:0}
+.toolbar .sep{width:1px; height:22px; background:var(--border); margin:0 3px}
+.tswitch{display:inline-flex; align-items:center; gap:7px; font-size:.8rem; color:var(--text2); cursor:pointer; user-select:none}
+.tswitch input{appearance:none; width:32px; height:18px; border-radius:10px; background:var(--panel3);
+  border:1px solid var(--border); position:relative; cursor:pointer; transition:background .15s; margin:0}
+.tswitch input::after{content:''; position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%;
+  background:var(--panel); border:1px solid var(--border2); transition:left .15s}
+.tswitch input:checked{background:var(--accent)}
+.tswitch input:checked::after{left:16px}
+.tlabel{font-size:.74rem; color:var(--text3)}
+#colTypeSel{font-size:.78rem; padding:3px 6px}
+#undoCount{font-size:.68rem; color:var(--text3); min-width:20px; text-align:center}
+#btnMore{display:none}
 
-/* SIDEBAR */
-.sidebar{width:152px;background:var(--bg1);border-right:1px solid var(--border);padding:10px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:5px}
-.stat{background:var(--bg2);border-radius:5px;padding:8px 10px}
-.stat-lbl{font-size:.68rem;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
-.stat-val{font-size:.95rem;font-weight:700;color:var(--accent);font-family:'Consolas',monospace}
-@media(max-width:768px){.sidebar{display:none}}
+/* ===== Layout principal ===== */
+.mainwrap{flex:1; display:flex; min-height:0; position:relative}
 
-/* TABLE WRAPPER */
-.tw{flex:1;overflow:auto;position:relative;background:var(--cell-bg)}
+/* ===== Grid ===== */
+#gridwrap{flex:1; overflow:auto; position:relative; background:var(--bg); outline:none; user-select:none;
+  overscroll-behavior:contain}
+#ghead{position:sticky; top:0; z-index:10; display:flex; width:var(--totw); background:var(--panel2);
+  border-bottom:1px solid var(--border2); min-width:100%}
+.ghcorner{position:sticky; left:0; z-index:12; width:52px; flex:none; background:var(--panel2);
+  border-right:1px solid var(--border2); cursor:pointer; display:flex; align-items:center; justify-content:center;
+  color:var(--text3); font-size:.7rem}
+.ghcorner:hover{background:var(--panel3)}
+.gh{flex:none; display:flex; align-items:center; gap:4px; padding:0 6px; height:30px; position:relative;
+  border-right:1px solid var(--border); font-size:.76rem; color:var(--text2); background:var(--panel2); cursor:pointer; overflow:hidden}
+.gh:hover{background:var(--panel3)}
+.gh.selcol{background:var(--sel-strong)}
+.gh .ghl{font-family:ui-monospace,Consolas,monospace; font-weight:700; color:var(--text3); flex-shrink:0}
+.gh .ghn{font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1}
+.gh .ghtype{font-size:.64rem; color:var(--text3); flex-shrink:0}
+.gh .ghtype.forced{color:var(--accent); font-weight:700}
+.gh .ghsort{color:var(--accent); font-size:.66rem; flex-shrink:0}
+.gh .ghfilter{color:var(--accent); font-size:.66rem; flex-shrink:0}
+.gh .ghmenu{flex-shrink:0; width:18px; height:18px; line-height:1; border-radius:4px; color:var(--text3);
+  font-size:.68rem; display:flex; align-items:center; justify-content:center; visibility:hidden}
+.gh:hover .ghmenu,.gh .ghmenu:focus-visible{visibility:visible}
+.gh .ghmenu:hover{background:var(--sel-strong); color:var(--text)}
+.ghresize{position:absolute; right:-3px; top:0; width:7px; height:100%; cursor:col-resize; z-index:2}
+.ghresize:hover{background:var(--accent)}
+#gcanvas{position:relative; width:var(--totw); min-width:100%}
+#gslice{position:absolute; left:0; top:0; width:100%; will-change:transform}
+.grow{display:flex; width:var(--totw); border-bottom:1px solid var(--border); background:var(--panel)}
+.rn{position:sticky; left:0; z-index:5; width:52px; flex:none; display:flex; align-items:center; justify-content:center;
+  font-family:ui-monospace,Consolas,monospace; font-size:.7rem; color:var(--text3); background:var(--panel2);
+  border-right:1px solid var(--border2); cursor:pointer; user-select:none}
+.rn:hover{background:var(--panel3)}
+.rn.s{background:var(--sel-strong); color:var(--text); font-weight:700}
+.gc{flex:none; padding:0 7px; display:flex; align-items:center; overflow:hidden; white-space:pre;
+  border-right:1px solid var(--border); font-size:.82rem; cursor:cell; contain:strict}
+.gc>span{overflow:hidden; text-overflow:ellipsis; width:100%}
+.gc.ar>span{text-align:right}
+.gc.sel{background:var(--sel)}
+.gc.mm{background:var(--warn-bg); box-shadow:inset 3px 0 0 var(--warn)}
+.gc.mm.sel{background:var(--warn-bg)}
+.gc.active{box-shadow:inset 0 0 0 2px var(--accent); background:var(--panel)}
+.gc.active.sel{background:var(--sel)}
+.gc mark{background:var(--mark); color:var(--mark-text); border-radius:2px; padding:0 1px}
+.gc.curmatch mark{background:var(--mark-cur)}
+.gc.flash{animation:cellflash 1s ease-out}
+@keyframes cellflash{0%,60%{box-shadow:inset 0 0 0 3px var(--accent)} 100%{}}
+.freeze1 .gc[data-c="0"]{position:sticky; left:52px; z-index:4; background:var(--panel)}
+.freeze1 .gc.sel[data-c="0"]{background:var(--panel3)}
+.freeze1 .gh[data-c="0"]{position:sticky; left:52px; z-index:11}
+.d-compact .gc{font-size:.76rem}
+.d-comfy .gc{font-size:.88rem}
+#celled{position:absolute; z-index:20; resize:none; padding:3px 6px; font-size:.82rem; line-height:1.45;
+  border:2px solid var(--accent); border-radius:0; box-shadow:var(--shadow); background:var(--panel); overflow:hidden}
+#emptyHint{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:3}
+#emptyHint[hidden]{display:none}
+#emptyHint .card{background:var(--panel); border:1px dashed var(--border2); border-radius:12px; padding:26px 34px;
+  color:var(--text2); font-size:.9rem; text-align:center; line-height:1.9}
+#emptyHint kbd{font-size:.75rem}
 
-/* DROP OVERLAY */
-.drop-ov{position:absolute;inset:16px;background:rgba(13,17,23,.93);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:200;border:2px dashed var(--accent);border-radius:10px;pointer-events:none}
-.drop-ov.on{display:flex;pointer-events:all}
-.drop-txt{font-size:1.2rem;color:var(--accent);font-weight:500}
+/* ===== Sidebar ===== */
+#sidebar{width:230px; flex-shrink:0; background:var(--panel); border-left:1px solid var(--border);
+  overflow-y:auto; padding:14px; font-size:.82rem}
+#sidebar h3{font-size:.68rem; text-transform:uppercase; letter-spacing:.6px; color:var(--text3); margin:14px 0 7px}
+#sidebar h3:first-child{margin-top:0}
+.statrow{display:flex; justify-content:space-between; gap:8px; padding:3px 0; color:var(--text2)}
+.statrow b{color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; text-align:right; word-break:break-all}
+.statrow b.calc{color:var(--text3); font-weight:400; font-style:italic}
+#sheetGrip{display:none}
+#btnStats{display:none}
 
-/* EMPTY STATE */
-.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:300px;color:var(--text2);text-align:center;padding:40px;gap:12px}
-.empty h2{color:var(--text1);font-size:1.1rem}
-.empty p{max-width:380px;font-size:.88rem;line-height:1.6}
+/* ===== Barra de búsqueda ===== */
+#findWrap{position:absolute; top:10px; right:12px; z-index:40; background:var(--panel); border:1px solid var(--border2);
+  border-radius:10px; box-shadow:var(--shadow); padding:8px 10px; display:flex; flex-direction:column; gap:6px; max-width:min(430px,92%)}
+#findWrap[hidden]{display:none}
+#findWrap .row{display:flex; align-items:center; gap:6px}
+#findInp,#replInp{width:180px; padding:4px 8px; font-size:.82rem}
+#findCount{font-size:.72rem; color:var(--text2); min-width:86px; text-align:center; white-space:nowrap}
+#findWrap .btn{padding:4px 8px; font-size:.76rem}
 
-/* SELECTION OVERLAY */
-#sel-ov{position:absolute;display:none;pointer-events:none;border:2px solid var(--sel-border);z-index:40;border-radius:1px}
-.sh{position:absolute;width:11px;height:11px;background:var(--bg1);border:2px solid var(--sel-border);border-radius:50%;pointer-events:all;touch-action:none;cursor:default;z-index:50}
-.sh-tl{top:-6px;left:-6px}
-.sh-br{bottom:-6px;right:-6px}
-@media(pointer:coarse){.sh{width:18px;height:18px}.sh-tl{top:-9px;left:-9px}.sh-br{bottom:-9px;right:-9px}}
+/* ===== Menú contextual / popovers ===== */
+.menu{position:fixed; z-index:200; min-width:200px; background:var(--panel); border:1px solid var(--border2);
+  border-radius:9px; box-shadow:var(--shadow); padding:5px; font-size:.83rem}
+.menu[hidden]{display:none}
+.menu button.mi{display:flex; width:100%; text-align:left; padding:6px 10px; border-radius:6px; gap:8px; align-items:center}
+.menu button.mi:hover,.menu button.mi:focus-visible{background:var(--sel-strong)}
+.menu button.mi.danger{color:var(--danger)}
+.menu .msep{height:1px; background:var(--border); margin:5px 4px}
+.menu .mlabel{font-size:.68rem; color:var(--text3); padding:5px 10px 2px; text-transform:uppercase; letter-spacing:.5px}
+.menu .mrow{display:flex; align-items:center; gap:6px; padding:4px 10px}
+.menu .mrow input[type=search]{flex:1; padding:4px 8px; font-size:.8rem; min-width:0}
+.menu .mrow select{flex:1; padding:3px 6px; font-size:.8rem}
+kbd{font-family:ui-monospace,Consolas,monospace; font-size:.72rem; background:var(--panel2); border:1px solid var(--border);
+  border-bottom-width:2px; border-radius:4px; padding:1px 5px; color:var(--text2)}
+.menu .mi kbd{margin-left:auto}
 
-/* CELL EDITOR */
-#ced{position:absolute;display:none;z-index:100;background:var(--bg1);border:2px solid var(--accent);outline:none;padding:5px 9px;font-size:.88rem;font-family:inherit;color:var(--text0);box-shadow:0 3px 16px rgba(0,0,0,.6);min-width:80px}
+/* ===== Diálogos ===== */
+dialog{background:var(--panel); color:var(--text); border:1px solid var(--border2); border-radius:12px;
+  box-shadow:var(--shadow); padding:0; max-width:min(560px,92vw); max-height:88vh}
+dialog::backdrop{background:rgba(8,12,18,.55)}
+.dhead{display:flex; align-items:center; justify-content:space-between; padding:13px 18px; border-bottom:1px solid var(--border)}
+.dhead h2{font-size:.98rem}
+.dbody{padding:15px 18px; overflow-y:auto; max-height:64vh; font-size:.86rem}
+.dfoot{display:flex; justify-content:flex-end; gap:8px; padding:12px 18px; border-top:1px solid var(--border)}
+.dclose{font-size:1.1rem; color:var(--text3); padding:2px 8px; border-radius:6px}
+.dclose:hover{background:var(--panel2); color:var(--text)}
+.frow{display:flex; align-items:center; gap:10px; margin-bottom:11px; flex-wrap:wrap}
+.frow>label:first-child{min-width:110px; color:var(--text2); font-size:.82rem}
+.frow .hint{flex-basis:100%; font-size:.74rem; color:var(--text3); margin:-6px 0 0 120px; line-height:1.45}
+.chk{display:inline-flex; align-items:center; gap:7px; cursor:pointer; font-size:.84rem}
+.chk input{width:15px; height:15px; accent-color:var(--accent)}
+#dlgHelp table{border-collapse:collapse; width:100%; font-size:.8rem}
+#dlgHelp td{padding:4px 8px; border-bottom:1px solid var(--border); vertical-align:top}
+#dlgHelp td:last-child{white-space:nowrap; text-align:right}
+#dlgHelp h3{font-size:.85rem; margin:16px 0 8px; color:var(--accent)}
+#dlgHelp p,#dlgHelp li{font-size:.8rem; color:var(--text2); line-height:1.55; margin-bottom:6px}
+#dlgHelp ul{padding-left:18px}
 
-/* DATA TABLE */
-.dt{border-collapse:collapse;font-size:.87rem}
-.dt td,.dt th{border:1px solid var(--border)}
+/* ===== Overlays ===== */
+#dropOverlay{position:fixed; inset:0; z-index:300; background:color-mix(in srgb, var(--accent) 12%, transparent);
+  display:flex; align-items:center; justify-content:center; pointer-events:none}
+#dropOverlay[hidden]{display:none}
+#dropOverlay .card{border:3px dashed var(--accent); border-radius:16px; padding:44px 70px; font-size:1.15rem;
+  font-weight:600; color:var(--accent); background:var(--panel)}
+#progressWrap{position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:250; background:var(--panel);
+  border:1px solid var(--border2); border-radius:10px; box-shadow:var(--shadow); padding:9px 16px;
+  display:flex; align-items:center; gap:11px; font-size:.82rem; min-width:270px}
+#progressWrap[hidden]{display:none}
+#progressWrap .bar{flex:1; height:6px; background:var(--panel3); border-radius:3px; overflow:hidden}
+#progressWrap .bar i{display:block; height:100%; background:var(--accent); border-radius:3px; width:0%; transition:width .15s}
+#progressWrap .bar.indet i{width:35%; animation:indet 1.1s infinite linear}
+@keyframes indet{0%{transform:translateX(-110%)}100%{transform:translateX(320%)}}
+.spinner{width:14px; height:14px; border:2px solid var(--panel3); border-top-color:var(--accent); border-radius:50%;
+  animation:spin .8s linear infinite; flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+body.working .toolbar button,body.working .toolbar select,body.working .hdr-actions .btn{pointer-events:none; opacity:.5}
+#toasts{position:fixed; bottom:18px; left:50%; transform:translateX(-50%); z-index:260; display:flex;
+  flex-direction:column; gap:8px; align-items:center; max-width:92vw}
+.toast{display:flex; align-items:center; gap:10px; background:var(--panel); color:var(--text); border:1px solid var(--border2);
+  border-left:4px solid var(--accent); border-radius:9px; box-shadow:var(--shadow); padding:9px 14px; font-size:.83rem;
+  animation:toastin .18s ease-out; max-width:100%}
+.toast.ok{border-left-color:var(--ok)}
+.toast.warn{border-left-color:var(--warn)}
+.toast.err{border-left-color:var(--danger)}
+.toast .btn{padding:3px 8px; font-size:.75rem}
+@keyframes toastin{from{opacity:0; transform:translateY(8px)}to{opacity:1}}
 
-/* Corner cell */
-.corner{position:sticky;top:0;left:0;z-index:30;background:var(--header-bg);min-width:44px;width:44px;cursor:pointer;text-align:center;padding:8px 4px;border:1px solid var(--border)}
-.corner:hover{background:var(--bg3)}
-
-/* Column headers */
-.dt th.ch{background:var(--header-bg);position:sticky;top:0;z-index:20;padding:0;min-width:90px}
-.ch-in{display:flex;flex-direction:column}
-.ch-name-row{display:flex;align-items:center;padding:7px 10px 7px 10px;gap:6px;font-weight:600;color:var(--text1);cursor:default}
-.ch-name-row:hover{background:var(--bg3)}
-.ch-lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;min-width:0}
-.ch-lbl:hover{color:var(--accent-h)}
-.sort-btn{display:flex;align-items:center;color:var(--text2);padding:2px 3px;border-radius:3px;cursor:pointer;flex-shrink:0;transition:all .12s}
-.sort-btn:hover{background:var(--bg3);color:var(--text1)}
-.sort-btn.on{color:var(--accent)}
-.ch-filter{padding:0 6px 5px}
-.ch-filter input{width:100%;padding:3px 7px;background:var(--bg0);border:1px solid var(--border);border-radius:3px;color:var(--text1);font-size:.76rem;font-family:inherit;outline:none}
-.ch-filter input:focus{border-color:var(--accent)}
-.ch-filter input::placeholder{color:var(--text2)}
-
-/* Row headers */
-.dt td.rh{background:var(--header-bg);position:sticky;left:0;z-index:15;width:44px;min-width:44px;text-align:center;font-size:.74rem;color:var(--text2);padding:7px 4px;cursor:pointer;white-space:nowrap;user-select:none}
-.dt td.rh:hover{background:var(--bg3);color:var(--text1)}
-.dt td.rh.rsel{background:var(--sel-bg);color:var(--text0)}
-
-/* Data cells */
-.dt td.dc{background:var(--cell-bg);padding:0;position:relative;cursor:cell}
-.dt tr:hover td.dc{background:var(--row-hover)}
-.cv{padding:6px 9px;min-height:31px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;pointer-events:none;color:var(--text1);font-size:.87rem;line-height:1.4}
-td.dc.insel{background:var(--sel-bg) !important}
-td.dc.insel .cv{color:var(--text0)}
-td.dc.actcell{box-shadow:inset 0 0 0 2px var(--sel-border);background:var(--sel-bg) !important}
-td.dc.actcell .cv{color:var(--text0)}
-
-/* CONTEXT MENU */
-.cmenu{position:fixed;background:var(--bg1);border:1px solid var(--border2);border-radius:8px;padding:5px 0;min-width:215px;z-index:1000;box-shadow:0 8px 32px rgba(0,0,0,.65);display:none}
-.cmenu.on{display:block;animation:cmIn .1s ease-out}
-@keyframes cmIn{from{opacity:0;transform:scale(.95) translateY(-3px)}to{opacity:1;transform:none}}
-.ci{padding:8px 15px;cursor:pointer;font-size:.86rem;display:flex;align-items:center;gap:10px;color:var(--text1);transition:background .1s}
-.ci:hover{background:var(--accent);color:#fff}
-.ci svg{flex-shrink:0}
-.ci .cshort{margin-left:auto;font-size:.73rem;color:var(--text2);font-family:monospace}
-.ci:hover .cshort{color:rgba(255,255,255,.6)}
-.csep{height:1px;background:var(--border);margin:4px 0}
-
-/* MODAL */
-.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px}
-.moverlay.on{display:flex}
-.modal{background:var(--bg1);border:1px solid var(--border2);border-radius:12px;max-width:640px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 16px 64px rgba(0,0,0,.7)}
-.modal.wide{max-width:720px}
-.mhdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.mtitle{font-size:1rem;font-weight:600;color:var(--text0)}
-.mclose{background:none;border:none;color:var(--text2);cursor:pointer;padding:4px;display:flex;border-radius:4px;transition:all .12s}
-.mclose:hover{background:var(--bg3);color:var(--text0)}
-.mbody{padding:16px 20px;flex:1;overflow-y:auto}
-.mfoot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
-.txprev{width:100%;min-height:200px;background:var(--bg0);border:1px solid var(--border);border-radius:6px;padding:11px;color:var(--text1);font-family:'Consolas','Courier New',monospace;font-size:.8rem;resize:vertical;white-space:pre;overflow:auto}
-
-/* HELP */
-.hsec{margin-bottom:16px}
-.hsec h4{color:var(--accent);font-size:.86rem;margin-bottom:7px;font-weight:600}
-.hsec ul{list-style:none;display:flex;flex-direction:column;gap:4px}
-.hsec li{font-size:.83rem;color:var(--text1);display:flex;align-items:baseline;gap:7px}
-.hsec li::before{content:'·';color:var(--text2)}
-kbd{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:1px 6px;font-family:monospace;font-size:.8em;box-shadow:0 2px 0 rgba(0,0,0,.3);white-space:nowrap;color:var(--text0)}
-
-/* TOAST */
-.toast{position:fixed;bottom:22px;right:22px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:11px 16px;display:flex;align-items:center;gap:9px;box-shadow:0 4px 20px rgba(0,0,0,.5);transform:translateY(70px);opacity:0;transition:all .22s ease;z-index:3000;font-size:.86rem;max-width:300px}
-.toast.show{transform:none;opacity:1}
-.toast.success .ti{color:#3fb950}
-.toast.error .ti{color:var(--red)}
-
-/* SCROLLBARS */
-::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:var(--bg0)}
-::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px}
-::-webkit-scrollbar-thumb:hover{background:var(--text2)}
-::-webkit-scrollbar-corner{background:var(--bg0)}
+/* ===== Móvil ===== */
+@media (max-width:767px){
+  .hdr{gap:8px; padding:6px 10px}
+  #selBadge{display:none}
+  .hdr-actions .btn .blbl{display:none}
+  .toolbar .tb-x{display:none}
+  .toolbar.open .tb-x{display:inline-flex}
+  #btnMore{display:inline-flex}
+  #sidebar{position:fixed; left:0; right:0; bottom:0; width:auto; z-index:150; border-left:none;
+    border-top:1px solid var(--border2); border-radius:16px 16px 0 0; box-shadow:var(--shadow);
+    max-height:55vh; transform:translateY(105%); transition:transform .22s ease}
+  #sidebar.open{transform:translateY(0)}
+  #sheetGrip{display:block; width:44px; height:5px; border-radius:3px; background:var(--border2); margin:2px auto 10px}
+  #btnStats{display:inline-flex}
+  #findWrap{right:6px; left:6px; max-width:none}
+  #findInp,#replInp{width:auto; flex:1}
+}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header class="header">
+<div id="progressWrap" hidden role="status">
+  <span class="spinner"></span>
+  <span id="progressLbl">Procesando…</span>
+  <span class="bar" id="progressBarWrap"><i id="progressBar"></i></span>
+  <span id="progressPct" style="min-width:34px;text-align:right;font-variant-numeric:tabular-nums"></span>
+</div>
+
+<header class="hdr">
   <div class="brand">
-    <span class="brand-icon">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-    </span>
-    <span class="brand-name">CSV<em>Editor</em></span>
-    <span class="sel-badge" id="selBadge">Sin selección</span>
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+    CSV&nbsp;<em>Editor</em>
   </div>
+  <div class="fnamewrap">
+    <span id="fileName" title="Clic para renombrar" tabindex="0" role="button" aria-label="Nombre del archivo. Pulsa para renombrar">datos.csv</span>
+    <span class="save-ind" id="saveInd"><span class="dot"></span><span id="saveIndTxt">—</span></span>
+  </div>
+  <span id="selBadge" aria-live="off">1×1</span>
+  <span id="filterInfo" hidden></span>
   <div class="hdr-actions">
-    <button class="btn" onclick="E.openFile()" title="Abrir archivo CSV">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-      <span class="btn-label">Abrir</span>
-    </button>
-    <button class="btn" onclick="E.pastePrompt()" title="Pegar datos (Ctrl+V)">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-      <span class="btn-label">Pegar</span>
-    </button>
-    <button class="btn primary" onclick="E.exportCSV()" title="Exportar CSV">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <span class="btn-label">CSV</span>
-    </button>
-    <button class="btn primary" onclick="E.exportMd()" title="Exportar Markdown">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      <span class="btn-label">Markdown</span>
-    </button>
-    <button class="btn danger" onclick="E.clearAll()" title="Limpiar todo">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      <span class="btn-label">Limpiar</span>
-    </button>
-    <button class="btn" onclick="E.showHelp()" title="Ayuda">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      <span class="btn-label">Ayuda</span>
-    </button>
+    <button class="btn" id="btnStats" title="Estadísticas de la selección">Σ</button>
+    <button class="btn" id="btnOpen" title="Abrir archivo CSV/TSV/TXT"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span class="blbl">Abrir</span></button>
+    <button class="btn" id="btnPaste" title="Pegar datos desde el portapapeles"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg><span class="blbl">Pegar</span></button>
+    <button class="btn primary" id="btnExport" title="Exportar (Ctrl+S: exportación rápida CSV)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="blbl">Exportar</span></button>
+    <button class="btn icon" id="btnFind" title="Buscar (Ctrl+F)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></button>
+    <button class="btn danger" id="btnClear" title="Vaciar la tabla y el autoguardado"><span class="blbl">Limpiar</span><svg class="blbl" style="display:none" width="13" height="13" viewBox="0 0 24 24"><path d="M3 6h18"/></svg><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mobonly"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+    <button class="btn icon" id="btnHelp" title="Ayuda y atajos de teclado">?</button>
   </div>
 </header>
 
-<!-- FORMULA BAR -->
-<div class="fbar">
-  <div class="name-box" id="nameBox">—</div>
-  <div class="fbar-sep"></div>
-  <div class="fx-label">fx</div>
-  <div class="fbar-val" id="fbarVal">—</div>
+<div id="recoverBar" hidden>
+  <span>Hay una sesión anterior guardada (<b id="recoverInfo"></b>). ¿Quieres recuperarla?</span>
+  <button class="btn primary" id="btnRecover">Recuperar sesión</button>
+  <button class="btn" id="btnDiscard">Empezar de cero</button>
 </div>
 
-<!-- TOOLBAR -->
-<div class="toolbar">
-  <label class="cbx">
-    <input type="checkbox" id="hasHeader" checked onchange="E.toggleHeader()">
-    <span>Encabezado</span>
+<div class="cellbar">
+  <span id="cellRef" title="Referencia de la celda activa">A1</span>
+  <span id="cellTypeIcon" title="Tipo detectado de la columna">Abc</span>
+  <input id="fxInput" aria-label="Contenido de la celda activa" autocomplete="off" spellcheck="false" placeholder="Contenido de la celda activa…">
+</div>
+
+<div class="toolbar" id="toolbar" role="toolbar" aria-label="Herramientas de edición">
+  <label class="tswitch" title="Tratar la primera fila como encabezado de columnas">
+    <input type="checkbox" id="tglHeader"><span>1ª fila = encabezado</span>
   </label>
-  <div class="tsep"></div>
-  <button class="btn" onclick="E.addRow()" title="Insertar fila después de selección">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="14" width="18" height="7" rx="1"/><line x1="12" y1="4" x2="12" y2="11"/><line x1="8.5" y1="7.5" x2="15.5" y2="7.5"/></svg>
-    <span class="btn-label">Fila</span>
-  </button>
-  <button class="btn" onclick="E.addColumn()" title="Añadir columna al final">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="3" width="7" height="18" rx="1"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="7.5" y1="8.5" x2="7.5" y2="15.5"/></svg>
-    <span class="btn-label">Columna</span>
-  </button>
-  <button class="btn danger" onclick="E.deleteRows()" title="Eliminar filas seleccionadas">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-    <span class="btn-label">Filas</span>
-  </button>
-  <button class="btn danger" onclick="E.deleteCols()" title="Eliminar columnas seleccionadas">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><line x1="14" y1="9" x2="20" y2="15"/><line x1="20" y1="9" x2="14" y2="15"/></svg>
-    <span class="btn-label">Columnas</span>
-  </button>
-  <div class="tsep"></div>
-  <button class="btn" onclick="E.undo()" title="Deshacer (Ctrl+Z)">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.01"/></svg>
-    <span class="btn-label">Deshacer</span>
-  </button>
-  <button class="btn" onclick="E.redo()" title="Rehacer (Ctrl+Y)">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-4.01"/></svg>
-    <span class="btn-label">Rehacer</span>
-  </button>
+  <span class="sep"></span>
+  <button class="btn icon" id="btnUndo" title="Deshacer (Ctrl+Z)" aria-keyshortcuts="Control+Z"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg></button>
+  <span id="undoCount" aria-hidden="true"></span>
+  <button class="btn icon" id="btnRedo" title="Rehacer (Ctrl+Y)" aria-keyshortcuts="Control+Y"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg></button>
+  <span class="sep"></span>
+  <button class="btn tb-x" id="btnRowAbove" title="Insertar fila encima de la selección">＋Fila ↑</button>
+  <button class="btn tb-x" id="btnRowBelow" title="Insertar fila debajo de la selección">＋Fila ↓</button>
+  <button class="btn tb-x" id="btnDelRow" title="Eliminar filas seleccionadas">－Fila</button>
+  <button class="btn tb-x" id="btnColLeft" title="Insertar columna a la izquierda">＋Col ←</button>
+  <button class="btn tb-x" id="btnColRight" title="Insertar columna a la derecha">＋Col →</button>
+  <button class="btn tb-x" id="btnDelCol" title="Eliminar columnas seleccionadas">－Col</button>
+  <span class="sep tb-x"></span>
+  <button class="btn tb-x" id="btnReplace" title="Buscar y reemplazar (Ctrl+H)">Reemplazar</button>
+  <span class="sep tb-x"></span>
+  <span class="tlabel tb-x">Densidad</span>
+  <span class="seg tb-x" role="group" aria-label="Densidad de fila">
+    <button id="denC" aria-pressed="false" title="Compacta">S</button>
+    <button id="denN" aria-pressed="true" title="Normal">M</button>
+    <button id="denX" aria-pressed="false" title="Cómoda">L</button>
+  </span>
+  <span class="sep tb-x"></span>
+  <label class="tlabel tb-x" for="colTypeSel">Tipo col.</label>
+  <select id="colTypeSel" class="tb-x" title="Forzar el tipo de la columna activa">
+    <option value="auto">Auto</option>
+    <option value="number">Número</option>
+    <option value="text">Texto</option>
+    <option value="date">Fecha</option>
+    <option value="boolean">Booleano</option>
+  </select>
+  <button class="btn tb-x" id="btnFreeze" title="Fijar la primera columna en el scroll horizontal" aria-pressed="false">Fijar 1ª col</button>
+  <button class="btn icon tb-x" id="btnCfg" title="Preferencias">⚙</button>
+  <button class="btn icon" id="btnMore" title="Más acciones" aria-expanded="false">⋯</button>
 </div>
 
-<!-- MAIN -->
-<div class="main">
-  <aside class="sidebar">
-    <div class="stat"><div class="stat-lbl">Filas</div><div class="stat-val" id="sRows">0</div></div>
-    <div class="stat"><div class="stat-lbl">Columnas</div><div class="stat-val" id="sCols">0</div></div>
-    <div class="stat"><div class="stat-lbl">Selección</div><div class="stat-val" id="sSel">0</div></div>
-    <div class="stat"><div class="stat-lbl">Suma</div><div class="stat-val" id="sSum">—</div></div>
-    <div class="stat"><div class="stat-lbl">Promedio</div><div class="stat-val" id="sAvg">—</div></div>
-    <div class="stat"><div class="stat-lbl">Mínimo</div><div class="stat-val" id="sMin">—</div></div>
-    <div class="stat"><div class="stat-lbl">Máximo</div><div class="stat-val" id="sMax">—</div></div>
+<div class="mainwrap">
+  <div id="gridwrap" tabindex="0" role="grid" aria-label="Tabla de datos" aria-multiselectable="true" class="d-normal">
+    <div id="ghead" role="row" aria-rowindex="1"></div>
+    <div id="gcanvas"><div id="gslice"></div></div>
+    <div id="emptyHint" hidden><div class="card">
+      La tabla está vacía.<br>
+      <b>Abrir</b> un archivo CSV/TSV, <b>arrastrarlo</b> aquí,<br>
+      o <b>pegar</b> datos con <kbd>Ctrl+V</kbd>.
+    </div></div>
+  </div>
+
+  <aside id="sidebar" aria-label="Panel de estadísticas">
+    <div id="sheetGrip"></div>
+    <h3>Datos</h3>
+    <div class="statrow"><span>Filas</span><b id="sdRows">0</b></div>
+    <div class="statrow"><span>Columnas</span><b id="sdCols">0</b></div>
+    <div class="statrow" id="sdFilterRow" hidden><span>Filtro</span><b id="sdFilter"></b></div>
+    <h3>Selección</h3>
+    <div class="statrow"><span>Tamaño</span><b id="sdSel">1×1</b></div>
+    <div class="statrow"><span>No vacíos</span><b id="stCnt">0</b></div>
+    <h3>Estadísticas numéricas</h3>
+    <div class="statrow"><span>Valores núm.</span><b id="stCntN">0</b></div>
+    <div class="statrow"><span>Suma</span><b id="stSum">—</b></div>
+    <div class="statrow"><span>Promedio</span><b id="stAvg">—</b></div>
+    <div class="statrow"><span>Mínimo</span><b id="stMin">—</b></div>
+    <div class="statrow"><span>Máximo</span><b id="stMax">—</b></div>
+    <div class="statrow"><span>Mediana</span><b id="stMed">—</b></div>
   </aside>
 
-  <div class="tw" id="tw">
-    <div class="drop-ov" id="dropOv">
-      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--accent);opacity:.7"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-      <div class="drop-txt">Suelta el archivo aquí</div>
+  <div id="findWrap" hidden role="search" aria-label="Buscar en la tabla">
+    <div class="row">
+      <input id="findInp" type="search" placeholder="Buscar…" autocomplete="off" aria-label="Texto a buscar">
+      <span id="findCount" aria-live="polite">0 coincidencias</span>
+      <button class="btn icon" id="btnFPrev" title="Anterior (Shift+Enter)">↑</button>
+      <button class="btn icon" id="btnFNext" title="Siguiente (Enter)">↓</button>
+      <button class="btn icon" id="btnTglRepl" title="Mostrar reemplazo" aria-expanded="false">⇄</button>
+      <button class="btn icon" id="btnFClose" title="Cerrar (Escape)">✕</button>
     </div>
-    <div class="empty" id="empty">
-      <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=".8" style="opacity:.3"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-      <h2>Sin datos</h2>
-      <p>Pega datos desde Excel o cualquier tabla, abre un archivo CSV, o arrastra un fichero aquí.</p>
-      <button class="btn accent" onclick="E.pastePrompt()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        Pegar datos
-      </button>
+    <div class="row" id="replRow" hidden>
+      <input id="replInp" type="search" placeholder="Reemplazar por…" autocomplete="off" aria-label="Texto de reemplazo">
+      <button class="btn" id="btnRepl">Reemplazar</button>
+      <button class="btn" id="btnReplAll">Todo</button>
     </div>
-    <!-- Selection overlay -->
-    <div id="sel-ov">
-      <div class="sh sh-tl" id="shTL"></div>
-      <div class="sh sh-br" id="shBR"></div>
-    </div>
-    <!-- Floating cell editor -->
-    <input id="ced" type="text" autocomplete="off" autocorrect="off" spellcheck="false">
-    <!-- Table -->
-    <table class="dt" id="dt" style="display:none">
-      <thead id="dtHead"></thead>
-      <tbody id="dtBody"></tbody>
+  </div>
+</div>
+
+<div id="dropOverlay" hidden><div class="card">Suelta aquí para importar</div></div>
+<div id="toasts" aria-live="polite"></div>
+<div id="ctxMenu" class="menu" hidden role="menu"></div>
+<div id="colMenu" class="menu" hidden role="menu"></div>
+<div id="cfgMenu" class="menu" hidden>
+  <div class="mlabel">Preferencias</div>
+  <div class="mrow"><span style="font-size:.78rem;color:var(--text2);min-width:88px">Decimales</span>
+    <select id="decSel" title="Separador decimal para reconocer números">
+      <option value="auto">Auto (locale)</option>
+      <option value="coma">Coma (1.234,5)</option>
+      <option value="punto">Punto (1,234.5)</option>
+    </select></div>
+  <div class="mrow"><span style="font-size:.78rem;color:var(--text2);min-width:88px">Tema</span>
+    <select id="themeSel"><option value="auto">Auto</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div>
+</div>
+
+<dialog id="dlgExport" aria-labelledby="dlgExportT">
+  <div class="dhead"><h2 id="dlgExportT">Exportar datos</h2><button class="dclose" data-close>✕</button></div>
+  <div class="dbody">
+    <div class="frow"><label>Formato</label>
+      <span class="seg" id="expFmt">
+        <button data-v="csv" aria-pressed="true">CSV</button>
+        <button data-v="tsv" aria-pressed="false">TSV</button>
+        <button data-v="markdown" aria-pressed="false">Markdown</button>
+        <button data-v="json" aria-pressed="false">JSON</button>
+      </span></div>
+    <div class="frow"><label>Ámbito</label>
+      <span class="seg" id="expScope">
+        <button data-v="all" aria-pressed="true">Toda la tabla</button>
+        <button data-v="sel" aria-pressed="false">Solo la selección</button>
+      </span></div>
+    <div class="frow expcsv"><label for="expDelim">Delimitador</label>
+      <select id="expDelim">
+        <option value=";">Punto y coma (;) — Excel en español</option>
+        <option value=",">Coma (,) — estándar RFC 4180</option>
+      </select></div>
+    <div class="frow expcsv"><label></label>
+      <label class="chk"><input type="checkbox" id="expBom" checked> Añadir BOM UTF-8</label>
+      <span class="hint">Necesario para que Excel muestre correctamente tildes y eñes. Desactívalo solo si otro programa lo rechaza.</span></div>
+    <div class="frow expcsvtsv"><label></label>
+      <label class="chk"><input type="checkbox" id="expInject"> Neutralizar fórmulas (seguridad)</label>
+      <span class="hint">Antepone <code>'</code> a celdas que empiezan por <code>=</code> <code>+</code> <code>-</code> <code>@</code> para que Excel no las ejecute como fórmulas (mitigación de CSV injection). Los números negativos no se modifican.</span></div>
+    <div class="frow"><label for="expName">Nombre</label><input id="expName" style="flex:1;padding:5px 9px" spellcheck="false"></div>
+  </div>
+  <div class="dfoot">
+    <button class="btn" id="btnExpCopy" title="Copiar el resultado al portapapeles">Copiar al portapapeles</button>
+    <button class="btn primary" id="btnExpDownload">Descargar</button>
+  </div>
+</dialog>
+
+<dialog id="dlgConfirm" aria-labelledby="dlgConfirmT">
+  <div class="dhead"><h2 id="dlgConfirmT">Confirmar</h2><button class="dclose" data-close>✕</button></div>
+  <div class="dbody"><p id="confirmMsg" style="line-height:1.6"></p></div>
+  <div class="dfoot"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="btnConfirmOk">Aceptar</button></div>
+</dialog>
+
+<dialog id="dlgGoto" aria-labelledby="dlgGotoT">
+  <div class="dhead"><h2 id="dlgGotoT">Ir a celda</h2><button class="dclose" data-close>✕</button></div>
+  <div class="dbody">
+    <div class="frow"><label for="gotoInp">Referencia</label>
+      <input id="gotoInp" placeholder="Ej.: A1500 o C7" style="width:140px;padding:5px 9px" spellcheck="false" autocomplete="off"></div>
+    <p style="font-size:.76rem;color:var(--text3)">Columna por letra + fila por número (sin contar el encabezado).</p>
+  </div>
+  <div class="dfoot"><button class="btn primary" id="btnGotoOk">Ir</button></div>
+</dialog>
+
+<dialog id="dlgPaste" aria-labelledby="dlgPasteT">
+  <div class="dhead"><h2 id="dlgPasteT">Pegar datos</h2><button class="dclose" data-close>✕</button></div>
+  <div class="dbody">
+    <p style="margin-bottom:9px;color:var(--text2)">Pega aquí tus datos (<kbd>Ctrl+V</kbd>). Se detectará el delimitador automáticamente.</p>
+    <textarea id="pasteTa" rows="9" style="width:100%;padding:8px;font-family:ui-monospace,Consolas,monospace;font-size:.8rem" spellcheck="false"></textarea>
+  </div>
+  <div class="dfoot"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="btnPasteOk">Importar</button></div>
+</dialog>
+
+<dialog id="dlgHelp" aria-labelledby="dlgHelpT">
+  <div class="dhead"><h2 id="dlgHelpT">Ayuda · CSV Editor</h2><button class="dclose" data-close>✕</button></div>
+  <div class="dbody">
+    <h3 style="margin-top:0">Atajos de teclado</h3>
+    <table>
+      <tr><td>Editar celda</td><td><kbd>F2</kbd> / doble clic / escribir</td></tr>
+      <tr><td>Confirmar y bajar / subir</td><td><kbd>Enter</kbd> / <kbd>Shift+Enter</kbd></td></tr>
+      <tr><td>Confirmar y derecha / izquierda</td><td><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd></td></tr>
+      <tr><td>Salto de línea dentro de la celda</td><td><kbd>Alt+Enter</kbd></td></tr>
+      <tr><td>Cancelar edición</td><td><kbd>Escape</kbd></td></tr>
+      <tr><td>Mover celda activa</td><td>Flechas</td></tr>
+      <tr><td>Saltar al borde del bloque de datos</td><td><kbd>Ctrl</kbd>+Flechas</td></tr>
+      <tr><td>Primera columna de la fila</td><td><kbd>Home</kbd></td></tr>
+      <tr><td>Celda A1 / última celda con datos</td><td><kbd>Ctrl+Home</kbd> / <kbd>Ctrl+End</kbd></td></tr>
+      <tr><td>Desplazar la vista</td><td><kbd>Re Pág</kbd> / <kbd>Av Pág</kbd></td></tr>
+      <tr><td>Extender selección</td><td><kbd>Shift</kbd>+Flechas / <kbd>Shift</kbd>+Clic</td></tr>
+      <tr><td>Seleccionar todo</td><td><kbd>Ctrl+A</kbd></td></tr>
+      <tr><td>Seleccionar fila / columna</td><td>Clic en su cabecera</td></tr>
+      <tr><td>Copiar / Pegar</td><td><kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd></td></tr>
+      <tr><td>Vaciar celdas seleccionadas</td><td><kbd>Supr</kbd></td></tr>
+      <tr><td>Vaciar celda y editar</td><td><kbd>Retroceso</kbd></td></tr>
+      <tr><td>Deshacer / Rehacer</td><td><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd></td></tr>
+      <tr><td>Buscar / Reemplazar</td><td><kbd>Ctrl+F</kbd> / <kbd>Ctrl+H</kbd></td></tr>
+      <tr><td>Ir a celda</td><td><kbd>Ctrl+G</kbd></td></tr>
+      <tr><td>Exportación rápida (última config.)</td><td><kbd>Ctrl+S</kbd></td></tr>
+      <tr><td>Menú contextual</td><td><kbd>Shift+F10</kbd> / clic derecho / toque largo</td></tr>
     </table>
+    <h3>Cómo funciona</h3>
+    <ul>
+      <li><b>Fidelidad de datos:</b> la app nunca transforma el contenido. Un código postal <code>09001</code> en una columna numérica se exporta como <code>09001</code>. Los tipos de columna solo afectan a la alineación, a la ordenación y a las estadísticas.</li>
+      <li><b>Ordenar</b> reordena los datos de verdad (como una hoja de cálculo). Se puede deshacer con <kbd>Ctrl+Z</kbd>, que restaura el orden exacto anterior. Con filtro activo, se ordena la tabla completa y el filtro se vuelve a aplicar.</li>
+      <li><b>Filtrar</b> solo oculta filas: no modifica ni borra datos. Al pegar con un filtro activo, los datos van únicamente a las filas visibles.</li>
+      <li><b>Tipos de columna:</b> se autodetectan (≥ 90 % de valores conformes) y pueden forzarse desde la toolbar o el menú de columna. Se conservan en el autoguardado, pero no viajan dentro del CSV exportado (el formato no admite metadatos).</li>
+      <li><b>Excel en español:</b> exporta con delimitador <code>;</code> y BOM UTF-8 (valores por defecto) para que Excel abra el archivo correctamente en una tabla y con acentos legibles.</li>
+      <li><b>Autoguardado:</b> usa IndexedDB y, si no está disponible (ocurre con <code>file://</code> en algunos navegadores), localStorage. Si ninguno funciona o el archivo es demasiado grande, el indicador del encabezado lo avisa: exporta manualmente con frecuencia.</li>
+      <li><b>Al cerrar la pestaña</b> con cambios sin guardar, el navegador muestra su aviso genérico (los navegadores ya no permiten mensajes personalizados).</li>
+    </ul>
   </div>
-</div>
+  <div class="dfoot"><button class="btn primary" data-close>Cerrar</button></div>
+</dialog>
 
-<!-- CONTEXT MENU -->
-<div class="cmenu" id="cmenu">
-  <div class="ci" onclick="E.copy('tab')">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-    Copiar<span class="cshort">Ctrl+C</span>
-  </div>
-  <div class="ci" onclick="E.copy('csv')">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-    Copiar como CSV
-  </div>
-  <div class="ci" onclick="E.copy('md')">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    Copiar como Markdown
-  </div>
-  <div class="csep"></div>
-  <div class="ci" onclick="E.pastePrompt()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-    Pegar<span class="cshort">Ctrl+V</span>
-  </div>
-  <div class="csep"></div>
-  <div class="ci" id="cmInsert1" onclick="E.ctxInsertBefore()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Insertar fila arriba
-  </div>
-  <div class="ci" id="cmInsert2" onclick="E.ctxInsertAfter()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Insertar fila abajo
-  </div>
-  <div class="csep"></div>
-  <div class="ci" onclick="E.clearCells()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-    Vaciar contenido<span class="cshort">Del</span>
-  </div>
-  <div class="ci" onclick="E.deleteRows()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-    Eliminar filas
-  </div>
-</div>
-
-<!-- EXPORT MODAL -->
-<div class="moverlay" id="expModal">
-  <div class="modal">
-    <div class="mhdr">
-      <h3 class="mtitle" id="expTitle">Exportar</h3>
-      <button class="mclose" onclick="E.closeModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
-    <div class="mbody"><textarea class="txprev" id="expPrev" readonly></textarea></div>
-    <div class="mfoot">
-      <button class="btn" onclick="E.closeModal()">Cerrar</button>
-      <button class="btn" onclick="E.copyExport()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        Copiar
-      </button>
-      <button class="btn primary" onclick="E.downloadExport()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Descargar
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- HELP MODAL -->
-<div class="moverlay" id="helpModal">
-  <div class="modal wide">
-    <div class="mhdr">
-      <h3 class="mtitle">Ayuda — Atajos y funciones</h3>
-      <button class="mclose" onclick="E.closeHelp()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
-    <div class="mbody">
-      <div class="hsec"><h4>Edición de celdas</h4><ul>
-        <li><kbd>F2</kbd> o doble clic/tap — entrar en modo edición</li>
-        <li><kbd>Escape</kbd> — cancelar edición sin guardar</li>
-        <li><kbd>Enter</kbd> — confirmar y bajar</li>
-        <li><kbd>Shift+Enter</kbd> — confirmar y subir</li>
-        <li><kbd>Tab</kbd> — confirmar y moverse a la derecha</li>
-        <li><kbd>Shift+Tab</kbd> — confirmar y moverse a la izquierda</li>
-        <li>Cualquier tecla — reemplaza el contenido de la celda activa</li>
-      </ul></div>
-      <div class="hsec"><h4>Navegación</h4><ul>
-        <li><kbd>↑ ↓ ← →</kbd> — mover celda activa</li>
-        <li><kbd>Ctrl+↑↓←→</kbd> — saltar al borde del bloque de datos</li>
-        <li><kbd>Home</kbd> — ir a la primera columna de la fila</li>
-        <li><kbd>Ctrl+Home</kbd> — ir a la celda A1</li>
-        <li><kbd>Ctrl+End</kbd> — ir a la última celda con datos</li>
-        <li><kbd>Page Up / Page Down</kbd> — desplazar vista</li>
-      </ul></div>
-      <div class="hsec"><h4>Selección</h4><ul>
-        <li><kbd>Shift+↑↓←→</kbd> — extender selección</li>
-        <li><kbd>Shift+Clic</kbd> — extender selección hasta el clic</li>
-        <li><kbd>Ctrl+A</kbd> — seleccionar todo</li>
-        <li>Clic en número de fila — seleccionar fila completa</li>
-        <li>Clic en nombre de columna — seleccionar columna completa</li>
-        <li>Arrastrar tiradores — redimensionar selección con ratón o dedo</li>
-        <li>Arrastrar sobre celdas — seleccionar rango</li>
-      </ul></div>
-      <div class="hsec"><h4>Acciones</h4><ul>
-        <li><kbd>Ctrl+C</kbd> — copiar selección (formato tabulado)</li>
-        <li><kbd>Ctrl+V</kbd> — pegar desde portapapeles</li>
-        <li><kbd>Delete</kbd> — vaciar celdas seleccionadas</li>
-        <li><kbd>Backspace</kbd> — vaciar celda activa y editar</li>
-        <li><kbd>Ctrl+Z</kbd> — deshacer</li>
-        <li><kbd>Ctrl+Y</kbd> o <kbd>Ctrl+Shift+Z</kbd> — rehacer</li>
-      </ul></div>
-      <div class="hsec"><h4>Ordenar y filtrar</h4><ul>
-        <li>Clic en el icono de flecha del encabezado — ordenar por columna</li>
-        <li>Campo de texto bajo el encabezado — filtrar por columna</li>
-        <li>Clic derecho — menú contextual con más opciones</li>
-      </ul></div>
-    </div>
-    <div class="mfoot"><button class="btn primary" onclick="E.closeHelp()">Entendido</button></div>
-  </div>
-</div>
-
-
-<!-- PASTE MODAL -->
-<div class="moverlay" id="pasteModal">
-  <div class="modal">
-    <div class="mhdr">
-      <h3 class="mtitle">Pegar datos</h3>
-      <button class="mclose" onclick="E.closePasteModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
-    <div class="mbody">
-      <p style="font-size:.85rem;color:var(--text2);margin-bottom:10px">Pega aquí tus datos (desde Excel, Calc, CSV…) y pulsa <strong style="color:var(--text1)">Importar</strong>.</p>
-      <textarea class="txprev" id="pasteArea" placeholder="Pega aquí con Ctrl+V o pulsación larga…" style="min-height:220px;resize:vertical"></textarea>
-    </div>
-    <div class="mfoot">
-      <button class="btn" onclick="E.closePasteModal()">Cancelar</button>
-      <button class="btn primary" onclick="E.confirmPaste()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-        Importar
-      </button>
-    </div>
-  </div>
-</div>
-
-<input type="file" id="fileIn" accept=".csv,.txt,.tsv" style="display:none" onchange="E.handleFile(event)">
-
-<div class="toast" id="toast">
-  <span class="ti" id="toastIcon">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-  </span>
-  <span id="toastMsg">OK</span>
-</div>
+<input type="file" id="fileInput" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" hidden>
+<div id="sr" class="sr-only" aria-live="polite"></div>
 
 <script>
 'use strict';
-// =====================================================
-// CSV EDITOR — complete rewrite with Excel behaviours
-// =====================================================
-class CSVEditor {
-  constructor() {
-    this.data = [];
-    this.hasHeader = true;
-    this.filters = {};
-    this.sortCol = -1;
-    this.sortDir = 'asc';
-    this.hist = [];
-    this.hIdx = -1;
-    this.maxHist = 100;
-    // Selection: anchor + active define the range
-    this.anchor = null;   // {r,c}
-    this.active = null;   // {r,c}
-    // Editing
-    this.editing = null;  // {r,c}
-    // Export
-    this.expContent = '';
-    this.expType = '';
-    // Mouse drag state
-    this.mdown = false;
-    this.mstart = null;
-    // Handle drag
-    this.hdrag = null;    // 'tl'|'br'
-    this.hfixed = null;   // fixed corner when dragging handle
-    // Touch double-tap
-    this.lastTap = 0;
-    this.lastTapRC = null;
-    // Toast timer
-    this._tt = null;
-    this.init();
-  }
-
-  // ---- INIT ----
-  init() {
-    this.bindEvents();
-    this.loadSample();
-  }
-
-  loadSample() {
-    this.data = [
-      ['Nombre','Edad','Ciudad','Salario'],
-      ['Juan Pérez','28','Madrid','35000'],
-      ['María García','34','Barcelona','42000'],
-      ['Carlos López','45','Valencia','55000'],
-      ['Ana Martínez','31','Sevilla','38000']
-    ];
-    this.saveState();
-    this.render();
-  }
-
-  // ---- HISTORY ----
-  saveState() {
-    if (this.hIdx < this.hist.length - 1) this.hist = this.hist.slice(0, this.hIdx + 1);
-    this.hist.push({ data: JSON.parse(JSON.stringify(this.data)), hdr: this.hasHeader });
-    if (this.hist.length > this.maxHist) this.hist.shift(); else this.hIdx++;
-    this.updStats();
-  }
-
-  undo() {
-    if (this.hIdx > 0) {
-      this.hIdx--;
-      const s = this.hist[this.hIdx];
-      this.data = JSON.parse(JSON.stringify(s.data));
-      this.hasHeader = s.hdr;
-      document.getElementById('hasHeader').checked = this.hasHeader;
-      this.clearSel(); this.render(); this.toast('Deshacer', 'success');
-    }
-  }
-
-  redo() {
-    if (this.hIdx < this.hist.length - 1) {
-      this.hIdx++;
-      const s = this.hist[this.hIdx];
-      this.data = JSON.parse(JSON.stringify(s.data));
-      this.hasHeader = s.hdr;
-      document.getElementById('hasHeader').checked = this.hasHeader;
-      this.clearSel(); this.render(); this.toast('Rehacer', 'success');
-    }
-  }
-
-  // ---- RENDER ----
-  render() {
-    if (this.editing) this.commitEdit();
-    const empty = this.data.length === 0;
-    document.getElementById('empty').style.display = empty ? 'flex' : 'none';
-    document.getElementById('dt').style.display = empty ? 'none' : 'table';
-    if (!empty) { this.renderHead(); this.renderBody(); }
-    this.updStats();
-    this.updSelInfo();
-    this.updOverlay();
-  }
-
-  renderHead() {
-    const thead = document.getElementById('dtHead');
-    thead.innerHTML = '';
-    const tr = document.createElement('tr');
-
-    // Corner
-    const corner = document.createElement('th');
-    corner.className = 'corner';
-    corner.title = 'Seleccionar todo (Ctrl+A)';
-    corner.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="opacity:.35;display:block;margin:auto"><rect x="2" y="2" width="8" height="8"/><rect x="14" y="2" width="8" height="8"/><rect x="2" y="14" width="8" height="8"/><rect x="14" y="14" width="8" height="8"/></svg>`;
-    corner.onclick = () => this.selAll();
-    tr.appendChild(corner);
-
-    const nCols = this.data[0]?.length || 0;
-    for (let c = 0; c < nCols; c++) {
-      const th = document.createElement('th');
-      th.className = 'ch';
-      th.dataset.col = c;
-
-      const label = this.hasHeader ? (this.data[0][c] || `Col ${c+1}`) : this.colLetter(c);
-      const isSorted = this.sortCol === c;
-      const sortSvg = isSorted
-        ? (this.sortDir === 'asc'
-            ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>`
-            : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>`)
-        : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg>`;
-
-      th.innerHTML = `<div class="ch-in">
-        <div class="ch-name-row">
-          <span class="ch-lbl" data-selcol="${c}" title="Clic: seleccionar columna">${this.esc(label)}</span>
-          <span class="sort-btn${isSorted?' on':''}" data-sortcol="${c}" title="Ordenar">${sortSvg}</span>
-        </div>
-        <div class="ch-filter"><input type="text" placeholder="Filtrar…" value="${this.filters[c]||''}" data-fcol="${c}"></div>
-      </div>`;
-
-      th.querySelector('.ch-lbl').addEventListener('mousedown', e => {
-        e.preventDefault(); e.stopPropagation();
-        this.selCol(c, e.shiftKey);
-      });
-      th.querySelector('.sort-btn').addEventListener('mousedown', e => {
-        e.preventDefault(); e.stopPropagation();
-        this.sortByCol(c);
-      });
-      th.querySelector('input[data-fcol]').addEventListener('input', e => {
-        const fc = parseInt(e.target.dataset.fcol);
-        e.target.value ? (this.filters[fc] = e.target.value) : delete this.filters[fc];
-        this.renderBody();
-      });
-
-      tr.appendChild(th);
-    }
-    thead.appendChild(tr);
-  }
-
-  renderBody() {
-    const tbody = document.getElementById('dtBody');
-    tbody.innerHTML = '';
-    let rows = this.filteredData();
-    if (this.sortCol >= 0) rows = this.sortedData(rows);
-
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      const ri = this.data.indexOf(row);
-      if (this.hasHeader && ri === 0) continue;
-
-      const tr = document.createElement('tr');
-
-      // Row header
-      const rh = document.createElement('td');
-      rh.className = 'rh';
-      rh.dataset.ri = ri;
-      rh.textContent = this.hasHeader ? ri : ri + 1;
-      rh.addEventListener('mousedown', e => { e.preventDefault(); this.selRow(ri, e.shiftKey); });
-      tr.appendChild(rh);
-
-      // Data cells
-      for (let c = 0; c < row.length; c++) {
-        const td = document.createElement('td');
-        td.className = 'dc';
-        td.dataset.r = ri;
-        td.dataset.c = c;
-        const cv = document.createElement('div');
-        cv.className = 'cv';
-        cv.textContent = row[c] || '';
-        td.appendChild(cv);
-        tr.appendChild(td);
-      }
-      tbody.appendChild(tr);
-    }
-    this.applySelStyle();
-  }
-
-  filteredData() {
-    return this.data.filter((row, idx) => {
-      if (this.hasHeader && idx === 0) return true;
-      for (const col in this.filters) {
-        const f = this.filters[col].toLowerCase();
-        if (f && !(row[col] || '').toLowerCase().includes(f)) return false;
-      }
-      return true;
-    });
-  }
-
-  sortedData(rows) {
-    return [...rows].sort((a, b) => {
-      if (this.hasHeader) {
-        if (this.data.indexOf(a) === 0) return -1;
-        if (this.data.indexOf(b) === 0) return 1;
-      }
-      let va = a[this.sortCol] || '', vb = b[this.sortCol] || '';
-      const na = parseFloat(va.replace(/[,\s]/g,'')), nb = parseFloat(vb.replace(/[,\s]/g,''));
-      if (!isNaN(na) && !isNaN(nb)) return this.sortDir === 'asc' ? na-nb : nb-na;
-      va = va.toLowerCase(); vb = vb.toLowerCase();
-      return va < vb ? (this.sortDir==='asc'?-1:1) : va > vb ? (this.sortDir==='asc'?1:-1) : 0;
-    });
-  }
-
-  sortByCol(col) {
-    this.sortCol === col ? (this.sortDir = this.sortDir==='asc'?'desc':'asc') : (this.sortCol=col, this.sortDir='asc');
-    this.render();
-  }
-
-  // ---- SELECTION ----
-  range() {
-    if (!this.anchor || !this.active) return null;
-    return {
-      r0: Math.min(this.anchor.r, this.active.r),
-      r1: Math.max(this.anchor.r, this.active.r),
-      c0: Math.min(this.anchor.c, this.active.c),
-      c1: Math.max(this.anchor.c, this.active.c)
-    };
-  }
-
-  applySelStyle() {
-    document.querySelectorAll('td.dc.insel,td.dc.actcell').forEach(el => el.classList.remove('insel','actcell'));
-    document.querySelectorAll('td.rh.rsel').forEach(el => el.classList.remove('rsel'));
-    const rng = this.range();
-    if (!rng) return;
-    for (let r = rng.r0; r <= rng.r1; r++) {
-      for (let c = rng.c0; c <= rng.c1; c++) {
-        const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
-        if (td) {
-          td.classList.add('insel');
-          if (this.active && r === this.active.r && c === this.active.c) td.classList.add('actcell');
-        }
-      }
-      const rh = document.querySelector(`td.rh[data-ri="${r}"]`);
-      if (rh) rh.classList.add('rsel');
-    }
-  }
-
-  setSel(anchor, active, extend) {
-    if (extend && this.anchor) { this.active = active; }
-    else { this.anchor = anchor; this.active = active; }
-    this.applySelStyle();
-    this.updSelInfo();
-    this.updOverlay();
-    this.updFbar();
-  }
-
-  clearSel() {
-    this.anchor = null; this.active = null;
-    this.applySelStyle();
-    this.updSelInfo();
-    this.updOverlay();
-    this.updFbar();
-  }
-
-  selCell(r, c, extend) {
-    const sr = this.hasHeader ? 1 : 0;
-    const mr = this.data.length - 1;
-    const mc = (this.data[0]?.length || 1) - 1;
-    r = Math.max(sr, Math.min(mr, r));
-    c = Math.max(0, Math.min(mc, c));
-    this.setSel({r,c}, {r,c}, extend);
-    this.scrollTo(r, c);
-  }
-
-  selRow(ri, extend) {
-    const mc = (this.data[0]?.length || 1) - 1;
-    if (extend && this.anchor) {
-      this.active = {r: ri, c: mc};
-      if (this.anchor.c !== 0) this.anchor = {r: this.anchor.r, c: 0};
-    } else {
-      this.anchor = {r: ri, c: 0};
-      this.active = {r: ri, c: mc};
-    }
-    this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
-  }
-
-  selCol(ci, extend) {
-    const sr = this.hasHeader ? 1 : 0;
-    const mr = this.data.length - 1;
-    if (extend && this.anchor) {
-      this.active = {r: mr, c: ci};
-    } else {
-      this.anchor = {r: sr, c: ci};
-      this.active = {r: mr, c: ci};
-    }
-    this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
-  }
-
-  selAll() {
-    const sr = this.hasHeader ? 1 : 0;
-    this.anchor = {r: sr, c: 0};
-    this.active = {r: this.data.length-1, c: (this.data[0]?.length||1)-1};
-    this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
-  }
-
-  moveActive(dr, dc, extend, jump) {
-    if (!this.active) { this.selCell(this.hasHeader?1:0, 0, false); return; }
-    let {r, c} = this.active;
-    const sr = this.hasHeader ? 1 : 0;
-    const mr = this.data.length - 1;
-    const mc = (this.data[0]?.length || 1) - 1;
-    if (jump) {
-      if (dr > 0) r = mr; else if (dr < 0) r = sr;
-      else if (dc > 0) c = mc; else if (dc < 0) c = 0;
-    } else {
-      r = Math.max(sr, Math.min(mr, r + dr));
-      c = Math.max(0, Math.min(mc, c + dc));
-    }
-    if (extend) {
-      this.active = {r, c};
-      this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
-    } else {
-      this.selCell(r, c, false);
-    }
-    this.scrollTo(r, c);
-  }
-
-  scrollTo(r, c) {
-    const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
-    if (td) td.scrollIntoView({block:'nearest', inline:'nearest'});
-  }
-
-  // ---- OVERLAY ----
-  updOverlay() {
-    const ov = document.getElementById('sel-ov');
-    const rng = this.range();
-    if (!rng) { ov.style.display = 'none'; return; }
-
-    const tl = document.querySelector(`td.dc[data-r="${rng.r0}"][data-c="${rng.c0}"]`);
-    const br = document.querySelector(`td.dc[data-r="${rng.r1}"][data-c="${rng.c1}"]`);
-    if (!tl || !br) { ov.style.display = 'none'; return; }
-
-    const tw = document.getElementById('tw');
-    const wr = tw.getBoundingClientRect();
-    const tr = tl.getBoundingClientRect();
-    const brr = br.getBoundingClientRect();
-
-    ov.style.display = 'block';
-    ov.style.left = (tr.left - wr.left + tw.scrollLeft) + 'px';
-    ov.style.top  = (tr.top  - wr.top  + tw.scrollTop)  + 'px';
-    ov.style.width  = (brr.right  - tr.left) + 'px';
-    ov.style.height = (brr.bottom - tr.top)  + 'px';
-  }
-
-  // ---- FORMULA BAR ----
-  updFbar() {
-    const nb = document.getElementById('nameBox');
-    const fv = document.getElementById('fbarVal');
-    if (!this.active) { nb.textContent = '—'; fv.textContent = '—'; return; }
-    const {r, c} = this.active;
-    nb.textContent = this.colLetter(c) + (r + 1);
-    fv.textContent = this.data[r]?.[c] ?? '';
-  }
-
-  // ---- STATS ----
-  updStats() {
-    document.getElementById('sRows').textContent = this.data.length;
-    document.getElementById('sCols').textContent = this.data[0]?.length || 0;
-    this.calcStats();
-  }
-
-  calcStats() {
-    const rng = this.range();
-    const ids = ['sSum','sAvg','sMin','sMax'];
-    if (!rng) { ids.forEach(id => document.getElementById(id).textContent = '—'); return; }
-    const nums = [];
-    for (let r = rng.r0; r <= rng.r1; r++)
-      for (let c = rng.c0; c <= rng.c1; c++) {
-        const v = parseFloat((this.data[r]?.[c]||'').replace(/[,\s]/g,''));
-        if (!isNaN(v)) nums.push(v);
-      }
-    if (!nums.length) { ids.forEach(id => document.getElementById(id).textContent = '—'); return; }
-    const sum = nums.reduce((a,b)=>a+b,0);
-    document.getElementById('sSum').textContent = this.fmt(sum);
-    document.getElementById('sAvg').textContent = this.fmt(sum/nums.length);
-    document.getElementById('sMin').textContent = this.fmt(Math.min(...nums));
-    document.getElementById('sMax').textContent = this.fmt(Math.max(...nums));
-  }
-
-  updSelInfo() {
-    const rng = this.range();
-    const badge = document.getElementById('selBadge');
-    const sel = document.getElementById('sSel');
-    if (!rng) { badge.textContent = 'Sin selección'; sel.textContent = '0'; return; }
-    const nr = rng.r1-rng.r0+1, nc = rng.c1-rng.c0+1, tot = nr*nc;
-    badge.textContent = tot===1 ? '1 celda' : `${nr}×${nc} = ${tot} celdas`;
-    sel.textContent = tot;
-    this.calcStats();
-  }
-
-  // ---- CELL EDITING ----
-  startEdit(r, c, initVal) {
-    if (this.editing) this.commitEdit();
-    const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
-    if (!td) return;
-    this.editing = {r, c};
-    const tw = document.getElementById('tw');
-    const wr = tw.getBoundingClientRect();
-    const tr2 = td.getBoundingClientRect();
-    const ced = document.getElementById('ced');
-    ced.style.display = 'block';
-    ced.style.left   = (tr2.left - wr.left + tw.scrollLeft) + 'px';
-    ced.style.top    = (tr2.top  - wr.top  + tw.scrollTop)  + 'px';
-    ced.style.width  = Math.max(tr2.width, 100) + 'px';
-    ced.style.height = tr2.height + 'px';
-    ced.value = initVal !== undefined ? initVal : (this.data[r]?.[c] || '');
-    ced.focus();
-    if (initVal !== undefined) {
-      ced.setSelectionRange(ced.value.length, ced.value.length);
-    } else {
-      ced.select();
-    }
-  }
-
-  commitEdit(dr, dc) {
-    if (!this.editing) return;
-    const {r, c} = this.editing;
-    const ced = document.getElementById('ced');
-    const val = ced.value;
-    if (this.data[r] && val !== this.data[r][c]) {
-      this.data[r][c] = val;
-      this.saveState();
-    }
-    // Update cell view
-    const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
-    if (td) td.querySelector('.cv').textContent = val;
-    // Update header if header row
-    if (this.hasHeader && r === 0) this.renderHead();
-    // Update formula bar
-    if (this.active && this.active.r === r && this.active.c === c)
-      document.getElementById('fbarVal').textContent = val;
-
-    ced.style.display = 'none';
-    this.editing = null;
-    if (dr !== undefined && dc !== undefined) this.moveActive(dr, dc, false, false);
-    this.updStats();
-  }
-
-  cancelEdit() {
-    if (!this.editing) return;
-    document.getElementById('ced').style.display = 'none';
-    this.editing = null;
-  }
-
-  // ---- EVENTS ----
-  bindEvents() {
-    const tw = document.getElementById('tw');
-
-    // Mouse on table wrapper
-    tw.addEventListener('mousedown', e => this.onMD(e));
-    tw.addEventListener('mousemove', e => this.onMM(e));
-    document.addEventListener('mouseup', () => { this.mdown = false; this.mstart = null; });
-
-    // Touch
-    tw.addEventListener('touchstart', e => this.onTS(e), {passive:false});
-    tw.addEventListener('touchmove',  e => this.onTM(e), {passive:false});
-    document.addEventListener('touchend', () => { /* handled in onTouchEnd via closure */ });
-
-    // Double-click
-    document.getElementById('dt').addEventListener('dblclick', e => {
-      const td = e.target.closest('td.dc');
-      if (td) this.startEdit(+td.dataset.r, +td.dataset.c);
-    });
-
-    // Right-click: do NOT clear selection
-    tw.addEventListener('contextmenu', e => {
-      e.preventDefault();
-      const th = e.target.closest('th.ch');
-      this.menuColCtx = th ? parseInt(th.dataset.col) : null;
-      this.showMenu(e.clientX, e.clientY);
-    });
-
-    // Hide context menu on outside click
-    document.addEventListener('mousedown', e => {
-      if (!e.target.closest('#cmenu')) this.hideMenu();
-    });
-
-    // Cell editor blur
-    const ced = document.getElementById('ced');
-    ced.addEventListener('blur', () => { if (this.editing) this.commitEdit(); });
-
-    // Keyboard
-    document.addEventListener('keydown', e => this.onKey(e));
-
-    // Paste
-    document.addEventListener('paste', e => this.onPaste(e));
-
-    // Handle drag
-    this.bindHandles();
-
-    // Drag and drop files
-    this.bindDrop();
-
-    // Scroll: reposition overlay and cell editor
-    tw.addEventListener('scroll', () => {
-      this.updOverlay();
-      if (this.editing) this.repositionEditor();
-    });
-
-    // Window resize
-    window.addEventListener('resize', () => {
-      this.updOverlay();
-      if (this.editing) this.repositionEditor();
-    });
-  }
-
-  repositionEditor() {
-    const {r, c} = this.editing;
-    const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
-    if (!td) return;
-    const tw = document.getElementById('tw');
-    const wr = tw.getBoundingClientRect();
-    const tr = td.getBoundingClientRect();
-    const ced = document.getElementById('ced');
-    ced.style.left = (tr.left - wr.left + tw.scrollLeft) + 'px';
-    ced.style.top  = (tr.top  - wr.top  + tw.scrollTop)  + 'px';
-  }
-
-  onMD(e) {
-    if (e.button === 2) return; // right-click: do not alter selection
-    if (e.target.closest('.sh')) return; // handle drag handled separately
-    const td = e.target.closest('td.dc');
-    if (!td) return;
-    const r = +td.dataset.r, c = +td.dataset.c;
-    if (this.editing) this.commitEdit();
-    if (e.shiftKey && this.anchor) {
-      this.active = {r, c};
-      this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
-    } else {
-      this.selCell(r, c, false);
-    }
-    this.mdown = true;
-    this.mstart = {r, c};
-    e.preventDefault();
-  }
-
-  onMM(e) {
-    if (!this.mdown || !this.mstart) return;
-    const td = e.target.closest('td.dc');
-    if (!td) return;
-    const r = +td.dataset.r, c = +td.dataset.c;
-    if (!this.active || r !== this.active.r || c !== this.active.c) {
-      this.active = {r, c};
-      if (!this.anchor) this.anchor = this.mstart;
-      this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
-    }
-  }
-
-  onTS(e) {
-    const touch = e.touches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    const td = el?.closest('td.dc');
-    if (!td) return;
-    const r = +td.dataset.r, c = +td.dataset.c;
-
-    // Double-tap detection
-    const now = Date.now();
-    if (now - this.lastTap < 350 && this.lastTapRC?.r === r && this.lastTapRC?.c === c) {
-      e.preventDefault();
-      if (this.editing) this.cancelEdit();
-      this.startEdit(r, c);
-      this.lastTap = 0; this.lastTapRC = null;
-      return;
-    }
-    this.lastTap = now; this.lastTapRC = {r, c};
-
-    if (this.editing) this.commitEdit();
-    this.selCell(r, c, false);
-    this.mdown = true; this.mstart = {r, c};
-    e.preventDefault();
-  }
-
-  onTM(e) {
-    if (!this.mdown) return;
-    const touch = e.touches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    const td = el?.closest('td.dc');
-    if (!td) return;
-    const r = +td.dataset.r, c = +td.dataset.c;
-    if (!this.active || r !== this.active.r || c !== this.active.c) {
-      this.active = {r, c};
-      if (!this.anchor) this.anchor = this.mstart;
-      this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
-    }
-    e.preventDefault();
-  }
-
-  onKey(e) {
-    const inCed = this.editing !== null;
-    const inInput = document.activeElement.tagName === 'INPUT' && document.activeElement.id !== 'ced';
-    if (inInput) return;
-
-    const ctrl = e.ctrlKey || e.metaKey;
-    const shift = e.shiftKey;
-
-    // In edit mode
-    if (inCed) {
-      switch (e.key) {
-        case 'Escape':    e.preventDefault(); this.cancelEdit(); break;
-        case 'Enter':     e.preventDefault(); this.commitEdit(shift?-1:1, 0); break;
-        case 'Tab':       e.preventDefault(); this.commitEdit(0, shift?-1:1); break;
-        case 'F2':        e.preventDefault(); document.getElementById('ced').select(); break;
-      }
-      return;
-    }
-
-    // Not in edit mode — Ctrl shortcuts
-    if (ctrl) {
-      switch (e.key.toLowerCase()) {
-        case 'z':  e.preventDefault(); shift ? this.redo() : this.undo(); return;
-        case 'y':  e.preventDefault(); this.redo(); return;
-        case 'c':  e.preventDefault(); this.copy('tab'); return;
-        case 'a':  e.preventDefault(); this.selAll(); return;
-        case 'home': e.preventDefault(); this.selCell(this.hasHeader?1:0, 0, shift); return;
-        case 'end': {
-          e.preventDefault();
-          const mr = this.data.length-1, mc = (this.data[0]?.length||1)-1;
-          if (shift && this.anchor) { this.active={r:mr,c:mc}; this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar(); this.scrollTo(mr,mc); }
-          else this.selCell(mr, mc, false);
-          return;
-        }
-        case 'arrowup':    e.preventDefault(); this.moveActive(-1,0,shift,true); return;
-        case 'arrowdown':  e.preventDefault(); this.moveActive(1,0,shift,true); return;
-        case 'arrowleft':  e.preventDefault(); this.moveActive(0,-1,shift,true); return;
-        case 'arrowright': e.preventDefault(); this.moveActive(0,1,shift,true); return;
-      }
-    }
-
-    switch (e.key) {
-      case 'ArrowUp':    e.preventDefault(); this.moveActive(-1,0,shift,false); break;
-      case 'ArrowDown':  e.preventDefault(); this.moveActive(1,0,shift,false); break;
-      case 'ArrowLeft':  e.preventDefault(); this.moveActive(0,-1,shift,false); break;
-      case 'ArrowRight': e.preventDefault(); this.moveActive(0,1,shift,false); break;
-      case 'Tab':        e.preventDefault(); this.moveActive(0,shift?-1:1,false,false); break;
-      case 'Enter':      e.preventDefault(); if (this.active) this.moveActive(shift?-1:1,0,false,false); break;
-      case 'F2':         e.preventDefault(); if (this.active) this.startEdit(this.active.r, this.active.c); break;
-      case 'Escape':     e.preventDefault(); this.clearSel(); break;
-      case 'Delete':     e.preventDefault(); this.clearCells(); break;
-      case 'Backspace':
-        if (this.active) {
-          e.preventDefault();
-          this.selCell(this.active.r, this.active.c, false);
-          this.startEdit(this.active.r, this.active.c, '');
-        }
-        break;
-      case 'Home':
-        e.preventDefault();
-        if (this.active) {
-          if (shift && this.anchor) {
-            this.active = {r:this.active.r, c:0};
-            this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
-          } else { this.selCell(this.active.r, 0, false); }
-        }
-        break;
-      case 'End': {
-        e.preventDefault();
-        const mc = (this.data[0]?.length||1)-1;
-        if (this.active) {
-          if (shift && this.anchor) {
-            this.active = {r:this.active.r, c:mc};
-            this.applySelStyle(); this.updSelInfo(); this.updOverlay(); this.updFbar();
-          } else { this.selCell(this.active.r, mc, false); }
-        }
-        break;
-      }
-      case 'PageUp':   e.preventDefault(); document.getElementById('tw').scrollTop -= 280; break;
-      case 'PageDown': e.preventDefault(); document.getElementById('tw').scrollTop += 280; break;
-      default:
-        // Printable key starts editing
-        if (this.active && e.key.length === 1 && !ctrl)
-          this.startEdit(this.active.r, this.active.c, e.key);
-    }
-  }
-
-  // ---- HANDLE DRAG ----
-  bindHandles() {
-    const tl = document.getElementById('shTL');
-    const br = document.getElementById('shBR');
-
-    const startDrag = (which, e) => {
-      e.preventDefault(); e.stopPropagation();
-      const rng = this.range();
-      if (!rng) return;
-      this.hdrag = which;
-      this.hfixed = which === 'tl' ? {r:rng.r1,c:rng.c1} : {r:rng.r0,c:rng.c0};
-    };
-
-    const moveDrag = (clientX, clientY) => {
-      if (!this.hdrag) return;
-      const el = document.elementFromPoint(clientX, clientY);
-      const td = el?.closest('td.dc');
-      if (!td) return;
-      this.setSel(this.hfixed, {r:+td.dataset.r, c:+td.dataset.c}, false);
-    };
-
-    tl.addEventListener('mousedown', e => startDrag('tl', e));
-    br.addEventListener('mousedown', e => startDrag('br', e));
-    tl.addEventListener('touchstart', e => startDrag('tl', e), {passive:false});
-    br.addEventListener('touchstart', e => startDrag('br', e), {passive:false});
-
-    document.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
-    document.addEventListener('touchmove', e => {
-      if (!this.hdrag) return;
-      e.preventDefault();
-      moveDrag(e.touches[0].clientX, e.touches[0].clientY);
-    }, {passive:false});
-
-    const endDrag = () => { this.hdrag = null; this.hfixed = null; };
-    document.addEventListener('mouseup', endDrag);
-    document.addEventListener('touchend', endDrag);
-  }
-
-  // ---- DRAG AND DROP ----
-  bindDrop() {
-    const tw = document.getElementById('tw');
-    const ov = document.getElementById('dropOv');
-    ['dragenter','dragover','dragleave','drop'].forEach(ev =>
-      tw.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
-    tw.addEventListener('dragenter', () => ov.classList.add('on'));
-    ov.addEventListener('dragleave', e => { if (e.target===ov) ov.classList.remove('on'); });
-    tw.addEventListener('drop', e => {
-      ov.classList.remove('on');
-      const f = e.dataTransfer.files[0];
-      if (f) this.readFile(f);
-    });
-  }
-
-  // ---- ROW / COL OPERATIONS ----
-  addRow() {
-    const nc = this.data[0]?.length || 3;
-    const rng = this.range();
-    const at = rng ? rng.r1 + 1 : this.data.length;
-    this.data.splice(at, 0, new Array(nc).fill(''));
-    this.saveState(); this.render(); this.toast('Fila añadida', 'success');
-  }
-
-  addColumn() {
-    this.data.forEach(row => row.push(''));
-    this.saveState(); this.render(); this.toast('Columna añadida', 'success');
-  }
-
-  deleteRows() {
-    const rng = this.range();
-    if (!rng) { this.toast('Sin selección', 'error'); return; }
-    const rows = [];
-    for (let i = rng.r0; i <= rng.r1; i++) rows.push(i);
-    const del = rows.filter(i => !(this.hasHeader && i===0));
-    if (!del.length) { this.toast('No se puede eliminar el encabezado', 'error'); return; }
-    del.sort((a,b)=>b-a).forEach(i => this.data.splice(i,1));
-    this.clearSel(); this.saveState(); this.render();
-    this.toast(`${del.length} fila(s) eliminada(s)`, 'success');
-    this.hideMenu();
-  }
-
-  deleteCols() {
-    const rng = this.range();
-    if (!rng) { this.toast('Sin selección', 'error'); return; }
-    const cols = [];
-    for (let c = rng.c0; c <= rng.c1; c++) cols.push(c);
-    cols.sort((a,b)=>b-a).forEach(c => this.data.forEach(row => row.splice(c,1)));
-    this.clearSel(); this.saveState(); this.render();
-    this.toast(`${cols.length} columna(s) eliminada(s)`, 'success');
-  }
-
-  clearCells() {
-    const rng = this.range();
-    if (!rng) return;
-    for (let r = rng.r0; r <= rng.r1; r++)
-      for (let c = rng.c0; c <= rng.c1; c++) {
-        if (this.data[r]) this.data[r][c] = '';
-        const td = document.querySelector(`td.dc[data-r="${r}"][data-c="${c}"]`);
-        if (td) td.querySelector('.cv').textContent = '';
-      }
-    this.saveState(); this.hideMenu(); this.toast('Contenido vaciado', 'success');
-  }
-
-  ctxInsertBefore() {
-    this.menuColCtx !== null ? this.insertColBefore(this.menuColCtx) : this.insertBefore();
-  }
-
-  ctxInsertAfter() {
-    this.menuColCtx !== null ? this.insertColAfter(this.menuColCtx) : this.insertAfter();
-  }
-
-  insertColBefore(col) {
-    this.data.forEach(row => row.splice(col, 0, ''));
-    this.saveState(); this.render(); this.hideMenu(); this.toast('Columna insertada a la izquierda', 'success');
-  }
-
-  insertColAfter(col) {
-    this.data.forEach(row => row.splice(col + 1, 0, ''));
-    this.saveState(); this.render(); this.hideMenu(); this.toast('Columna insertada a la derecha', 'success');
-  }
-
-  insertBefore() {
-    const rng = this.range();
-    if (!rng) { this.toast('Sin selección', 'error'); return; }
-    const nc = this.data[0]?.length || 3;
-    this.data.splice(rng.r0, 0, new Array(nc).fill(''));
-    this.saveState(); this.render(); this.hideMenu(); this.toast('Fila insertada arriba', 'success');
-  }
-
-  insertAfter() {
-    const rng = this.range();
-    if (!rng) { this.toast('Sin selección', 'error'); return; }
-    const nc = this.data[0]?.length || 3;
-    this.data.splice(rng.r1+1, 0, new Array(nc).fill(''));
-    this.saveState(); this.render(); this.hideMenu(); this.toast('Fila insertada abajo', 'success');
-  }
-
-  clearAll() {
-    if (!confirm('¿Eliminar todos los datos?')) return;
-    this.data = [['','',''],['','',''],['','','']]; this.filters = {}; this.sortCol = -1;
-    this.clearSel(); this.saveState(); this.render(); this.toast('Datos eliminados', 'success');
-  }
-
-  toggleHeader() {
-    this.hasHeader = document.getElementById('hasHeader').checked;
-    this.saveState(); this.render();
-  }
-
-  // ---- COPY / PASTE ----
-  getSelData() {
-    const rng = this.range();
-    if (!rng) return [];
-    const out = [];
-    for (let r = rng.r0; r <= rng.r1; r++) {
-      const row = [];
-      for (let c = rng.c0; c <= rng.c1; c++) row.push(this.data[r]?.[c] || '');
-      out.push(row);
-    }
-    return out;
-  }
-
-  copy(fmt) {
-    const d = this.getSelData();
-    if (!d.length) { this.toast('Sin selección', 'error'); return; }
-    let text;
-    if (fmt === 'tab') {
-      text = d.map(r => r.join('\t')).join('\n');
-    } else if (fmt === 'csv') {
-      text = d.map(r => r.map(c => {
-        const s = String(c).replace(/"/g,'""');
-        return (s.includes(',')||s.includes('"')||s.includes('\n')) ? `"${s}"` : s;
-      }).join(',')).join('\n');
-    } else {
-      text = '';
-      d.forEach((row,i) => {
-        text += '| ' + row.map(c=>c||' ').join(' | ') + ' |\n';
-        if (i===0) text += '| ' + row.map(()=>'---').join(' | ') + ' |\n';
-      });
-    }
-    navigator.clipboard.writeText(text).then(() => this.toast('Copiado', 'success'));
-    this.hideMenu();
-  }
-
-  pastePrompt() {
-    if (!navigator.clipboard?.readText) { this.openPasteModal(); return; }
-    navigator.clipboard.readText()
-      .then(text => {
-        if (!text.trim()) { this.toast('Portapapeles vacío', 'error'); return; }
-        this.parseInsert(text);
-      })
-      .catch(() => this.openPasteModal());
-  }
-
-  openPasteModal() {
-    const area = document.getElementById('pasteArea');
-    area.value = '';
-    document.getElementById('pasteModal').classList.add('on');
-    setTimeout(() => area.focus(), 80);
-  }
-
-  closePasteModal() {
-    document.getElementById('pasteModal').classList.remove('on');
-  }
-
-  confirmPaste() {
-    const text = document.getElementById('pasteArea').value;
-    if (!text.trim()) { this.toast('Nada que importar', 'error'); return; }
-    this.closePasteModal();
-    this.parseInsert(text);
-  }
-
-  onPaste(e) {
-    if (document.activeElement.id === 'ced') return;
-    if (document.activeElement.id === 'pasteArea') return;
-    const inInput = document.activeElement.tagName === 'INPUT' && document.activeElement.id !== 'ced';
-    if (inInput) return;
-    e.preventDefault();
-    const text = (e.clipboardData || window.clipboardData).getData('Text');
-    if (!text.trim()) { this.toast('Portapapeles vacío', 'error'); return; }
-    this.parseInsert(text);
-  }
-
-  parseInsert(text) {
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    if (!lines.length) return;
-    let delim = '\t';
-    if (lines[0].includes(',') && !lines[0].includes('\t')) delim = ',';
-    else if (lines[0].includes(';') && !lines[0].includes('\t')) delim = ';';
-    const parsed = lines.map(l => this.parseLine(l, delim));
-
-    if (this.active && this.data.length > 0) {
-      const sr = this.active.r, sc = this.active.c;
-      while (this.data.length < sr + parsed.length)
-        this.data.push(new Array(this.data[0]?.length||0).fill(''));
-      const maxC = Math.max(...parsed.map(r=>r.length));
-      this.data.forEach(row => { while(row.length < sc+maxC) row.push(''); });
-      for (let i=0; i<parsed.length; i++)
-        for (let j=0; j<parsed[i].length; j++)
-          this.data[sr+i][sc+j] = parsed[i][j];
-    } else {
-      this.data = parsed;
-    }
-    this.saveState(); this.render(); this.toast(`${parsed.length} filas pegadas`, 'success');
-  }
-
-  parseLine(line, delim) {
-    const res=[]; let cur='', inQ=false;
-    for (let i=0; i<line.length; i++) {
-      const ch=line[i], nx=line[i+1];
-      if (ch==='"') { if(inQ&&nx==='"'){cur+='"';i++;}else inQ=!inQ; }
-      else if (ch===delim&&!inQ) { res.push(cur.trim()); cur=''; }
-      else cur+=ch;
-    }
-    res.push(cur.trim());
-    return res;
-  }
-
-  // ---- FILE I/O ----
-  openFile() { document.getElementById('fileIn').click(); }
-
-  handleFile(e) {
-    const f = e.target.files[0];
-    if (f) this.readFile(f);
-    e.target.value = '';
-  }
-
-  readFile(f) {
-    const reader = new FileReader();
-    reader.onload = e => { this.parseInsert(e.target.result); this.toast(`"${f.name}" cargado`, 'success'); };
-    reader.readAsText(f);
-  }
-
-  // ---- EXPORT ----
-  exportCSV() {
-    this.expContent = this.toCSV(); this.expType = 'csv';
-    document.getElementById('expTitle').textContent = 'Exportar como CSV';
-    document.getElementById('expPrev').value = this.expContent;
-    document.getElementById('expModal').classList.add('on');
-  }
-
-  exportMd() {
-    this.expContent = this.toMd(); this.expType = 'md';
-    document.getElementById('expTitle').textContent = 'Exportar como Markdown';
-    document.getElementById('expPrev').value = this.expContent;
-    document.getElementById('expModal').classList.add('on');
-  }
-
-  toCSV() {
-    return this.data.map(row => row.map(c => {
-      const s = String(c).replace(/"/g,'""');
-      return (s.includes(',')||s.includes('"')||s.includes('\n')) ? `"${s}"` : s;
-    }).join(',')).join('\n');
-  }
-
-  toMd() {
-    if (!this.data.length) return '';
-    let r = '| '+this.data[0].map(c=>c||' ').join(' | ')+' |\n';
-    r += '| '+this.data[0].map(()=>'---').join(' | ')+' |\n';
-    const s = this.hasHeader ? 1 : 0;
-    for (let i=s; i<this.data.length; i++)
-      r += '| '+this.data[i].map(c=>c||' ').join(' | ')+' |\n';
-    return r;
-  }
-
-  closeModal() { document.getElementById('expModal').classList.remove('on'); }
-
-  copyExport() {
-    navigator.clipboard.writeText(this.expContent).then(() => this.toast('Copiado', 'success'));
-  }
-
-  downloadExport() {
-    const blob = new Blob([this.expContent], {type: this.expType==='csv'?'text/csv':'text/markdown'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href=url; a.download=`datos.${this.expType}`;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(url);
-    this.toast('Archivo descargado', 'success');
-  }
-
-  // ---- CONTEXT MENU ----
-  showMenu(x, y) {
-    const m = document.getElementById('cmenu');
-    const isCol = this.menuColCtx !== null;
-    const svgPlus = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-    document.getElementById('cmInsert1').innerHTML = svgPlus + (isCol ? ' Insertar columna a la izquierda' : ' Insertar fila arriba');
-    document.getElementById('cmInsert2').innerHTML = svgPlus + (isCol ? ' Insertar columna a la derecha' : ' Insertar fila abajo');
-    m.style.left='0'; m.style.top='0';
-    m.classList.add('on');
-    const w=m.offsetWidth, h=m.offsetHeight;
-    const vw=window.innerWidth, vh=window.innerHeight;
-    m.style.left = Math.max(4,Math.min(x,vw-w-4)) + 'px';
-    m.style.top  = Math.max(4,Math.min(y,vh-h-4)) + 'px';
-  }
-
-  hideMenu() { document.getElementById('cmenu').classList.remove('on'); }
-
-  // ---- HELP ----
-  showHelp() { document.getElementById('helpModal').classList.add('on'); }
-  closeHelp() { document.getElementById('helpModal').classList.remove('on'); }
-
-  // ---- UTILS ----
-  esc(t) { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
-
-  colLetter(col) {
-    let r=''; col++;
-    while(col>0){ col--; r=String.fromCharCode(65+(col%26))+r; col=Math.floor(col/26); }
-    return r;
-  }
-
-  fmt(n) {
-    return Number.isInteger(n) ? n.toLocaleString() : n.toLocaleString(undefined,{maximumFractionDigits:2});
-  }
-
-  toast(msg, type='success') {
-    const t = document.getElementById('toast');
-    const ic = document.getElementById('toastIcon');
-    document.getElementById('toastMsg').textContent = msg;
-    ic.innerHTML = type==='success'
-      ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
-      : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
-    t.className = `toast ${type} show`;
-    clearTimeout(this._tt);
-    this._tt = setTimeout(() => t.classList.remove('show'), 2800);
-  }
+/* ================================================================
+   CSV Editor v2.1 — aplicación autocontenida (PRD v2.1 definitivo)
+   ================================================================ */
+
+/* ---------- utilidades DOM ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+const fmtInt = n => n.toLocaleString('es-ES');
+const fmtNum = n => n.toLocaleString('es-ES', { maximumFractionDigits: 4 });
+
+function colName(i){ let s=''; i++; while(i>0){ i--; s=String.fromCharCode(65 + i%26) + s; i=Math.floor(i/26); } return s; }
+function parseRef(str){
+  const m = /^([A-Za-z]+)\s*(\d+)$/.exec(String(str).trim());
+  if(!m) return null;
+  let c = 0;
+  for(const ch of m[1].toUpperCase()) c = c*26 + (ch.charCodeAt(0)-64);
+  return { c: c-1, r: parseInt(m[2],10)-1 };
 }
 
-const E = new CSVEditor();
+/* ================================================================
+   NÚCLEO COMPARTIDO CON EL WORKER
+   Estas funciones no capturan variables externas: se serializan con
+   toString() para construir el Web Worker embebido (Blob inline),
+   y se usan tal cual en el hilo principal como fallback.
+   ================================================================ */
+
+/* Parser CSV conforme a RFC 4180: máquina de estados que conserva su
+   estado entre bloques (comillas abiertas, campo parcial, \r pendiente),
+   por lo que admite streaming por chunks sin corromper campos multilínea. */
+function makeParser(delim){
+  let rows = [], row = [], field = '', inQ = false, qP = false, cr = false, first = true;
+  function endField(){ row.push(field); field=''; }
+  function endRow(){ endField(); rows.push(row); row = []; }
+  return {
+    write(s){
+      for(let i = 0; i < s.length; i++){
+        const ch = s[i];
+        if(first){ first = false; if(ch === '\uFEFF') continue; }   // BOM UTF-8
+        if(qP){ // el carácter anterior fue '"' dentro de un campo entrecomillado
+          qP = false;
+          if(ch === '"'){ field += '"'; continue; }                  // "" escapada
+          inQ = false;                                               // cierre de comillas
+        }
+        if(inQ){
+          if(ch === '"') qP = true;
+          else field += ch;
+          continue;
+        }
+        if(cr){ cr = false; if(ch === '\n') continue; }              // \r\n
+        if(ch === '"' && field === '') inQ = true;
+        else if(ch === delim) endField();
+        else if(ch === '\n') endRow();
+        else if(ch === '\r'){ endRow(); cr = true; }
+        else field += ch;
+      }
+    },
+    end(){
+      if(qP){ qP = false; inQ = false; }
+      if(field !== '' || row.length) endRow();
+    },
+    take(){ const r = rows; rows = []; return r; }
+  };
+}
+
+/* Detección de delimitador: parsea una muestra con cada candidato y
+   puntúa por número de columnas y consistencia entre filas. */
+function detectDelim(sample){
+  const cands = [',', ';', '\t'];
+  let best = ',', bestScore = -1;
+  for(const d of cands){
+    const p = makeParser(d);
+    p.write(sample); p.end();
+    const rows = p.take().slice(0, 20).filter(r => r.length > 1 || (r[0]||'').trim() !== '');
+    if(!rows.length) continue;
+    const counts = rows.map(r => r.length);
+    const first = counts[0];
+    let score = 0;
+    if(first > 1){
+      const consistent = counts.filter(c => c === first).length / counts.length;
+      score = first * consistent + (consistent === 1 ? 10 : 0);
+    }
+    if(score > bestScore){ bestScore = score; best = d; }
+  }
+  return best;
+}
+
+/* Números con separador decimal configurable (coma o punto). Devuelve NaN
+   si el texto no es un número "puro" (fidelidad: nunca adivina de más). */
+function toNum(s, decComma){
+  s = String(s).trim();
+  if(!s) return NaN;
+  if(decComma){
+    if(!/^[+-]?(\d{1,3}(\.\d{3})+|\d+)(,\d+)?$/.test(s)) return NaN;
+    return parseFloat(s.replace(/\./g, '').replace(',', '.'));
+  }
+  if(!/^[+-]?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?$/.test(s)) return NaN;
+  return parseFloat(s.replace(/,/g, ''));
+}
+
+function dateVal(s){
+  s = String(s).trim();
+  let m;
+  if((m = /^(\d{4})-(\d{2})-(\d{2})([ T](\d{2}):(\d{2})(:(\d{2}))?)?$/.exec(s))){
+    const mo = +m[2], d = +m[3];
+    if(mo < 1 || mo > 12 || d < 1 || d > 31) return NaN;
+    return Date.UTC(+m[1], mo-1, d, +(m[5]||0), +(m[6]||0), +(m[8]||0));
+  }
+  if((m = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/.exec(s))){   // dd/mm/aaaa
+    const d = +m[1], mo = +m[2];
+    if(mo < 1 || mo > 12 || d < 1 || d > 31) return NaN;
+    return Date.UTC(+m[3], mo-1, d);
+  }
+  return NaN;
+}
+
+function boolVal(s){
+  s = String(s).trim();
+  if(/^(true|verdadero|sí|si)$/i.test(s)) return 1;
+  if(/^(false|falso|no)$/i.test(s)) return 0;
+  return NaN;
+}
+
+/* Permutación de ordenación estable. Vacíos y valores no conformes al
+   final (en orden relativo original), independientemente de la dirección. */
+function sortPerm(vals, type, dir, decComma){
+  const n = vals.length;
+  const sign = dir === 'desc' ? -1 : 1;
+  const arr = new Array(n);
+  for(let i = 0; i < n; i++) arr[i] = i;
+  if(type === 'text'){
+    const col = new Intl.Collator('es', { numeric: true, sensitivity: 'base' });
+    arr.sort((a, b) => {
+      const va = String(vals[a]).trim(), vb = String(vals[b]).trim();
+      const ea = va === '', eb = vb === '';
+      if(ea || eb) return ea && eb ? a - b : (ea ? 1 : -1);
+      const c = col.compare(va, vb);
+      return c ? sign * c : a - b;
+    });
+  } else {
+    const key = new Float64Array(n);
+    for(let i = 0; i < n; i++){
+      const v = vals[i];
+      key[i] = type === 'number' ? toNum(v, decComma) : type === 'date' ? dateVal(v) : boolVal(v);
+    }
+    arr.sort((a, b) => {
+      const ka = key[a], kb = key[b];
+      const na = Number.isNaN(ka), nb = Number.isNaN(kb);
+      if(na || nb) return na && nb ? a - b : (na ? 1 : -1);
+      return ka === kb ? a - b : sign * (ka < kb ? -1 : 1);
+    });
+  }
+  return Int32Array.from(arr);
+}
+
+/* Bucle del worker: parseo en streaming (Blob.stream + TextDecoder
+   {stream:true}) y ordenaciones pesadas fuera del hilo de UI. */
+function workerBoot(){
+  self.onmessage = async e => {
+    const m = e.data;
+    const post = (x, tr) => self.postMessage(Object.assign({ id: m.id }, x), tr || []);
+    try{
+      if(m.op === 'parseFile'){
+        let delim = m.delim;
+        if(delim === 'auto'){
+          const head = await m.file.slice(0, 65536).text();
+          delim = detectDelim(head);
+        }
+        const p = makeParser(delim);
+        const total = m.file.size || 1;
+        let done = 0, lastProg = 0;
+        const reader = m.file.stream().getReader();
+        const dec = new TextDecoder('utf-8');
+        for(;;){
+          const { value, done: fin } = await reader.read();
+          if(fin) break;
+          done += value.byteLength;
+          p.write(dec.decode(value, { stream: true }));
+          const rows = p.take();
+          if(rows.length) post({ t: 'rows', rows });
+          const now = Date.now();
+          if(now - lastProg > 80){ lastProg = now; post({ t: 'prog', pct: done / total }); }
+        }
+        p.write(dec.decode());
+        p.end();
+        const rows = p.take();
+        if(rows.length) post({ t: 'rows', rows });
+        post({ t: 'done', delim });
+      }
+      else if(m.op === 'parseText'){
+        let delim = m.delim;
+        if(delim === 'auto') delim = detectDelim(m.text.slice(0, 65536));
+        const p = makeParser(delim);
+        const CH = 1 << 20;
+        for(let i = 0; i < m.text.length; i += CH){
+          p.write(m.text.slice(i, i + CH));
+          const rows = p.take();
+          if(rows.length) post({ t: 'rows', rows });
+        }
+        p.end();
+        const rows = p.take();
+        if(rows.length) post({ t: 'rows', rows });
+        post({ t: 'done', delim });
+      }
+      else if(m.op === 'sort'){
+        const perm = sortPerm(m.vals, m.type, m.dir, m.dc);
+        self.postMessage({ id: m.id, t: 'sorted', perm }, [perm.buffer]);
+      }
+    }catch(err){
+      post({ t: 'err', msg: String((err && err.message) || err) });
+    }
+  };
+}
+
+/* ---------- instancia del worker (Blob inline, compatible file://) ---------- */
+const W = { worker: null, jobs: new Map(), seq: 0 };
+(function initWorker(){
+  try{
+    const src = [makeParser, detectDelim, toNum, dateVal, boolVal, sortPerm, workerBoot]
+      .map(f => f.toString()).join('\n') + '\nworkerBoot();';
+    const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+    W.worker = new Worker(url);
+    W.worker.onmessage = e => {
+      const job = W.jobs.get(e.data.id);
+      if(job) job(e.data);
+    };
+    W.worker.onerror = () => { W.worker = null; };
+  }catch(_){ W.worker = null; }
+})();
+
+function workerJob(msg, onMsg){
+  const id = ++W.seq;
+  msg.id = id;
+  W.jobs.set(id, data => {
+    const finished = onMsg(data);
+    if(finished) W.jobs.delete(id);
+  });
+  W.worker.postMessage(msg);
+}
+
+/* ================================================================
+   ESTADO
+   ================================================================ */
+const ROWH = { compact: 26, normal: 32, comfy: 40 };
+const RNW = 52;            // ancho de la columna de números de fila
+const DEFW = 120;          // ancho por defecto de columna
+const BUF = 6;             // filas de buffer en la virtualización
+
+const S = {
+  rows: [],                // modelo completo (incluye la fila de encabezado si headerOn)
+  cols: 0,
+  headerOn: false,
+  types: [],               // tipo detectado por columna
+  forced: [],              // tipo forzado por el usuario (null = auto)
+  colW: [],
+  colX: [0],               // prefijos de posición X de columnas
+  density: 'normal',
+  filters: new Map(),      // col -> texto de filtro
+  visRows: null,           // Int32Array de índices de cuerpo visibles (null = sin filtro)
+  visMap: null,            // Map modelo->visual (perezoso)
+  vA: { v: 0, c: 0 },      // ancla de selección (coordenadas visuales)
+  vB: { v: 0, c: 0 },      // foco / celda activa
+  fileName: 'datos.csv',
+  freeze: false,
+  dcMode: 'auto',          // separador decimal: auto | coma | punto
+  sort: { c: -1, dir: null },
+  exportCfg: { format: 'csv', delim: ';', bom: true, inject: false, scope: 'all' },
+  loading: false,
+};
+const AUTO_DC = (()=>{ try{ return new Intl.NumberFormat(navigator.language || 'es').format(1.1).includes(','); }catch(_){ return true; } })();
+const dcEff = () => S.dcMode === 'auto' ? AUTO_DC : S.dcMode === 'coma';
+
+const hdrOff = () => S.headerOn ? 1 : 0;
+const nRows = () => Math.max(0, S.rows.length - hdrOff());
+const nVis  = () => S.visRows ? S.visRows.length : nRows();
+const v2m   = v => S.visRows ? S.visRows[v] : v;
+function m2v(m){
+  if(!S.visRows) return m;
+  if(!S.visMap){
+    S.visMap = new Map();
+    for(let i = 0; i < S.visRows.length; i++) S.visMap.set(S.visRows[i], i);
+  }
+  const v = S.visMap.get(m);
+  return v === undefined ? -1 : v;
+}
+const cellText = (m, c) => { const r = S.rows[m + hdrOff()]; return r ? (r[c] ?? '') : ''; };
+const effType = c => S.forced[c] || S.types[c] || 'text';
+const hdrName = c => S.headerOn ? ((S.rows[0] && S.rows[0][c]) || colName(c)) : colName(c);
+const TYPE_LABEL = { number: 'número', text: 'texto', date: 'fecha', boolean: 'booleano' };
+const TYPE_ICON  = { number: '123', text: 'Abc', date: '📅', boolean: '✓✗' };
+
+function hasData(){
+  for(let i = 0; i < S.rows.length; i++){
+    const r = S.rows[i];
+    for(let j = 0; j < r.length; j++) if(r[j] !== '' && r[j] != null) return true;
+  }
+  return false;
+}
+
+function setRaw(m, c, val){
+  const i = m + hdrOff();
+  while(S.rows.length <= i) S.rows.push([]);
+  const row = S.rows[i];
+  while(row.length <= c) row.push('');
+  row[c] = val;
+}
+
+function conforms(val, type){
+  const v = String(val).trim();
+  if(v === '') return true;
+  if(type === 'number') return !Number.isNaN(toNum(v, dcEff()));
+  if(type === 'date') return !Number.isNaN(dateVal(v));
+  if(type === 'boolean') return !Number.isNaN(boolVal(v));
+  return true;
+}
+
+/* ---------- geometría de columnas ---------- */
+function ensureColMeta(){
+  while(S.colW.length < S.cols) S.colW.push(DEFW);
+  while(S.types.length < S.cols) S.types.push('text');
+  while(S.forced.length < S.cols) S.forced.push(null);
+  S.colW.length = S.types.length = S.forced.length = S.cols;
+}
+function recalcX(){
+  ensureColMeta();
+  S.colX = [0];
+  let x = 0;
+  for(let c = 0; c < S.cols; c++){ x += S.colW[c]; S.colX.push(x); }
+  gridwrap.style.setProperty('--totw', (RNW + x) + 'px');
+}
+const colX = c => RNW + S.colX[c];
+
+/* ================================================================
+   DETECCIÓN DE TIPOS (solo presentación/comportamiento, §2.1)
+   ================================================================ */
+let typesT = 0;
+function typesDetectSoon(){ clearTimeout(typesT); typesT = setTimeout(detectTypes, 400); }
+function detectTypes(){
+  const n = nRows(), off = hdrOff();
+  const changed = [];
+  for(let c = 0; c < S.cols; c++){
+    let num = 0, dat = 0, boo = 0, tot = 0;
+    const step = Math.max(1, Math.floor(n / 400));
+    for(let m = 0; m < n; m += step){
+      const v = (S.rows[m + off] ? (S.rows[m + off][c] ?? '') : '').trim();
+      if(v === '') continue;
+      tot++;
+      if(!Number.isNaN(toNum(v, dcEff()))) num++;
+      else if(!Number.isNaN(dateVal(v))) dat++;
+      else if(!Number.isNaN(boolVal(v))) boo++;
+    }
+    let t = 'text';
+    if(tot >= 1){
+      if(num / tot >= .9) t = 'number';
+      else if(dat / tot >= .9) t = 'date';
+      else if(boo / tot >= .9) t = 'boolean';
+    }
+    if(S.types[c] !== t){ S.types[c] = t; changed.push(c); }
+  }
+  if(changed.length){ renderHead(); renderBody(true); cellbarUpdate(); }
+}
+
+/* ================================================================
+   HISTORIAL (diffs + comandos, §5.4)
+   ================================================================ */
+const H = { undo: [], redo: [], MAX: 100, BUDGET: 48 * 1024 * 1024 };
+
+function estBytes(e){
+  switch(e.t){
+    case 'cell': return 64 + (e.a.length + e.b.length) * 2;
+    case 'batch': { let b = 96; for(const [,,a,vb] of e.edits) b += 48 + (String(a).length + String(vb).length) * 2; return b; }
+    case 'perm': return 64 + e.perm.length * 4;
+    case 'delrows': { let b = 96; for(const r of e.rows) for(const v of r) b += 16 + String(v).length * 2; return b; }
+    case 'delcols': { let b = 96; for(const col of e.saved) for(const v of col) b += 16 + String(v).length * 2; return b; }
+    default: return 64;
+  }
+}
+function pushH(e){
+  e.bytes = estBytes(e);
+  H.undo.push(e);
+  H.redo.length = 0;
+  // presupuesto de memoria: primero se descartan las entradas antiguas grandes
+  let total = H.undo.reduce((s, x) => s + x.bytes, 0);
+  while(H.undo.length > H.MAX || (total > H.BUDGET && H.undo.length > 1)){
+    let idx = 0;
+    if(total > H.BUDGET){
+      let max = -1;
+      for(let i = 0; i < Math.min(H.undo.length - 1, 20); i++)
+        if(H.undo[i].bytes > max){ max = H.undo[i].bytes; idx = i; }
+    }
+    total -= H.undo[idx].bytes;
+    H.undo.splice(idx, 1);
+  }
+  updateUndoUI();
+}
+
+function invPerm(p){
+  const inv = new Int32Array(p.length);
+  for(let i = 0; i < p.length; i++) inv[p[i]] = i;
+  return inv;
+}
+function bodyReorder(perm){
+  const off = hdrOff();
+  const body = S.rows.slice(off);
+  const nb = new Array(body.length);
+  for(let i = 0; i < body.length; i++) nb[i] = body[perm[i]];
+  S.rows = S.rows.slice(0, off).concat(nb);
+}
+
+function applyEntry(e, fwd){
+  const off = hdrOff();
+  switch(e.t){
+    case 'cell':
+      setRaw(e.m, e.c, fwd ? e.b : e.a);
+      break;
+    case 'batch': {
+      if(fwd && e.grew) growTo(e.grew.rows, e.grew.cols);
+      for(const [m, c, a, b] of e.edits) setRaw(m, c, fwd ? b : a);
+      if(!fwd && e.grew){
+        S.rows.length = e.grew.prevLen;
+        if(e.grew.prevCols < S.cols){ S.cols = e.grew.prevCols; recalcX(); }
+      }
+      break;
+    }
+    case 'perm':
+      bodyReorder(fwd ? e.perm : invPerm(e.perm));
+      S.sort = fwd ? e.sort : (e.prevSort || { c: -1, dir: null });
+      break;
+    case 'insrows': {
+      if(fwd){
+        const blanks = Array.from({ length: e.n }, () => []);
+        S.rows.splice(e.at + off, 0, ...blanks);
+      } else {
+        S.rows.splice(e.at + off, e.n);
+      }
+      break;
+    }
+    case 'delrows': {
+      if(fwd){
+        for(let i = e.idxs.length - 1; i >= 0; i--) S.rows.splice(e.idxs[i] + off, 1);
+      } else {
+        for(let i = 0; i < e.idxs.length; i++) S.rows.splice(e.idxs[i] + off, 0, e.rows[i]);
+      }
+      break;
+    }
+    case 'inscols': {
+      if(fwd){
+        const blanks = new Array(e.n).fill('');
+        for(const row of S.rows) if(row.length > e.at) row.splice(e.at, 0, ...blanks);
+        S.colW.splice(e.at, 0, ...new Array(e.n).fill(DEFW));
+        S.types.splice(e.at, 0, ...new Array(e.n).fill('text'));
+        S.forced.splice(e.at, 0, ...new Array(e.n).fill(null));
+        S.cols += e.n;
+      } else {
+        for(const row of S.rows) if(row.length > e.at) row.splice(e.at, e.n);
+        S.colW.splice(e.at, e.n); S.types.splice(e.at, e.n); S.forced.splice(e.at, e.n);
+        S.cols -= e.n;
+      }
+      recalcX();
+      break;
+    }
+    case 'delcols': {
+      if(fwd){
+        for(let i = e.idxs.length - 1; i >= 0; i--){
+          const c = e.idxs[i];
+          for(const row of S.rows) if(row.length > c) row.splice(c, 1);
+          S.colW.splice(c, 1); S.types.splice(c, 1); S.forced.splice(c, 1);
+        }
+        S.cols -= e.idxs.length;
+      } else {
+        for(let i = 0; i < e.idxs.length; i++){
+          const c = e.idxs[i];
+          for(let r = 0; r < S.rows.length; r++){
+            const row = S.rows[r];
+            while(row.length < c) row.push('');
+            row.splice(c, 0, e.saved[i][r] ?? '');
+          }
+          S.colW.splice(c, 0, e.widths[i]); S.types.splice(c, 0, e.ctypes[i]); S.forced.splice(c, 0, e.cforced[i]);
+        }
+        S.cols += e.idxs.length;
+      }
+      recalcX();
+      break;
+    }
+    case 'header':
+      S.headerOn = fwd ? e.on : !e.on;
+      tglHeader.checked = S.headerOn;
+      break;
+    case 'type':
+      S.forced[e.c] = fwd ? e.b : e.a;
+      break;
+    case 'hcell': {   // renombrar celda de encabezado (fila 0 del modelo)
+      const row = S.rows[0] || (S.rows[0] = []);
+      while(row.length <= e.c) row.push('');
+      row[e.c] = fwd ? e.b : e.a;
+      break;
+    }
+  }
+  const structural = e.t !== 'cell';
+  after({ structure: structural });
+}
+
+function growTo(rowsN, colsN){
+  const off = hdrOff();
+  while(S.rows.length - off < rowsN) S.rows.push([]);
+  if(colsN > S.cols){ S.cols = colsN; recalcX(); renderHead(); }
+}
+
+function undo(){
+  const e = H.undo.pop();
+  if(!e){ toast('Nada que deshacer', 'warn'); return; }
+  applyEntry(e, false);
+  H.redo.push(e);
+  updateUndoUI();
+  announce('Deshecho: ' + e.desc);
+}
+function redo(){
+  const e = H.redo.pop();
+  if(!e){ toast('Nada que rehacer', 'warn'); return; }
+  applyEntry(e, true);
+  H.undo.push(e);
+  updateUndoUI();
+  announce('Rehecho: ' + e.desc);
+}
+function updateUndoUI(){
+  const u = H.undo[H.undo.length - 1], r = H.redo[H.redo.length - 1];
+  btnUndo.disabled = !u;
+  btnRedo.disabled = !r;
+  btnUndo.title = u ? `Deshacer: ${u.desc} (Ctrl+Z)` : 'Deshacer (Ctrl+Z)';
+  btnRedo.title = r ? `Rehacer: ${r.desc} (Ctrl+Y)` : 'Rehacer (Ctrl+Y)';
+  undoCount.textContent = (H.undo.length || H.redo.length) ? `${H.undo.length}·${H.redo.length}` : '';
+}
+
+/* operación de usuario: crea la entrada, la aplica y la registra */
+function doEntry(e){
+  applyEntry(e, true);
+  pushH(e);
+  emptyHint.hidden = true;
+}
+
+function setCellUndo(m, c, val, descPrefix){
+  const old = cellText(m, c);
+  if(old === val) return false;
+  doEntry({ t: 'cell', m, c, a: old, b: val, desc: (descPrefix || 'editar') + ' ' + colName(c) + (m + 1) });
+  return true;
+}
+
+/* ================================================================
+   FILTROS (vista no destructiva, §5.3)
+   ================================================================ */
+function applyFilters(){
+  S.visMap = null;
+  const n = nRows(), off = hdrOff();
+  if(!S.filters.size){
+    S.visRows = null;
+  } else {
+    const fs = [...S.filters].map(([c, q]) => [c, q.toLowerCase()]);
+    const out = [];
+    for(let m = 0; m < n; m++){
+      const row = S.rows[m + off] || [];
+      let ok = true;
+      for(const [c, q] of fs){
+        if(!String(row[c] ?? '').toLowerCase().includes(q)){ ok = false; break; }
+      }
+      if(ok) out.push(m);
+    }
+    S.visRows = Int32Array.from(out);
+  }
+  clampSel();
+  updateCountsUI();
+}
+
+function clampSel(){
+  const maxV = Math.max(0, nVis() - 1), maxC = Math.max(0, S.cols - 1);
+  S.vA.v = clamp(S.vA.v, 0, maxV); S.vB.v = clamp(S.vB.v, 0, maxV);
+  S.vA.c = clamp(S.vA.c, 0, maxC); S.vB.c = clamp(S.vB.c, 0, maxC);
+}
+function selRect(){
+  return {
+    v1: Math.min(S.vA.v, S.vB.v), v2: Math.max(S.vA.v, S.vB.v),
+    c1: Math.min(S.vA.c, S.vB.c), c2: Math.max(S.vA.c, S.vB.c),
+  };
+}
+
+/* ---------- pipeline tras cambios de modelo ---------- */
+let findT = 0;
+function findRefreshSoon(){ if(!F.open) return; clearTimeout(findT); findT = setTimeout(findRefresh, 160); }
+
+function after(opts = {}){
+  if(opts.structure){
+    if(S.rows.length && S.cols === 0) S.cols = Math.max(...S.rows.map(r => r.length), 1);
+    ensureColMeta();
+    applyFilters();
+    recalcX();
+    renderHead();
+    typesDetectSoon();
+  }
+  clampSel();
+  renderBody(true);
+  cellbarUpdate();
+  statsSched();
+  selBadgeUpdate();
+  updateCountsUI();
+  if(!S.loading){ markDirty(); typesDetectSoon(); }
+  findRefreshSoon();
+}
+/* ================================================================
+   RENDERIZADO VIRTUAL
+   ================================================================ */
+function renderHead(){
+  const sel = selRect();
+  const fullCols = nVis() > 0 && sel.v1 === 0 && sel.v2 === nVis() - 1;
+  let h = `<div class="ghcorner" role="columnheader" aria-colindex="1" title="Seleccionar todo (Ctrl+A)">◢</div>`;
+  for(let c = 0; c < S.cols; c++){
+    const t = effType(c), forced = !!S.forced[c];
+    const selc = fullCols && sel.c1 <= c && c <= sel.c2;
+    h += `<div class="gh${selc ? ' selcol' : ''}" role="columnheader" aria-colindex="${c+2}" data-c="${c}" style="width:${S.colW[c]}px" title="${esc(hdrName(c))} — tipo: ${TYPE_LABEL[t]}${forced ? ' (forzado)' : ''}${S.headerOn ? '. Doble clic para renombrar' : ''}">` +
+      `<span class="ghl">${colName(c)}</span>` +
+      (S.headerOn ? `<span class="ghn">${esc(String((S.rows[0] && S.rows[0][c]) ?? ''))}</span>` : '') +
+      (S.sort.c === c ? `<span class="ghsort" aria-label="Ordenado ${S.sort.dir === 'desc' ? 'descendente' : 'ascendente'}">${S.sort.dir === 'desc' ? '▼' : '▲'}</span>` : '') +
+      (S.filters.has(c) ? `<span class="ghfilter" title="Filtro activo en esta columna">⏷</span>` : '') +
+      `<span class="ghtype${forced ? ' forced' : ''}" aria-hidden="true">${TYPE_ICON[t]}</span>` +
+      `<button class="ghmenu" data-c="${c}" title="Menú de columna (ordenar, filtrar, tipo)" aria-label="Menú de la columna ${colName(c)}" aria-haspopup="menu">▾</button>` +
+      `<div class="ghresize" data-c="${c}" title="Arrastrar para cambiar el ancho"></div></div>`;
+  }
+  ghead.innerHTML = h;
+}
+
+let lastFirst = -1, lastCount = -1;
+function renderBody(force){
+  const rowH = ROWH[S.density], nv = nVis(), off = hdrOff();
+  gcanvas.style.height = (nv * rowH) + 'px';
+  const headH = ghead.offsetHeight || 30;
+  const y = gridwrap.scrollTop, vh = gridwrap.clientHeight;
+  let first = Math.floor((y) / rowH) - BUF;
+  if(first < 0) first = 0;
+  let count = Math.ceil(vh / rowH) + BUF * 2 + 2;
+  if(first + count > nv) count = nv - first;
+  if(count < 0) count = 0;
+  if(!force && first === lastFirst && count === lastCount) return;
+  lastFirst = first; lastCount = count;
+
+  const sel = selRect(), act = S.vB;
+  const q = F.open && F.q ? F.q : '';
+  const cur = F.cur >= 0 ? F.matches[F.cur] : null;
+  const fullRowSel = sel.c1 === 0 && sel.c2 === S.cols - 1;
+  let html = '';
+  for(let v = first; v < first + count; v++){
+    const m = v2m(v), row = S.rows[m + off] || [];
+    const rowSel = sel.v1 <= v && v <= sel.v2;
+    html += `<div class="grow" role="row" aria-rowindex="${m+2}" data-v="${v}" style="height:${rowH}px">` +
+      `<div class="rn${rowSel && fullRowSel ? ' s' : ''}" data-v="${v}" role="rowheader" title="Fila ${m+1}. Clic para seleccionarla">${m+1}</div>`;
+    for(let c = 0; c < S.cols; c++){
+      const raw = String(row[c] ?? '');
+      const t = effType(c);
+      let cls = '';
+      if(t === 'number' || t === 'date') cls += ' ar';
+      const inSel = rowSel && sel.c1 <= c && c <= sel.c2;
+      if(inSel) cls += ' sel';
+      if(v === act.v && c === act.c) cls += ' active';
+      if(raw && !conforms(raw, t)) cls += ' mm';
+      let inner;
+      if(q && raw.toLowerCase().includes(F.qlc)){
+        inner = markCell(raw, q);
+        if(cur && cur.m === m && cur.c === c) cls += ' curmatch';
+      } else inner = esc(raw);
+      html += `<div class="gc${cls}" role="gridcell" aria-colindex="${c+2}"${inSel ? ' aria-selected="true"' : ''} data-c="${c}" style="width:${S.colW[c]}px"><span>${inner}</span></div>`;
+    }
+    html += '</div>';
+  }
+  gslice.style.transform = `translateY(${first * rowH}px)`;
+  gslice.innerHTML = html;
+}
+
+function markCell(raw, q){
+  const lc = raw.toLowerCase(), lq = q.toLowerCase();
+  let i = 0, out = '', p;
+  while((p = lc.indexOf(lq, i)) >= 0){
+    out += esc(raw.slice(i, p)) + '<mark>' + esc(raw.slice(p, p + q.length)) + '</mark>';
+    i = p + q.length;
+  }
+  return out + esc(raw.slice(i));
+}
+
+let scrollPend = false;
+gridwrap.addEventListener('scroll', () => {
+  if(scrollPend) return;
+  scrollPend = true;
+  requestAnimationFrame(() => { scrollPend = false; renderBody(false); });
+});
+
+function ensureVisible(v, c){
+  const rowH = ROWH[S.density], headH = ghead.offsetHeight || 30;
+  const top = v * rowH, bot = top + rowH + headH;
+  const y = gridwrap.scrollTop, vh = gridwrap.clientHeight;
+  if(top < y) gridwrap.scrollTop = top;
+  else if(bot > y + vh) gridwrap.scrollTop = bot - vh;
+  const x0 = colX(c), x1 = x0 + S.colW[c];
+  const sx = gridwrap.scrollLeft, vw = gridwrap.clientWidth;
+  const leftPad = RNW + (S.freeze && c > 0 ? S.colW[0] : 0);
+  if(x0 - leftPad < sx) gridwrap.scrollLeft = Math.max(0, x0 - leftPad);
+  else if(x1 > sx + vw) gridwrap.scrollLeft = x1 - vw;
+}
+
+/* ================================================================
+   SELECCIÓN Y NAVEGACIÓN
+   ================================================================ */
+function refreshSel(){
+  renderBody(true);
+  cellbarUpdate();
+  statsSched();
+  selBadgeUpdate();
+  announceCell();
+}
+function moveTo(v, c, extend, scroll = true){
+  v = clamp(v, 0, Math.max(0, nVis() - 1));
+  c = clamp(c, 0, Math.max(0, S.cols - 1));
+  S.vB = { v, c };
+  if(!extend) S.vA = { v, c };
+  if(scroll) ensureVisible(v, c);
+  refreshSel();
+}
+function selectRow(v, ext){
+  if(ext) S.vB = { v, c: Math.max(0, S.cols - 1) };
+  else { S.vA = { v, c: 0 }; S.vB = { v, c: Math.max(0, S.cols - 1) }; }
+  refreshSel(); renderHead();
+}
+function selectCol(c, ext){
+  const last = Math.max(0, nVis() - 1);
+  if(ext) S.vB = { v: last, c };
+  else { S.vA = { v: 0, c }; S.vB = { v: last, c }; }
+  refreshSel(); renderHead();
+}
+function selectAll(){
+  S.vA = { v: 0, c: 0 };
+  S.vB = { v: Math.max(0, nVis() - 1), c: Math.max(0, S.cols - 1) };
+  refreshSel(); renderHead();
+  announce(`Seleccionadas ${fmtInt(nVis())} filas por ${S.cols} columnas`);
+}
+function pageMove(dir, ext){
+  const rowH = ROWH[S.density];
+  const page = Math.max(1, Math.floor((gridwrap.clientHeight - (ghead.offsetHeight || 30)) / rowH) - 1);
+  moveTo(S.vB.v + dir * page, S.vB.c, ext);
+}
+function edgeJump(dv, dc, ext){
+  const nv = nVis(), nc = S.cols;
+  let v = S.vB.v, c = S.vB.c;
+  const has = (vv, cc) => String(cellText(v2m(vv), cc)).trim() !== '';
+  const step = (pos, d, max, get) => {
+    let i = pos;
+    if(get(i) && i + d >= 0 && i + d < max && get(i + d)){
+      while(i + d >= 0 && i + d < max && get(i + d)) i += d;
+      return i;
+    }
+    i += d;
+    while(i >= 0 && i < max && !get(i)) i += d;
+    if(i < 0) return 0;
+    if(i >= max) return max - 1;
+    return i;
+  };
+  if(dv && nv) v = step(v, dv, nv, i => has(i, c));
+  else if(dc && nc) c = step(c, dc, nc, i => has(v, i));
+  moveTo(v, c, ext);
+}
+function lastDataCell(){
+  const off = hdrOff();
+  let lastR = -1;
+  for(let m = nRows() - 1; m >= 0; m--){
+    const row = S.rows[m + off];
+    if(row && row.some(x => String(x ?? '').trim() !== '')){ lastR = m; break; }
+  }
+  if(lastR < 0) return { v: Math.max(0, nVis() - 1), c: Math.max(0, S.cols - 1) };
+  let lastC = 0;
+  const scan = row => {
+    if(!row) return;
+    for(let c = row.length - 1; c >= 0; c--)
+      if(String(row[c] ?? '').trim() !== ''){ if(c > lastC) lastC = c; break; }
+  };
+  const step = Math.max(1, Math.floor((lastR + 1) / 2000));
+  for(let m = 0; m <= lastR; m += step) scan(S.rows[m + off]);
+  scan(S.rows[lastR + off]);
+  if(S.headerOn) scan(S.rows[0]);
+  const v = m2v(lastR);
+  return { v: v < 0 ? Math.max(0, nVis() - 1) : v, c: Math.min(lastC, S.cols - 1) };
+}
+
+/* ---------- indicadores ---------- */
+function selBadgeUpdate(){
+  const r = selRect();
+  const nr = r.v2 - r.v1 + 1, nc = r.c2 - r.c1 + 1;
+  let txt = `${fmtInt(nr)}×${nc}`;
+  if(STQ.ok && STQ.nums > 1) txt += ` · Σ ${fmtNum(STQ.sum)}`;
+  selBadge.textContent = txt;
+  sdSel.textContent = `${fmtInt(nr)}×${nc}`;
+}
+function updateCountsUI(){
+  sdRows.textContent = fmtInt(nRows());
+  sdCols.textContent = S.cols;
+  if(S.filters.size){
+    filterInfo.hidden = false;
+    filterInfo.textContent = `Mostrando ${fmtInt(nVis())} de ${fmtInt(nRows())} filas`;
+    sdFilterRow.hidden = false;
+    sdFilter.textContent = `${S.filters.size} columna${S.filters.size > 1 ? 's' : ''}`;
+  } else {
+    filterInfo.hidden = true;
+    sdFilterRow.hidden = true;
+  }
+  gridwrap.setAttribute('aria-rowcount', String(nRows() + 1));
+  gridwrap.setAttribute('aria-colcount', String(S.cols + 1));
+}
+function cellbarUpdate(){
+  if(E.open) return;
+  const c = S.vB.c, m = v2m(S.vB.v);
+  cellRef.textContent = colName(c) + (m + 1);
+  const t = effType(c), f = !!S.forced[c];
+  cellTypeIcon.textContent = TYPE_ICON[t];
+  cellTypeIcon.classList.toggle('forced', f);
+  cellTypeIcon.title = `Tipo de columna: ${TYPE_LABEL[t]} ${f ? '(forzado manualmente)' : '(autodetectado)'}`;
+  if(document.activeElement !== fxInput) fxInput.value = cellText(m, c);
+  colTypeSel.value = S.forced[c] || 'auto';
+}
+let annT = 0;
+function announce(t){ clearTimeout(annT); annT = setTimeout(() => { sr.textContent = t; }, 120); }
+function announceCell(){
+  const c = S.vB.c, m = v2m(S.vB.v);
+  const val = String(cellText(m, c));
+  announce(`${colName(c)}${m + 1}: ${val ? val.slice(0, 80) : 'vacía'}. Tipo ${TYPE_LABEL[effType(c)]}`);
+}
+function flashActive(){
+  requestAnimationFrame(() => {
+    const el = gslice.querySelector('.gc.active');
+    if(el){ el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1000); }
+  });
+}
+
+/* ================================================================
+   RATÓN
+   ================================================================ */
+let dragSel = false, RZ = null;
+gridwrap.addEventListener('mousedown', e => {
+  if(e.button !== 0) return;
+  const rs = e.target.closest('.ghresize');
+  if(rs){ startResize(e, +rs.dataset.c); return; }
+  if(e.target.closest('.ghmenu')) return;
+  const gh = e.target.closest('.gh');
+  if(gh){
+    // detail>=2: el primer clic re-renderiza el grid y el navegador ya no emite dblclick
+    if(e.detail >= 2 && S.headerOn){ e.preventDefault(); renameHeader(+gh.dataset.c); return; }
+    selectCol(+gh.dataset.c, e.shiftKey); e.preventDefault(); gridwrap.focus(); return;
+  }
+  if(e.target.closest('.ghcorner')){ selectAll(); e.preventDefault(); gridwrap.focus(); return; }
+  const rn = e.target.closest('.rn');
+  if(rn){ selectRow(+rn.dataset.v, e.shiftKey); e.preventDefault(); gridwrap.focus(); return; }
+  const cell = e.target.closest('.gc');
+  if(!cell) return;
+  const v = +cell.parentElement.dataset.v, c = +cell.dataset.c;
+  if(e.detail >= 2){ e.preventDefault(); openEditor(v, c, null); return; }
+  if(E.open) commitEditor(null);
+  moveTo(v, c, e.shiftKey);
+  dragSel = true;
+  e.preventDefault();
+  gridwrap.focus();
+});
+gridwrap.addEventListener('mousemove', e => {
+  if(!dragSel) return;
+  const cell = e.target.closest('.gc');
+  if(!cell) return;
+  const v = +cell.parentElement.dataset.v, c = +cell.dataset.c;
+  if(v !== S.vB.v || c !== S.vB.c) moveTo(v, c, true, false);
+});
+window.addEventListener('mouseup', () => { dragSel = false; resizeEnd(); });
+function startResize(e, c){
+  RZ = { c, x: e.clientX, w: S.colW[c] };
+  e.preventDefault();
+  document.body.style.cursor = 'col-resize';
+  const mv = ev => {
+    if(!RZ) return;
+    S.colW[RZ.c] = Math.max(56, RZ.w + (ev.clientX - RZ.x));
+    recalcX(); renderHead(); renderBody(true);
+  };
+  window.addEventListener('mousemove', mv);
+  RZ.mv = mv;
+}
+function resizeEnd(){
+  if(!RZ) return;
+  window.removeEventListener('mousemove', RZ.mv);
+  RZ = null;
+  document.body.style.cursor = '';
+  markDirty();
+}
+
+ghead.addEventListener('click', e => {
+  const b = e.target.closest('.ghmenu');
+  if(b){
+    e.stopPropagation();
+    const r = b.getBoundingClientRect();
+    openColMenu(+b.dataset.c, r.left - 140, r.bottom + 4);
+  }
+});
+/* renombrar encabezado con doble clic */
+function renameHeader(c){
+  if(!S.headerOn || document.getElementById('hdrEdit')) return;
+  const gh = ghead.querySelector(`.gh[data-c="${c}"]`);
+  if(!gh) return;
+  const old = String((S.rows[0] && S.rows[0][c]) ?? '');
+  const inp = document.createElement('input');
+  inp.id = 'hdrEdit';
+  inp.value = old;
+  const r = gh.getBoundingClientRect();
+  inp.style.cssText = `position:fixed;z-index:300;left:${r.left}px;top:${r.top}px;width:${Math.max(S.colW[c], 120)}px;height:${r.height}px;padding:2px 6px;font-size:.78rem;font-weight:600`;
+  document.body.appendChild(inp);
+  inp.focus(); inp.select();
+  let doneFlag = false;
+  const done = commit => {
+    if(doneFlag) return;
+    doneFlag = true;
+    const val = inp.value;
+    inp.remove();
+    if(commit && val !== old) doEntry({ t: 'hcell', c, a: old, b: val, desc: 'renombrar columna ' + colName(c) });
+    gridwrap.focus();
+  };
+  inp.addEventListener('keydown', ev => {
+    ev.stopPropagation();
+    if(ev.key === 'Enter') done(true);
+    else if(ev.key === 'Escape') done(false);
+  });
+  inp.addEventListener('blur', () => done(true));
+}
+
+/* ================================================================
+   EDITOR DE CELDA
+   ================================================================ */
+const E = { open: false, v: 0, c: 0, m: 0, orig: '', ta: null };
+function openEditor(v, c, initial){
+  if(nVis() === 0 || S.cols === 0) return;
+  if(E.open) commitEditor(null);
+  moveTo(v, c, false);
+  const m = v2m(v);
+  E.open = true; E.v = v; E.c = c; E.m = m; E.orig = String(cellText(m, c));
+  const ta = document.createElement('textarea');
+  ta.id = 'celled';
+  ta.setAttribute('aria-label', `Editar celda ${colName(c)}${m + 1}`);
+  ta.value = initial != null ? initial : E.orig;
+  const rowH = ROWH[S.density];
+  const lines = Math.min(4, (ta.value.match(/\n/g) || []).length + 1);
+  ta.style.left = colX(c) + 'px';
+  ta.style.top = (v * rowH) + 'px';
+  ta.style.width = Math.max(S.colW[c], 150) + 'px';
+  ta.style.height = Math.max(rowH, 22 * lines + 8) + 'px';
+  gcanvas.appendChild(ta);
+  E.ta = ta;
+  ta.focus();
+  const L = ta.value.length;
+  ta.setSelectionRange(L, L);
+  ta.addEventListener('keydown', edKey);
+  ta.addEventListener('blur', () => { if(E.open) commitEditor(null, false); });
+}
+function edKey(e){
+  e.stopPropagation();
+  if(e.key === 'Enter' && e.altKey){
+    e.preventDefault();
+    const ta = E.ta, s = ta.selectionStart;
+    ta.value = ta.value.slice(0, s) + '\n' + ta.value.slice(ta.selectionEnd);
+    ta.setSelectionRange(s + 1, s + 1);
+    return;
+  }
+  if(e.key === 'Enter'){ e.preventDefault(); commitEditor(e.shiftKey ? 'up' : 'down'); }
+  else if(e.key === 'Tab'){ e.preventDefault(); commitEditor(e.shiftKey ? 'left' : 'right'); }
+  else if(e.key === 'Escape'){ e.preventDefault(); cancelEditor(); }
+}
+function commitEditor(dir, focusGrid = true){
+  if(!E.open) return;
+  const val = E.ta.value;
+  E.open = false;
+  E.ta.remove();
+  if(val !== E.orig) setCellUndo(E.m, E.c, val);
+  if(dir === 'down') moveTo(S.vB.v + 1, S.vB.c, false);
+  else if(dir === 'up') moveTo(S.vB.v - 1, S.vB.c, false);
+  else if(dir === 'right') moveTo(S.vB.v, S.vB.c + 1, false);
+  else if(dir === 'left') moveTo(S.vB.v, S.vB.c - 1, false);
+  else refreshSel();
+  if(focusGrid) gridwrap.focus();
+  cellbarUpdate();
+}
+function cancelEditor(){
+  if(!E.open) return;
+  E.open = false;
+  E.ta.remove();
+  gridwrap.focus();
+  refreshSel();
+}
+
+/* barra de celda activa como editor alternativo */
+let FX = null;
+fxInput.addEventListener('focus', () => { FX = { m: v2m(S.vB.v), c: S.vB.c }; });
+fxInput.addEventListener('keydown', e => {
+  e.stopPropagation();
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    if(FX) setCellUndo(FX.m, FX.c, fxInput.value);
+    FX = null;
+    gridwrap.focus();
+  } else if(e.key === 'Escape'){
+    e.preventDefault();
+    FX = null;
+    cellbarUpdate();
+    gridwrap.focus();
+  }
+});
+fxInput.addEventListener('blur', () => {
+  if(FX && fxInput.value !== cellText(FX.m, FX.c)) setCellUndo(FX.m, FX.c, fxInput.value);
+  FX = null;
+});
+
+/* ================================================================
+   TECLADO GLOBAL
+   Los atajos solo se interceptan con el foco "en la aplicación":
+   cuando el foco está en un campo de texto propio (buscador, diálogos,
+   editor de celda), se respeta el comportamiento nativo del campo.
+   ================================================================ */
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  const inField = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+  if(inField || E.open) return;
+  const ctrl = e.ctrlKey || e.metaKey;
+  if(ctrl){
+    const k = e.key.toLowerCase();
+    if(k === 'f'){ e.preventDefault(); openFind(false); return; }
+    if(k === 'h'){ e.preventDefault(); openFind(true); return; }
+    if(k === 'g'){ e.preventDefault(); openGoto(); return; }
+    if(k === 's'){ e.preventDefault(); quickExport(); return; }
+    if(k === 'z'){ e.preventDefault(); if(e.shiftKey) redo(); else undo(); return; }
+    if(k === 'y'){ e.preventDefault(); redo(); return; }
+    if(k === 'a'){ e.preventDefault(); selectAll(); return; }
+    if(k === 'c'){ copySel(); return; }
+    if(e.key === 'Home'){ e.preventDefault(); moveTo(0, 0, e.shiftKey); return; }
+    if(e.key === 'End'){ e.preventDefault(); const p = lastDataCell(); moveTo(p.v, p.c, e.shiftKey); return; }
+    if(e.key === 'ArrowUp'){ e.preventDefault(); edgeJump(-1, 0, e.shiftKey); return; }
+    if(e.key === 'ArrowDown'){ e.preventDefault(); edgeJump(1, 0, e.shiftKey); return; }
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); edgeJump(0, -1, e.shiftKey); return; }
+    if(e.key === 'ArrowRight'){ e.preventDefault(); edgeJump(0, 1, e.shiftKey); return; }
+    return; // Ctrl+V y demás: dejar pasar (el evento 'paste' hace el trabajo)
+  }
+  switch(e.key){
+    case 'ArrowUp': e.preventDefault(); moveTo(S.vB.v - 1, S.vB.c, e.shiftKey); break;
+    case 'ArrowDown': e.preventDefault(); moveTo(S.vB.v + 1, S.vB.c, e.shiftKey); break;
+    case 'ArrowLeft': e.preventDefault(); moveTo(S.vB.v, S.vB.c - 1, e.shiftKey); break;
+    case 'ArrowRight': e.preventDefault(); moveTo(S.vB.v, S.vB.c + 1, e.shiftKey); break;
+    case 'Home': e.preventDefault(); moveTo(S.vB.v, 0, e.shiftKey); break;
+    case 'PageDown': e.preventDefault(); pageMove(1, e.shiftKey); break;
+    case 'PageUp': e.preventDefault(); pageMove(-1, e.shiftKey); break;
+    case 'Enter': e.preventDefault(); moveTo(S.vB.v + (e.shiftKey ? -1 : 1), S.vB.c, false); break;
+    case 'F2': e.preventDefault(); openEditor(S.vB.v, S.vB.c, null); break;
+    case 'Delete': e.preventDefault(); clearSelection(); break;
+    case 'Backspace': e.preventDefault(); openEditor(S.vB.v, S.vB.c, ''); break;
+    case 'Escape': closeMenus(); if(F.open) closeFind(); break;
+    case 'F10': if(e.shiftKey){ e.preventDefault(); openCtxAtActive(); } break;
+    case 'ContextMenu': e.preventDefault(); openCtxAtActive(); break;
+    default:
+      if(e.key.length === 1 && !e.altKey){
+        e.preventDefault();
+        openEditor(S.vB.v, S.vB.c, e.key);
+      }
+  }
+});
+
+/* ================================================================
+   PORTAPAPELES
+   ================================================================ */
+function selToMatrix(){
+  const r = selRect();
+  const out = [];
+  for(let v = r.v1; v <= r.v2; v++){
+    const m = v2m(v), row = [];
+    for(let c = r.c1; c <= r.c2; c++) row.push(String(cellText(m, c)));
+    out.push(row);
+  }
+  return out;
+}
+function fmtDelim(matrix, delim){
+  const needQ = v => v.includes(delim) || v.includes('"') || v.includes('\n') || v.includes('\r');
+  return matrix.map(r => r.map(v => needQ(v) ? '"' + v.replace(/"/g, '""') + '"' : v).join(delim)).join('\r\n');
+}
+async function copyText(txt){
+  try{ await navigator.clipboard.writeText(txt); return true; }
+  catch(_){
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try{ ok = document.execCommand('copy'); }catch(__){ }
+    ta.remove();
+    gridwrap.focus();
+    return ok;
+  }
+}
+async function copySel(fmt){
+  const m = selToMatrix();
+  if(!m.length) return;
+  let txt;
+  if(fmt === 'csv') txt = fmtDelim(m, S.exportCfg.delim);
+  else if(fmt === 'markdown') txt = toMarkdown(m, mdHeaderForSel());
+  else txt = fmtDelim(m, '\t');
+  const ok = await copyText(txt);
+  toast(ok ? `Copiadas ${fmtInt(m.length)}×${m[0].length} celdas${fmt ? ' (' + fmt + ')' : ''}` : 'No se pudo copiar al portapapeles', ok ? 'ok' : 'err');
+}
+function mdHeaderForSel(){
+  const r = selRect();
+  return Array.from({ length: r.c2 - r.c1 + 1 }, (_, i) =>
+    S.headerOn ? String((S.rows[0] && S.rows[0][r.c1 + i]) ?? '') : colName(r.c1 + i));
+}
+
+document.addEventListener('paste', e => {
+  const t = e.target;
+  if(E.open || (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA'))) return;
+  const txt = e.clipboardData && e.clipboardData.getData('text/plain');
+  if(!txt) return;
+  e.preventDefault();
+  pasteData(txt);
+});
+
+function pasteData(text){
+  const delim = text.includes('\t') ? '\t' : detectDelim(text.slice(0, 65536));
+  const p = makeParser(delim);
+  p.write(text); p.end();
+  const mat = p.take();
+  while(mat.length && mat[mat.length - 1].length === 1 && mat[mat.length - 1][0] === '') mat.pop();
+  if(!mat.length) return;
+  applyPaste(mat);
+}
+function applyPaste(mat){
+  const r = selRect();
+  const startV = r.v1, startC = r.c1;
+  // 1 valor sobre una selección mayor: rellenar
+  if(mat.length === 1 && mat[0].length === 1 && (r.v2 > r.v1 || r.c2 > r.c1)){
+    const val = String(mat[0][0]);
+    const edits = [];
+    for(let v = r.v1; v <= r.v2; v++){
+      const m = v2m(v);
+      for(let c = r.c1; c <= r.c2; c++){
+        const old = String(cellText(m, c));
+        if(old !== val) edits.push([m, c, old, val]);
+      }
+    }
+    if(edits.length) doEntry({ t: 'batch', edits, desc: 'rellenar selección' });
+    toast(`Rellenadas ${fmtInt((r.v2 - r.v1 + 1) * (r.c2 - r.c1 + 1))} celdas`, 'ok');
+    return;
+  }
+  const filtered = !!S.visRows;
+  const prevLen = S.rows.length, prevCols = S.cols;
+  const needCols = startC + Math.max(...mat.map(rr => rr.length));
+  const needRows = startV + mat.length;
+  let grew = null;
+  // con filtro activo NUNCA se crean filas nuevas ni se toca ninguna oculta (§5.1)
+  if(!filtered && (needRows > nRows() || needCols > S.cols)){
+    grew = { rows: Math.max(needRows, nRows()), cols: Math.max(needCols, S.cols), prevLen, prevCols };
+    growTo(grew.rows, grew.cols);
+  } else if(filtered && needCols > S.cols){
+    grew = { rows: nRows(), cols: needCols, prevLen, prevCols };
+    growTo(nRows(), needCols);
+  }
+  const edits = [];
+  let skipped = 0, usedRows = 0;
+  for(let i = 0; i < mat.length; i++){
+    const v = startV + i;
+    if(v >= nVis()){ skipped = mat.length - i; break; }
+    const m = v2m(v);
+    usedRows++;
+    for(let j = 0; j < mat[i].length; j++){
+      const c = startC + j;
+      if(c >= S.cols) break;
+      const old = String(cellText(m, c)), nv2 = String(mat[i][j] ?? '');
+      if(old !== nv2) edits.push([m, c, old, nv2]);
+    }
+  }
+  if(edits.length || grew) doEntry({ t: 'batch', edits, grew, desc: `pegar ${usedRows} fila(s)` });
+  let msg = `Pegadas ${fmtInt(usedRows)} fila(s)`;
+  if(filtered) msg += ' (filtro activo: solo filas visibles)';
+  if(skipped) msg += `; ${fmtInt(skipped)} fila(s) descartadas`;
+  toast(msg, skipped ? 'warn' : 'ok');
+}
+
+/* ================================================================
+   OPERACIONES ESTRUCTURALES
+   ================================================================ */
+function selModelRows(){
+  const r = selRect();
+  const out = [];
+  for(let v = r.v1; v <= r.v2; v++) out.push(v2m(v));
+  out.sort((a, b) => a - b);
+  return out;
+}
+function clearSelection(){
+  const r = selRect();
+  const edits = [];
+  for(let v = r.v1; v <= r.v2; v++){
+    const m = v2m(v);
+    for(let c = r.c1; c <= r.c2; c++){
+      const old = String(cellText(m, c));
+      if(old !== '') edits.push([m, c, old, '']);
+    }
+  }
+  if(!edits.length) return;
+  doEntry({ t: 'batch', edits, desc: `vaciar ${edits.length} celda(s)` });
+  toast(`${fmtInt(edits.length)} celda(s) vaciada(s)`, 'ok');
+}
+function insRows(where){
+  const r = selRect();
+  const n = r.v2 - r.v1 + 1;
+  const at = where === 'above' ? v2m(r.v1) : v2m(r.v2) + 1;
+  doEntry({ t: 'insrows', at, n, desc: `insertar ${n} fila(s)` });
+  if(S.filters.size) toast('Las filas nuevas están vacías y pueden quedar ocultas por el filtro activo', 'warn');
+}
+function delRows(){
+  const idxs = selModelRows();
+  if(idxs.length >= nRows()){ toast('No se pueden eliminar todas las filas', 'warn'); return; }
+  const off = hdrOff();
+  const rows = idxs.map(m => S.rows[m + off]);
+  doEntry({ t: 'delrows', idxs, rows, desc: `eliminar ${idxs.length} fila(s)` });
+  toast(`Eliminadas ${fmtInt(idxs.length)} fila(s)`, 'ok');
+}
+function insCols(where){
+  const r = selRect();
+  const n = r.c2 - r.c1 + 1;
+  const at = where === 'left' ? r.c1 : r.c2 + 1;
+  doEntry({ t: 'inscols', at, n, desc: `insertar ${n} columna(s)` });
+}
+function delCols(){
+  const r = selRect();
+  const idxs = [];
+  for(let c = r.c1; c <= r.c2; c++) idxs.push(c);
+  if(idxs.length >= S.cols){ toast('No se pueden eliminar todas las columnas', 'warn'); return; }
+  const saved = idxs.map(c => S.rows.map(row => String(row[c] ?? '')));
+  doEntry({
+    t: 'delcols', idxs, saved,
+    widths: idxs.map(c => S.colW[c]),
+    ctypes: idxs.map(c => S.types[c]),
+    cforced: idxs.map(c => S.forced[c]),
+    desc: `eliminar ${idxs.length} columna(s)`
+  });
+  toast(`Eliminadas ${fmtInt(idxs.length)} columna(s)`, 'ok');
+}
+
+/* ================================================================
+   ORDENACIÓN (destructiva + reversible, §5.3)
+   ================================================================ */
+function sortBy(c, dir){
+  const off = hdrOff(), n = nRows();
+  if(!n) return;
+  const type = effType(c);
+  const vals = new Array(n);
+  for(let m = 0; m < n; m++) vals[m] = String((S.rows[m + off] || [])[c] ?? '');
+  const finish = perm => {
+    hideProgress();
+    doEntry({ t: 'perm', perm, sort: { c, dir }, prevSort: { ...S.sort }, desc: `ordenar por ${hdrName(c)}` });
+    toast(`Ordenado por ${hdrName(c)} (${TYPE_LABEL[type]}, ${dir === 'desc' ? 'descendente' : 'ascendente'})`, 'ok');
+  };
+  if(W.worker && n > 5000){
+    showProgress('Ordenando…', null);
+    workerJob({ op: 'sort', vals, type, dir, dc: dcEff() }, d => {
+      if(d.t === 'sorted'){ finish(d.perm); return true; }
+      if(d.t === 'err'){ hideProgress(); toast('Error al ordenar: ' + d.msg, 'err'); return true; }
+      return false;
+    });
+  } else finish(sortPerm(vals, type, dir, dcEff()));
+}
+
+/* ================================================================
+   FILTROS Y MENÚ DE COLUMNA
+   ================================================================ */
+function setFilter(c, q){
+  q = q.trim();
+  if(q) S.filters.set(c, q);
+  else S.filters.delete(c);
+  applyFilters();
+  renderHead();
+  renderBody(true);
+  statsSched();
+  findRefreshSoon();
+  announce(S.filters.size ? `Filtro aplicado: mostrando ${nVis()} de ${nRows()} filas` : 'Filtros quitados');
+}
+function forceType(c, t){
+  doEntry({ t: 'type', c, a: S.forced[c], b: t, desc: `tipo de columna ${colName(c)}` });
+  renderHead(); cellbarUpdate();
+}
+function openColMenu(c, x, y){
+  const q = S.filters.get(c) || '';
+  colMenu.innerHTML =
+    `<div class="mlabel">Columna ${colName(c)} · ${esc(hdrName(c))}</div>` +
+    `<button class="mi" data-a="sortasc">↑&nbsp; Ordenar ascendente</button>` +
+    `<button class="mi" data-a="sortdesc">↓&nbsp; Ordenar descendente</button>` +
+    `<div class="msep"></div>` +
+    `<div class="mlabel">Filtrar (contiene)</div>` +
+    `<div class="mrow"><input type="search" id="colFilterInp" value="${esc(q)}" placeholder="Texto a buscar…" aria-label="Filtro de la columna"></div>` +
+    (q ? `<button class="mi" data-a="clearfilter">✕&nbsp; Quitar filtro</button>` : '') +
+    (S.filters.size > 1 || (S.filters.size === 1 && !S.filters.has(c)) ? `<button class="mi" data-a="clearall">✕&nbsp; Quitar todos los filtros</button>` : '') +
+    `<div class="msep"></div>` +
+    `<div class="mrow"><span style="font-size:.78rem;color:var(--text2)">Tipo</span>` +
+    `<select id="colTypeMenuSel" aria-label="Tipo de la columna">` +
+    ['auto', 'number', 'text', 'date', 'boolean'].map(t =>
+      `<option value="${t}"${(S.forced[c] || 'auto') === t ? ' selected' : ''}>${t === 'auto' ? 'Auto (' + TYPE_LABEL[S.types[c] || 'text'] + ')' : TYPE_LABEL[t]}</option>`).join('') +
+    `</select></div>`;
+  showMenu(colMenu, x, y);
+  const inp = $('#colFilterInp');
+  let ft;
+  inp.addEventListener('input', () => { clearTimeout(ft); ft = setTimeout(() => setFilter(c, inp.value), 150); });
+  inp.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if(e.key === 'Enter'){ setFilter(c, inp.value); closeMenus(); gridwrap.focus(); }
+    else if(e.key === 'Escape'){ closeMenus(); gridwrap.focus(); }
+  });
+  $('#colTypeMenuSel').addEventListener('change', e => { forceType(c, e.target.value === 'auto' ? null : e.target.value); });
+  colMenu.querySelectorAll('.mi').forEach(b => b.addEventListener('click', () => {
+    const a = b.dataset.a;
+    closeMenus();
+    if(a === 'sortasc') sortBy(c, 'asc');
+    else if(a === 'sortdesc') sortBy(c, 'desc');
+    else if(a === 'clearfilter') setFilter(c, '');
+    else if(a === 'clearall'){ S.filters.clear(); setFilter(c, ''); }
+  }));
+  inp.focus();
+}
+
+/* ================================================================
+   MENÚ CONTEXTUAL
+   ================================================================ */
+gridwrap.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  const gh = e.target.closest('.gh');
+  if(gh){ openColMenu(+gh.dataset.c, e.clientX, e.clientY); return; }
+  const cell = e.target.closest('.gc');
+  const rn = e.target.closest('.rn');
+  if(cell){
+    const v = +cell.parentElement.dataset.v, c = +cell.dataset.c;
+    const r = selRect();
+    if(v < r.v1 || v > r.v2 || c < r.c1 || c > r.c2) moveTo(v, c, false);
+  } else if(rn) selectRow(+rn.dataset.v, false);
+  openCtx(e.clientX, e.clientY);
+});
+function openCtx(x, y){
+  const r = selRect();
+  const nr = r.v2 - r.v1 + 1, nc = r.c2 - r.c1 + 1;
+  ctxMenu.innerHTML =
+    `<button class="mi" data-a="copy">Copiar <kbd>Ctrl+C</kbd></button>` +
+    `<button class="mi" data-a="copymd">Copiar como Markdown</button>` +
+    `<button class="mi" data-a="copycsv">Copiar como CSV</button>` +
+    `<button class="mi" data-a="clear">Vaciar celdas <kbd>Supr</kbd></button>` +
+    `<div class="msep"></div>` +
+    `<button class="mi" data-a="rowab">Insertar ${nr} fila(s) encima</button>` +
+    `<button class="mi" data-a="rowbe">Insertar ${nr} fila(s) debajo</button>` +
+    `<button class="mi danger" data-a="delrow">Eliminar ${nr} fila(s)</button>` +
+    `<div class="msep"></div>` +
+    `<button class="mi" data-a="colle">Insertar ${nc} col. a la izquierda</button>` +
+    `<button class="mi" data-a="colri">Insertar ${nc} col. a la derecha</button>` +
+    `<button class="mi danger" data-a="delcol">Eliminar ${nc} columna(s)</button>` +
+    `<div class="msep"></div>` +
+    `<button class="mi" data-a="expsel">Exportar la selección…</button>`;
+  showMenu(ctxMenu, x, y);
+  ctxMenu.querySelectorAll('.mi').forEach(b => b.addEventListener('click', () => {
+    const a = b.dataset.a;
+    closeMenus();
+    ctxAction(a);
+  }));
+  const f = ctxMenu.querySelector('.mi');
+  if(f) f.focus();
+}
+function ctxAction(a){
+  switch(a){
+    case 'copy': copySel(); break;
+    case 'copymd': copySel('markdown'); break;
+    case 'copycsv': copySel('csv'); break;
+    case 'clear': clearSelection(); break;
+    case 'rowab': insRows('above'); break;
+    case 'rowbe': insRows('below'); break;
+    case 'delrow': delRows(); break;
+    case 'colle': insCols('left'); break;
+    case 'colri': insCols('right'); break;
+    case 'delcol': delCols(); break;
+    case 'expsel': S.exportCfg.scope = 'sel'; openExport(); break;
+  }
+}
+function openCtxAtActive(){
+  const rect = gridwrap.getBoundingClientRect();
+  const headH = ghead.offsetHeight || 30;
+  const rowH = ROWH[S.density];
+  const x = rect.left + colX(S.vB.c) - gridwrap.scrollLeft + 24;
+  const y = rect.top + headH + S.vB.v * rowH - gridwrap.scrollTop + 24;
+  openCtx(clamp(x, 10, innerWidth - 240), clamp(y, 10, innerHeight - 340));
+}
+function showMenu(el, x, y){
+  closeMenus();
+  el.hidden = false;
+  el.style.left = '0px'; el.style.top = '0px';
+  const w = el.offsetWidth, h = el.offsetHeight;
+  el.style.left = clamp(x, 6, innerWidth - w - 6) + 'px';
+  el.style.top = clamp(y, 6, innerHeight - h - 6) + 'px';
+}
+function closeMenus(){ ctxMenu.hidden = true; colMenu.hidden = true; cfgMenu.hidden = true; }
+document.addEventListener('mousedown', e => { if(!e.target.closest('.menu')) closeMenus(); }, true);
+for(const mn of [ctxMenu, colMenu, cfgMenu]){
+  mn.addEventListener('keydown', e => {
+    e.stopPropagation();
+    const items = [...mn.querySelectorAll('button.mi, input, select')];
+    const i = items.indexOf(document.activeElement);
+    if(e.key === 'ArrowDown'){ e.preventDefault(); (items[(i + 1) % items.length] || items[0]).focus(); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); (items[(i - 1 + items.length) % items.length] || items[0]).focus(); }
+    else if(e.key === 'Escape'){ closeMenus(); gridwrap.focus(); }
+  });
+}
+
+/* ================================================================
+   BUSCAR / REEMPLAZAR / IR A CELDA
+   ================================================================ */
+const F = { open: false, q: '', qlc: '', matches: [], cur: -1 };
+function openFind(withRepl){
+  findWrap.hidden = false;
+  F.open = true;
+  if(withRepl){ replRow.hidden = false; btnTglRepl.setAttribute('aria-expanded', 'true'); }
+  findInp.focus();
+  findInp.select();
+  findRefresh();
+}
+function closeFind(){
+  findWrap.hidden = true;
+  F.open = false; F.q = ''; F.qlc = ''; F.matches = []; F.cur = -1;
+  renderBody(true);
+  gridwrap.focus();
+}
+function findRefresh(){
+  F.q = findInp.value;
+  F.qlc = F.q.toLowerCase();
+  F.matches = [];
+  F.cur = -1;
+  if(F.q){
+    const off = hdrOff(), nv = nVis();
+    for(let v = 0; v < nv; v++){
+      const m = v2m(v), row = S.rows[m + off] || [];
+      for(let c = 0; c < S.cols; c++){
+        const val = row[c];
+        if(val && String(val).toLowerCase().includes(F.qlc)) F.matches.push({ v, m, c });
+      }
+    }
+  }
+  updateFindUI();
+  renderBody(true);
+}
+function updateFindUI(){
+  findCount.textContent = F.matches.length
+    ? (F.cur >= 0 ? `${F.cur + 1} de ${fmtInt(F.matches.length)}` : `${fmtInt(F.matches.length)} coincidencias`)
+    : (F.q ? 'Sin coincidencias' : '—');
+}
+function findNav(dir){
+  if(!F.matches.length) return;
+  F.cur = (F.cur + dir + F.matches.length) % F.matches.length;
+  const mt = F.matches[F.cur];
+  const v = m2v(mt.m);
+  if(v >= 0) moveTo(v, mt.c, false);
+  updateFindUI();
+  renderBody(true);
+}
+function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function replaceCurrent(){
+  if(!F.matches.length) return;
+  if(F.cur < 0){ findNav(1); return; }
+  const mt = F.matches[F.cur];
+  const raw = String(cellText(mt.m, mt.c));
+  const nv2 = raw.replace(new RegExp(escRe(F.q), 'gi'), replInp.value);
+  setCellUndo(mt.m, mt.c, nv2, 'reemplazar en');
+  const keep = F.cur;
+  clearTimeout(findT);
+  findRefresh();
+  if(F.matches.length){ F.cur = clamp(keep, 0, F.matches.length - 1) - 1; findNav(1); }
+}
+function replaceAll(){
+  if(!F.q) return;
+  const re = new RegExp(escRe(F.q), 'gi');
+  const seen = new Set();
+  const edits = [];
+  for(const mt of F.matches){
+    const key = mt.m + ':' + mt.c;
+    if(seen.has(key)) continue;
+    seen.add(key);
+    const raw = String(cellText(mt.m, mt.c));
+    const nv2 = raw.replace(re, replInp.value);
+    if(nv2 !== raw) edits.push([mt.m, mt.c, raw, nv2]);
+  }
+  if(!edits.length){ toast('Sin coincidencias que reemplazar', 'warn'); return; }
+  doEntry({ t: 'batch', edits, desc: `reemplazar todo (${edits.length} celdas)` });
+  toast(`Reemplazado en ${fmtInt(edits.length)} celda(s)`, 'ok');
+  clearTimeout(findT);
+  findRefresh();
+}
+findWrap.addEventListener('keydown', e => e.stopPropagation());
+findInp.addEventListener('input', () => { clearTimeout(findT); findT = setTimeout(findRefresh, 150); });
+findInp.addEventListener('keydown', e => {
+  if(e.key === 'Enter'){ e.preventDefault(); if(F.cur < 0) findRefresh(); findNav(e.shiftKey ? -1 : 1); }
+  else if(e.key === 'Escape'){ e.preventDefault(); closeFind(); }
+});
+replInp.addEventListener('keydown', e => {
+  if(e.key === 'Enter'){ e.preventDefault(); replaceCurrent(); }
+  else if(e.key === 'Escape'){ e.preventDefault(); closeFind(); }
+});
+btnFNext.addEventListener('click', () => findNav(1));
+btnFPrev.addEventListener('click', () => findNav(-1));
+btnFClose.addEventListener('click', closeFind);
+btnTglRepl.addEventListener('click', () => {
+  const show = replRow.hidden;
+  replRow.hidden = !show;
+  btnTglRepl.setAttribute('aria-expanded', String(show));
+  if(show) replInp.focus();
+});
+btnRepl.addEventListener('click', replaceCurrent);
+btnReplAll.addEventListener('click', replaceAll);
+
+function openGoto(){ dlgGoto.showModal(); gotoInp.select(); }
+function gotoRun(){
+  const ref = parseRef(gotoInp.value);
+  if(!ref || ref.r < 0 || ref.c < 0){ toast('Referencia no válida. Ejemplo: B120', 'warn'); return; }
+  if(ref.r >= nRows() || ref.c >= S.cols){ toast(`Fuera de rango: la tabla tiene ${fmtInt(nRows())} filas × ${S.cols} columnas`, 'warn'); return; }
+  const v = m2v(ref.r);
+  dlgGoto.close();
+  if(v < 0){ toast(`La fila ${ref.r + 1} está oculta por el filtro activo`, 'warn'); return; }
+  moveTo(v, ref.c, false);
+  flashActive();
+}
+btnGotoOk.addEventListener('click', gotoRun);
+gotoInp.addEventListener('keydown', e => { e.stopPropagation(); if(e.key === 'Enter'){ e.preventDefault(); gotoRun(); } });
+
+/* ================================================================
+   ESTADÍSTICAS DE LA SELECCIÓN (§3.4)
+   ================================================================ */
+const STQ = { ok: false, sum: 0, nums: 0, nonEmpty: 0 };
+let statsT2 = 0;
+const ORDER_ELS = () => [stMin, stMax, stMed];
+function iterSel(cb){
+  const r = selRect(), dc = dcEff();
+  for(let v = r.v1; v <= r.v2; v++){
+    const m = v2m(v);
+    for(let c = r.c1; c <= r.c2; c++){
+      const raw = String(cellText(m, c));
+      if(raw.trim() === '') continue;
+      cb(toNum(raw, dc));
+    }
+  }
+}
+function statsSched(){
+  const r = selRect();
+  const cells = (r.v2 - r.v1 + 1) * (r.c2 - r.c1 + 1);
+  if(cells <= 60000) computeQuick();
+  else {
+    STQ.ok = false;
+    for(const el of [stSum, stAvg]){ el.textContent = '…'; el.classList.add('calc'); }
+  }
+  for(const el of ORDER_ELS()){ el.textContent = 'calculando…'; el.classList.add('calc'); }
+  clearTimeout(statsT2);
+  statsT2 = setTimeout(computeFull, 160);
+}
+function paintQuick(){
+  stCnt.textContent = fmtInt(STQ.nonEmpty);
+  stCntN.textContent = fmtInt(STQ.nums);
+  stSum.textContent = STQ.nums ? fmtNum(STQ.sum) : '—';
+  stAvg.textContent = STQ.nums ? fmtNum(STQ.sum / STQ.nums) : '—';
+  stSum.classList.remove('calc');
+  stAvg.classList.remove('calc');
+  selBadgeUpdate();
+}
+function computeQuick(){
+  let sum = 0, nums = 0, ne = 0;
+  iterSel(n => { ne++; if(!Number.isNaN(n)){ sum += n; nums++; } });
+  STQ.ok = true; STQ.sum = sum; STQ.nums = nums; STQ.nonEmpty = ne;
+  paintQuick();
+}
+function computeFull(){
+  const arr = [];
+  let sum = 0, nums = 0, ne = 0;
+  iterSel(n => { ne++; if(!Number.isNaN(n)){ sum += n; nums++; arr.push(n); } });
+  if(!STQ.ok){ STQ.ok = true; STQ.sum = sum; STQ.nums = nums; STQ.nonEmpty = ne; paintQuick(); }
+  for(const el of ORDER_ELS()) el.classList.remove('calc');
+  if(!arr.length){
+    stMin.textContent = stMax.textContent = stMed.textContent = '—';
+    return;
+  }
+  arr.sort((a, b) => a - b);
+  stMin.textContent = fmtNum(arr[0]);
+  stMax.textContent = fmtNum(arr[arr.length - 1]);
+  const mid = arr.length >> 1;
+  stMed.textContent = fmtNum(arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2);
+}
+
+/* ================================================================
+   PERSISTENCIA LOCAL (§5.5: IndexedDB → localStorage → aviso)
+   ================================================================ */
+const P = { mode: 'none', reason: '', db: null, state: 'none', lastSave: 0, timer: 0, dirty: false };
+const LSKEY = 'csveditor.v21.autosave';
+function idbOpen(){
+  return new Promise((res, rej) => {
+    let req;
+    try{ req = indexedDB.open('csv-editor-v21', 1); }catch(e){ rej(e); return; }
+    req.onupgradeneeded = () => { req.result.createObjectStore('kv'); };
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error || new Error('IndexedDB no disponible'));
+    req.onblocked = () => rej(new Error('IndexedDB bloqueada'));
+  });
+}
+function idbPut(db, key, val){
+  return new Promise((res, rej) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(val, key);
+    tx.oncomplete = res;
+    tx.onerror = () => rej(tx.error);
+    tx.onabort = () => rej(tx.error || new Error('transacción abortada'));
+  });
+}
+function idbGet(db, key){
+  return new Promise((res, rej) => {
+    const rq = db.transaction('kv', 'readonly').objectStore('kv').get(key);
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+function idbDel(db, key){
+  return new Promise((res, rej) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').delete(key);
+    tx.oncomplete = res;
+    tx.onerror = () => rej(tx.error);
+  });
+}
+async function initStore(){
+  try{
+    const db = await idbOpen();
+    await idbPut(db, '__test__', { t: Date.now() });   // escritura de prueba real (§5.5)
+    P.db = db; P.mode = 'idb';
+  }catch(_){
+    try{
+      localStorage.setItem('__csve_test__', '1');
+      localStorage.removeItem('__csve_test__');
+      P.mode = 'ls';
+    }catch(__){
+      P.mode = 'none';
+      P.reason = 'El navegador no permite almacenamiento local en este contexto (habitual con file:// en algunos navegadores). Exporta manualmente con frecuencia (Ctrl+S).';
+    }
+  }
+  updateSaveUI();
+  checkRecovery();
+}
+function snapshot(){
+  return {
+    v: 1, rows: S.rows, cols: S.cols, headerOn: S.headerOn, forced: S.forced, colW: S.colW,
+    fileName: S.fileName, density: S.density, dcMode: S.dcMode, exportCfg: S.exportCfg, ts: Date.now()
+  };
+}
+/* Espejo en localStorage para datasets pequeños: en algunos navegadores
+   IndexedDB bajo file:// supera la escritura de prueba pero no persiste
+   entre sesiones (§5.5). El espejo cubre ese caso; si el dataset es
+   grande, se elimina el espejo para no recuperar datos obsoletos. */
+function mirrorToLS(snap){
+  try{
+    if(S.rows.length * Math.max(1, S.cols) <= 120000){
+      const s = JSON.stringify(snap);
+      if(s.length <= 4500000){ localStorage.setItem(LSKEY, s); return; }
+    }
+    localStorage.removeItem(LSKEY);
+  }catch(_){ }
+}
+async function saveNow(){
+  if(S.loading) return;
+  if(P.mode === 'idb'){
+    try{
+      const snap = snapshot();
+      await idbPut(P.db, 'auto', snap);
+      mirrorToLS(snap);
+      P.state = 'saved'; P.lastSave = Date.now(); P.dirty = false;
+    }catch(e){ P.mode = 'ls'; return saveNow(); }
+  } else if(P.mode === 'ls'){
+    try{
+      const s = JSON.stringify(snapshot());
+      if(s.length > 4500000){
+        P.state = 'na';
+        P.reason = 'El conjunto de datos es demasiado grande para el autoguardado disponible (límite de localStorage ~5 MB). Exporta manualmente con frecuencia (Ctrl+S).';
+        updateSaveUI();
+        return;
+      }
+      localStorage.setItem(LSKEY, s);
+      P.state = 'saved'; P.lastSave = Date.now(); P.dirty = false;
+    }catch(e){
+      P.state = 'na';
+      P.reason = 'No se pudo escribir en localStorage: ' + e.message;
+    }
+  } else P.state = 'na';
+  updateSaveUI();
+}
+function markDirty(){
+  P.dirty = true;
+  P.state = P.mode === 'none' ? 'na' : 'dirty';
+  updateSaveUI();
+  clearTimeout(P.timer);
+  P.timer = setTimeout(saveNow, 1200);
+}
+function relTime(ts){
+  const s = Math.round((Date.now() - ts) / 1000);
+  if(s < 5) return 'ahora';
+  if(s < 60) return `hace ${s} s`;
+  const m = Math.round(s / 60);
+  if(m < 60) return `hace ${m} min`;
+  return `hace ${Math.round(m / 60)} h`;
+}
+function updateSaveUI(){
+  saveInd.classList.remove('saved', 'dirty', 'na');
+  if(P.mode === 'none' || P.state === 'na'){
+    saveInd.classList.add('na');
+    saveIndTxt.textContent = 'Autoguardado no disponible';
+    saveInd.title = P.reason || 'Autoguardado no disponible. Exporta manualmente con frecuencia (Ctrl+S).';
+  } else if(P.state === 'dirty'){
+    saveInd.classList.add('dirty');
+    saveIndTxt.textContent = 'Cambios sin guardar';
+    saveInd.title = 'Hay ediciones pendientes de volcar al autoguardado.';
+  } else if(P.state === 'saved'){
+    saveInd.classList.add('saved');
+    saveIndTxt.textContent = 'Guardado ' + relTime(P.lastSave);
+    saveInd.title = 'Autoguardado al día (' + (P.mode === 'idb' ? 'IndexedDB' : 'localStorage') + ').';
+  } else {
+    saveIndTxt.textContent = 'Sin cambios';
+    saveInd.title = 'Todavía no hay cambios que guardar. Almacenamiento: ' + (P.mode === 'idb' ? 'IndexedDB' : 'localStorage') + '.';
+  }
+}
+setInterval(() => { if(P.state === 'saved') updateSaveUI(); }, 10000);
+async function loadSaved(){
+  let a = null, b = null;
+  if(P.db){ try{ a = await idbGet(P.db, 'auto'); }catch(_){ } }
+  try{ const s = localStorage.getItem(LSKEY); if(s) b = JSON.parse(s); }catch(_){ }
+  if(a && b) return (a.ts || 0) >= (b.ts || 0) ? a : b;
+  return a || b || null;
+}
+async function clearSaved(){
+  try{ if(P.db) await idbDel(P.db, 'auto'); }catch(_){ }
+  try{ localStorage.removeItem(LSKEY); }catch(_){ }
+}
+async function checkRecovery(){
+  const snap = await loadSaved();
+  if(!snap || !snap.rows || !snap.rows.length) return;
+  if(hasData()) return;
+  recoverInfo.textContent = `${snap.fileName || 'datos'} · ${fmtInt(Math.max(0, snap.rows.length - (snap.headerOn ? 1 : 0)))} filas · ${relTime(snap.ts || Date.now())}`;
+  recoverBar.hidden = false;
+  btnRecover.onclick = () => { recoverBar.hidden = true; restoreSnap(snap); };
+  btnDiscard.onclick = () => { recoverBar.hidden = true; clearSaved(); toast('Sesión anterior descartada', 'ok'); };
+}
+function restoreSnap(snap){
+  S.rows = snap.rows;
+  S.cols = snap.cols || Math.max(1, ...snap.rows.map(r => r.length));
+  S.headerOn = !!snap.headerOn;
+  S.forced = snap.forced || [];
+  S.colW = snap.colW || [];
+  S.types = [];
+  S.fileName = snap.fileName || 'datos.csv';
+  S.density = snap.density || 'normal';
+  S.dcMode = snap.dcMode || 'auto';
+  if(snap.exportCfg) S.exportCfg = snap.exportCfg;
+  S.filters.clear(); S.visRows = null; S.visMap = null;
+  S.sort = { c: -1, dir: null };
+  H.undo.length = H.redo.length = 0;
+  updateUndoUI();
+  tglHeader.checked = S.headerOn;
+  applyDensity(S.density);
+  fileName.textContent = S.fileName;
+  decSel.value = S.dcMode;
+  S.vA = { v: 0, c: 0 }; S.vB = { v: 0, c: 0 };
+  S.loading = false;
+  emptyHint.hidden = true;
+  after({ structure: true });
+  detectTypes();
+  P.state = 'saved'; P.lastSave = snap.ts || Date.now(); P.dirty = false;
+  updateSaveUI();
+  toast('Sesión anterior recuperada', 'ok');
+}
+window.addEventListener('beforeunload', e => {
+  if(P.dirty && hasData()){ e.preventDefault(); e.returnValue = ''; }
+});
+
+/* ================================================================
+   IMPORTACIÓN
+   ================================================================ */
+const L = { src: null, srcType: null };
+function doImport(src, type, delim, force){
+  const run = () => {
+    L.src = src; L.srcType = type;
+    const newRows = [];
+    S.loading = true;
+    showProgress('Importando…', type === 'file' ? 0 : null);
+    const name = type === 'file' ? src.name : null;
+    const onMsg = d => {
+      if(d.t === 'rows'){
+        for(const r of d.rows) newRows.push(r);
+        progressLbl.textContent = `Importando… ${fmtInt(newRows.length)} filas`;
+        return false;
+      }
+      if(d.t === 'prog'){ setProgress(d.pct); return false; }
+      if(d.t === 'done'){ finishLoad(newRows, d.delim, name); return true; }
+      if(d.t === 'err'){
+        S.loading = false;
+        hideProgress();
+        toast('Error al importar: ' + d.msg, 'err');
+        return true;
+      }
+      return false;
+    };
+    if(W.worker) workerJob(type === 'file' ? { op: 'parseFile', file: src, delim } : { op: 'parseText', text: src, delim }, onMsg);
+    else mainParse(src, type, delim, onMsg);
+  };
+  if(!force && hasData()) confirmDlg('Importar reemplazará la tabla actual y vaciará el historial de cambios. ¿Continuar?', run);
+  else run();
+}
+async function mainParse(src, type, delim, onMsg){
+  try{
+    if(type === 'file'){
+      if(delim === 'auto') delim = detectDelim(await src.slice(0, 65536).text());
+      const p = makeParser(delim);
+      const reader = src.stream().getReader();
+      const dec = new TextDecoder('utf-8');
+      let done = 0;
+      for(;;){
+        const { value, done: fin } = await reader.read();
+        if(fin) break;
+        done += value.byteLength;
+        p.write(dec.decode(value, { stream: true }));
+        const rows = p.take();
+        if(rows.length) onMsg({ t: 'rows', rows });
+        onMsg({ t: 'prog', pct: done / (src.size || 1) });
+      }
+      p.write(dec.decode());
+      p.end();
+      const rows = p.take();
+      if(rows.length) onMsg({ t: 'rows', rows });
+      onMsg({ t: 'done', delim });
+    } else {
+      if(delim === 'auto') delim = detectDelim(src.slice(0, 65536));
+      const p = makeParser(delim);
+      p.write(src); p.end();
+      onMsg({ t: 'rows', rows: p.take() });
+      onMsg({ t: 'done', delim });
+    }
+  }catch(e){ onMsg({ t: 'err', msg: e.message }); }
+}
+function finishLoad(newRows, delim, name){
+  while(newRows.length && newRows[newRows.length - 1].every(v => v === '')) newRows.pop();
+  S.rows = newRows;
+  S.cols = 0;
+  for(const r of newRows) if(r.length > S.cols) S.cols = r.length;
+  if(S.cols === 0){ S.cols = 1; }
+  S.headerOn = newRows.length > 1;
+  tglHeader.checked = S.headerOn;
+  S.colW = []; S.types = []; S.forced = [];
+  S.filters.clear(); S.visRows = null; S.visMap = null;
+  S.sort = { c: -1, dir: null };
+  H.undo.length = H.redo.length = 0;
+  updateUndoUI();
+  if(name){ S.fileName = name; fileName.textContent = name; }
+  S.vA = { v: 0, c: 0 }; S.vB = { v: 0, c: 0 };
+  S.loading = false;
+  emptyHint.hidden = true;
+  after({ structure: true });
+  detectTypes();
+  hideProgress();
+  markDirty();
+  gridwrap.scrollTop = 0; gridwrap.scrollLeft = 0;
+  const dn = delim === '\t' ? 'tabulación' : delim === ';' ? 'punto y coma (;)' : 'coma (,)';
+  toast(`Importadas ${fmtInt(nRows())} filas × ${S.cols} columnas — delimitador: ${dn}`, 'ok',
+    [{ label: 'Cambiar delimitador', fn: reimportMenu }]);
+  announce(`Importadas ${nRows()} filas y ${S.cols} columnas`);
+}
+function reimportMenu(){
+  if(!L.src) return;
+  toast('Reimportar interpretando el delimitador como:', '', [
+    { label: 'Coma ,', fn: () => doImport(L.src, L.srcType, ',', true) },
+    { label: 'Punto y coma ;', fn: () => doImport(L.src, L.srcType, ';', true) },
+    { label: 'Tabulación', fn: () => doImport(L.src, L.srcType, '\t', true) },
+  ]);
+}
+
+/* arrastrar y soltar */
+let dragDepth = 0;
+window.addEventListener('dragenter', e => {
+  if([...(e.dataTransfer ? e.dataTransfer.types : [])].includes('Files')){
+    dragDepth++;
+    dropOverlay.hidden = false;
+  }
+});
+window.addEventListener('dragleave', () => {
+  if(!dropOverlay.hidden){
+    dragDepth--;
+    if(dragDepth <= 0){ dragDepth = 0; dropOverlay.hidden = true; }
+  }
+});
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => {
+  e.preventDefault();
+  dragDepth = 0;
+  dropOverlay.hidden = true;
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f) doImport(f, 'file', 'auto');
+});
+
+/* ================================================================
+   EXPORTACIÓN (§4.3)
+   ================================================================ */
+function injectGuard(v){
+  return (S.exportCfg.inject && /^[=+\-@]/.test(v) && Number.isNaN(toNum(v, dcEff()))) ? "'" + v : v;
+}
+function toCSV(mtx, delim){
+  return mtx.map(r => r.map(cell => {
+    const v = injectGuard(String(cell));
+    return (v.includes(delim) || v.includes('"') || v.includes('\n') || v.includes('\r'))
+      ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }).join(delim)).join('\r\n');
+}
+function toMarkdown(mtx, hdrRow){
+  const escMd = v => String(v).replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>');
+  const w = Math.max(hdrRow ? hdrRow.length : 0, ...mtx.map(r => r.length), 1);
+  const line = r => '| ' + Array.from({ length: w }, (_, c) => escMd(r[c] ?? '')).join(' | ') + ' |';
+  const hdr = line(hdrRow || Array.from({ length: w }, (_, c) => colName(c)));
+  const sepLine = '|' + Array.from({ length: w }, () => ' --- ').join('|') + '|';
+  return [hdr, sepLine, ...mtx.map(line)].join('\n');
+}
+function uniqueKeys(hdr){
+  const seen = new Map();
+  return hdr.map((h, i) => {
+    let k = String(h || '').trim() || 'col' + (i + 1);
+    if(seen.has(k)){ const n = seen.get(k) + 1; seen.set(k, n); k = k + '_' + n; }
+    else seen.set(k, 1);
+    return k;
+  });
+}
+function buildExport(){
+  const cfg = S.exportCfg, scope = cfg.scope;
+  let body, hdr;
+  if(scope === 'sel'){
+    body = selToMatrix();
+    const r = selRect();
+    hdr = Array.from({ length: r.c2 - r.c1 + 1 }, (_, i) =>
+      S.headerOn ? String((S.rows[0] && S.rows[0][r.c1 + i]) ?? '') : colName(r.c1 + i));
+  } else {
+    const all = S.rows.map(row => Array.from({ length: S.cols }, (_, c) => String(row[c] ?? '')));
+    if(S.headerOn){ hdr = all[0] || []; body = all.slice(1); }
+    else { hdr = Array.from({ length: S.cols }, (_, c) => colName(c)); body = all; }
+  }
+  let text, mime, ext;
+  if(cfg.format === 'csv' || cfg.format === 'tsv'){
+    const delim = cfg.format === 'tsv' ? '\t' : cfg.delim;
+    const rowsOut = (S.headerOn && scope === 'all') ? [hdr, ...body] : body;
+    text = toCSV(rowsOut, delim);
+    mime = cfg.format === 'tsv' ? 'text/tab-separated-values' : 'text/csv';
+    ext = cfg.format === 'tsv' ? '.tsv' : '.csv';
+  } else if(cfg.format === 'markdown'){
+    text = toMarkdown(body, hdr);
+    mime = 'text/markdown';
+    ext = '.md';
+  } else {
+    if(S.headerOn){
+      const keys = uniqueKeys(hdr);
+      text = JSON.stringify(body.map(r => {
+        const o = {};
+        keys.forEach((k, i) => o[k] = r[i] ?? '');
+        return o;
+      }), null, 2);
+    } else text = JSON.stringify(body, null, 2);
+    mime = 'application/json';
+    ext = '.json';
+  }
+  return { text, mime, ext };
+}
+function download(nameBase, ext, text, mime, bom){
+  const parts = [];
+  if(bom) parts.push('\uFEFF');
+  parts.push(text);
+  const blob = new Blob(parts, { type: mime + ';charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nameBase.replace(/\.(csv|tsv|txt|md|json)$/i, '') + ext;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function quickExport(){
+  if(!hasData()){ toast('No hay datos que exportar', 'warn'); return; }
+  const { text, mime, ext } = buildExport();
+  download(S.fileName, ext, text, mime, S.exportCfg.bom && S.exportCfg.format === 'csv');
+  toast(`Exportado como ${S.exportCfg.format.toUpperCase()} (${S.exportCfg.scope === 'sel' ? 'selección' : 'tabla completa'})`, 'ok');
+}
+function segWire(el, cb){
+  el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    el.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    cb(b.dataset.v);
+  }));
+}
+segWire(expFmt, v => { S.exportCfg.format = v; expUpdateVis(); markDirty(); });
+segWire(expScope, v => { S.exportCfg.scope = v; markDirty(); });
+expDelim.addEventListener('change', e => { S.exportCfg.delim = e.target.value; markDirty(); });
+expBom.addEventListener('change', e => { S.exportCfg.bom = e.target.checked; markDirty(); });
+expInject.addEventListener('change', e => { S.exportCfg.inject = e.target.checked; markDirty(); });
+function expUpdateVis(){
+  const csv = S.exportCfg.format === 'csv';
+  const csvtsv = csv || S.exportCfg.format === 'tsv';
+  document.querySelectorAll('.expcsv').forEach(el => el.style.display = csv ? '' : 'none');
+  document.querySelectorAll('.expcsvtsv').forEach(el => el.style.display = csvtsv ? '' : 'none');
+}
+function openExport(){
+  expFmt.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S.exportCfg.format)));
+  expScope.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S.exportCfg.scope)));
+  expDelim.value = S.exportCfg.delim;
+  expBom.checked = S.exportCfg.bom;
+  expInject.checked = S.exportCfg.inject;
+  expName.value = S.fileName.replace(/\.[^.]+$/, '');
+  expUpdateVis();
+  dlgExport.showModal();
+}
+btnExpDownload.addEventListener('click', () => {
+  const { text, mime, ext } = buildExport();
+  const base = expName.value.trim() || 'datos';
+  download(base, ext, text, mime, S.exportCfg.bom && S.exportCfg.format === 'csv');
+  dlgExport.close();
+  toast(`Descargado ${base}${ext}`, 'ok');
+});
+btnExpCopy.addEventListener('click', async () => {
+  const { text } = buildExport();
+  const ok = await copyText(text);
+  toast(ok ? 'Copiado al portapapeles' : 'No se pudo copiar', ok ? 'ok' : 'err');
+});
+
+/* ================================================================
+   DIÁLOGOS, TOASTS, PROGRESO
+   ================================================================ */
+document.querySelectorAll('dialog').forEach(d => d.addEventListener('keydown', e => e.stopPropagation()));
+document.querySelectorAll('dialog [data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+function confirmDlg(msg, cb){
+  confirmMsg.textContent = msg;
+  btnConfirmOk.onclick = () => { dlgConfirm.close(); cb(); };
+  dlgConfirm.showModal();
+}
+function toast(msg, kind = '', actions){
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  const sp = document.createElement('span');
+  sp.textContent = msg;
+  el.appendChild(sp);
+  if(actions) for(const a of actions){
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.textContent = a.label;
+    b.addEventListener('click', () => { el.remove(); a.fn(); });
+    el.appendChild(b);
+  }
+  toasts.appendChild(el);
+  setTimeout(() => el.remove(), actions ? 10000 : 4200);
+  while(toasts.children.length > 4) toasts.firstChild.remove();
+}
+function showProgress(lbl, pct){
+  progressWrap.hidden = false;
+  progressLbl.textContent = lbl;
+  document.body.classList.add('working');
+  setProgress(pct);
+}
+function setProgress(p){
+  if(p == null){
+    progressBarWrap.classList.add('indet');
+    progressPct.textContent = '';
+  } else {
+    progressBarWrap.classList.remove('indet');
+    progressBar.style.width = (p * 100).toFixed(0) + '%';
+    progressPct.textContent = (p * 100).toFixed(0) + '%';
+  }
+}
+function hideProgress(){
+  progressWrap.hidden = true;
+  document.body.classList.remove('working');
+}
+
+/* ================================================================
+   CABECERA Y TOOLBAR
+   ================================================================ */
+btnOpen.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files && fileInput.files[0];
+  fileInput.value = '';
+  if(f) doImport(f, 'file', 'auto');
+});
+btnPaste.addEventListener('click', async () => {
+  let txt = null;
+  try{ txt = await navigator.clipboard.readText(); }catch(_){ }
+  if(txt && txt.trim()) doImport(txt, 'text', 'auto');
+  else { pasteTa.value = ''; dlgPaste.showModal(); setTimeout(() => pasteTa.focus(), 60); }
+});
+btnPasteOk.addEventListener('click', () => {
+  const t = pasteTa.value;
+  dlgPaste.close();
+  if(t.trim()) doImport(t, 'text', 'auto');
+});
+btnExport.addEventListener('click', openExport);
+btnHelp.addEventListener('click', () => dlgHelp.showModal());
+btnFind.addEventListener('click', () => openFind(false));
+btnClear.addEventListener('click', () => {
+  confirmDlg('Se borrará toda la tabla y también el autoguardado. Esta acción es irreversible (no se puede deshacer).', () => {
+    blankGrid();
+    H.undo.length = H.redo.length = 0;
+    updateUndoUI();
+    clearSaved();
+    P.dirty = false; P.state = 'none';
+    updateSaveUI();
+    S.fileName = 'datos.csv';
+    fileName.textContent = S.fileName;
+    emptyHint.hidden = false;
+    S.loading = true;             // evitar que after() marque dirty y re-guarde
+    after({ structure: true });
+    S.loading = false;
+    detectTypes();
+    toast('Tabla y autoguardado borrados', 'ok');
+  });
+});
+/* renombrar archivo */
+function renameFile(){
+  const inp = document.createElement('input');
+  inp.id = 'fileNameEdit';
+  inp.value = S.fileName;
+  fileName.replaceWith(inp);
+  inp.focus(); inp.select();
+  let doneFlag = false;
+  const done = commit => {
+    if(doneFlag) return;
+    doneFlag = true;
+    if(commit && inp.value.trim()){ S.fileName = inp.value.trim(); markDirty(); }
+    inp.replaceWith(fileName);
+    fileName.textContent = S.fileName;
+  };
+  inp.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if(e.key === 'Enter') done(true);
+    else if(e.key === 'Escape') done(false);
+  });
+  inp.addEventListener('blur', () => done(true));
+}
+fileName.addEventListener('click', renameFile);
+fileName.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); renameFile(); } });
+
+tglHeader.addEventListener('change', () => {
+  doEntry({ t: 'header', on: tglHeader.checked, desc: 'encabezado ' + (tglHeader.checked ? 'activado' : 'desactivado') });
+});
+btnUndo.addEventListener('click', undo);
+btnRedo.addEventListener('click', redo);
+btnRowAbove.addEventListener('click', () => insRows('above'));
+btnRowBelow.addEventListener('click', () => insRows('below'));
+btnDelRow.addEventListener('click', delRows);
+btnColLeft.addEventListener('click', () => insCols('left'));
+btnColRight.addEventListener('click', () => insCols('right'));
+btnDelCol.addEventListener('click', delCols);
+btnReplace.addEventListener('click', () => openFind(true));
+function applyDensity(d){
+  S.density = d;
+  gridwrap.classList.remove('d-compact', 'd-normal', 'd-comfy');
+  gridwrap.classList.add('d-' + d);
+  denC.setAttribute('aria-pressed', String(d === 'compact'));
+  denN.setAttribute('aria-pressed', String(d === 'normal'));
+  denX.setAttribute('aria-pressed', String(d === 'comfy'));
+  renderBody(true);
+  ensureVisible(S.vB.v, S.vB.c);
+}
+denC.addEventListener('click', () => { applyDensity('compact'); markDirty(); });
+denN.addEventListener('click', () => { applyDensity('normal'); markDirty(); });
+denX.addEventListener('click', () => { applyDensity('comfy'); markDirty(); });
+colTypeSel.addEventListener('change', e => forceType(S.vB.c, e.target.value === 'auto' ? null : e.target.value));
+btnFreeze.addEventListener('click', () => {
+  S.freeze = !S.freeze;
+  gridwrap.classList.toggle('freeze1', S.freeze);
+  btnFreeze.setAttribute('aria-pressed', String(S.freeze));
+});
+btnCfg.addEventListener('click', e => {
+  e.stopPropagation();
+  const r = btnCfg.getBoundingClientRect();
+  showMenu(cfgMenu, r.left - 120, r.bottom + 4);
+});
+decSel.addEventListener('change', e => {
+  S.dcMode = e.target.value;
+  detectTypes();
+  renderBody(true);
+  statsSched();
+  markDirty();
+});
+function applyTheme(t){
+  if(t === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', t);
+  try{ localStorage.setItem('csve.theme', t); }catch(_){ }
+}
+themeSel.addEventListener('change', e => applyTheme(e.target.value));
+btnMore.addEventListener('click', () => {
+  const open = toolbar.classList.toggle('open');
+  btnMore.setAttribute('aria-expanded', String(open));
+});
+btnStats.addEventListener('click', () => sidebar.classList.toggle('open'));
+sheetGrip.addEventListener('click', () => sidebar.classList.remove('open'));
+
+/* ================================================================
+   TÁCTIL (§3.6)
+   ================================================================ */
+const TT = { x: 0, y: 0, moved: false, timer: 0, cell: null, lastTap: 0, tapV: -1, tapC: -1, selecting: false };
+gridwrap.addEventListener('touchstart', e => {
+  if(e.touches.length !== 1) return;
+  const t = e.touches[0];
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const cell = el && el.closest('.gc');
+  TT.x = t.clientX; TT.y = t.clientY; TT.cell = cell; TT.moved = false;
+  TT.selecting = !!(cell && cell.classList.contains('active'));
+  clearTimeout(TT.timer);
+  TT.timer = setTimeout(() => {
+    if(!TT.moved && cell){
+      const v = +cell.parentElement.dataset.v, c = +cell.dataset.c;
+      moveTo(v, c, false);
+      openCtx(TT.x, TT.y);
+      if(navigator.vibrate) navigator.vibrate(12);
+    }
+  }, 550);
+}, { passive: true });
+gridwrap.addEventListener('touchmove', e => {
+  const t = e.touches[0];
+  if(Math.abs(t.clientX - TT.x) > 8 || Math.abs(t.clientY - TT.y) > 8){
+    TT.moved = true;
+    clearTimeout(TT.timer);
+  }
+  if(TT.selecting){
+    e.preventDefault();
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const cell = el && el.closest('.gc');
+    if(cell) moveTo(+cell.parentElement.dataset.v, +cell.dataset.c, true, false);
+  }
+}, { passive: false });
+gridwrap.addEventListener('touchend', () => {
+  clearTimeout(TT.timer);
+  if(TT.moved){ TT.selecting = false; return; }
+  const cell = TT.cell;
+  if(!cell){ TT.selecting = false; return; }
+  const now = Date.now();
+  const v = +cell.parentElement.dataset.v, c = +cell.dataset.c;
+  if(now - TT.lastTap < 350 && TT.tapV === v && TT.tapC === c){
+    openEditor(v, c, null);
+    TT.lastTap = 0;
+  } else {
+    moveTo(v, c, false);
+    TT.lastTap = now; TT.tapV = v; TT.tapC = c;
+  }
+  TT.selecting = false;
+});
+
+/* ================================================================
+   ARRANQUE
+   ================================================================ */
+function blankGrid(){
+  S.rows = Array.from({ length: 100 }, () => []);
+  S.cols = 10;
+  S.headerOn = false;
+  tglHeader.checked = false;
+  S.types = []; S.forced = []; S.colW = [];
+  S.filters.clear();
+  S.visRows = null; S.visMap = null;
+  S.sort = { c: -1, dir: null };
+  S.vA = { v: 0, c: 0 }; S.vB = { v: 0, c: 0 };
+}
+(function init(){
+  let th = 'auto';
+  try{ th = localStorage.getItem('csve.theme') || 'auto'; }catch(_){ }
+  themeSel.value = th;
+  if(th !== 'auto') document.documentElement.setAttribute('data-theme', th);
+  decSel.value = S.dcMode;
+  blankGrid();
+  ensureColMeta();
+  recalcX();
+  renderHead();
+  renderBody(true);
+  updateCountsUI();
+  cellbarUpdate();
+  updateUndoUI();
+  statsSched();
+  emptyHint.hidden = false;
+  initStore();
+  window.addEventListener('resize', () => renderBody(true));
+  gridwrap.focus();
+})();
+
+/* API para pruebas automatizadas y depuración */
+window.CSVE = {
+  S, H, F, P, W,
+  doImport, applyPaste, buildExport, sortBy, setFilter, undo, redo, moveTo,
+  openExport, detectTypes, cellText, setCellUndo, v2m, m2v, nRows, nVis,
+  selectAll, clearSelection, findRefresh, openFind, quickExport, toCSV, toMarkdown,
+  makeParser, detectDelim, toNum, dateVal, boolVal, sortPerm,
+};
 </script>
 </body>
 </html>
